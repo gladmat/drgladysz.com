@@ -43,7 +43,10 @@ const {
   alt,
   aspect = '16/9',
   position = 'center',
-  saturate = 1,
+  // The mockups apply filter: saturate(0.96) to every editorial photo break for
+  // a coherent, slightly-cooled palette. OR-shot Lightroom grading (per
+  // _handoff/design/photo-manifest.md) is a Phase 9 finishing pass on top.
+  saturate = 0.96,
   maxHeight,
   priority = 'lazy',
   widths = IMAGE_WIDTHS,

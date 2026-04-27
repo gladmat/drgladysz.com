@@ -1,0 +1,166 @@
+---
+import SiteLayout from '@/layouts/SiteLayout.astro';
+import AboutHero from '@/components/AboutHero.astro';
+import AboutSection from '@/components/AboutSection.astro';
+import PhotoBreak from '@/components/PhotoBreak.astro';
+import { IMAGE_SIZES_HERO_SPLIT } from '@/lib/image-config';
+import img14 from '@/assets/img/img-14.jpg';
+import img08 from '@/assets/img/img-08.jpg';
+import img19 from '@/assets/img/img-19.jpg';
+
+// Locked content from _handoff/content/about-en.md (v1.6).
+// DO NOT paraphrase — wording is non-negotiable. Italicised foreign-language
+// terms (Leitender Arzt, Handchirurgie, lekarz, Surgical Common Trunk,
+// Facharzt, Doktorvater, Pseudomonas aeruginosa, JMIR AI) preserved as-is.
+
+const personJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Physician',
+  name: 'Mateusz Gładysz',
+  honorificSuffix: 'MD, FEBOPRAS, FEBHS',
+  jobTitle: 'Consultant Plastic and Hand Surgeon',
+  email: 'mateusz@drgladysz.com',
+  url: 'https://drgladysz.com/en/about',
+  medicalSpecialty: ['PlasticSurgery'],
+  knowsLanguage: ['en', 'pl', 'de'],
+  workLocation: {
+    '@type': 'Hospital',
+    name: 'Waikato Hospital',
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: 'Hamilton',
+      addressCountry: 'NZ',
+    },
+  },
+  alumniOf: [
+    { '@type': 'CollegeOrUniversity', name: 'Medical University of Warsaw' },
+    { '@type': 'CollegeOrUniversity', name: 'University Hospital of Zurich' },
+    { '@type': 'CollegeOrUniversity', name: 'Hannover Medical School' },
+  ],
+  sameAs: [
+    'https://orcid.org/0009-0009-2380-4056',
+    'https://www.linkedin.com/in/mateuszgladysz',
+  ],
+};
+---
+<SiteLayout
+  title="About — Mateusz Gładysz, MD, FEBOPRAS, FEBHS"
+  description="Consultant plastic and hand surgeon, currently at Waikato Hospital, Hamilton. Training across Switzerland, Germany, Australia, and New Zealand."
+  locale="en"
+  alternateUrl="/pl/o-mnie"
+  heroPreload={{ src: img14, sizes: IMAGE_SIZES_HERO_SPLIT }}
+  jsonLd={personJsonLd}
+>
+  <AboutHero
+    photo={img14}
+    photoAlt="Mateusz Gładysz in an examination room with anatomical posters"
+    lead="Consultant Plastic and Hand Surgeon at Waikato Hospital, Hamilton — with training across Switzerland, Germany, Australia, and New Zealand."
+  />
+
+  <section class="opening-narrative">
+    <div class="opening-inner">
+      <p>
+        I am a consultant plastic and hand surgeon, currently practising at Waikato Hospital in Hamilton, New Zealand. My training pathway across Switzerland, Germany, Australia, and New Zealand has shaped a clinical practice grounded in microsurgical reconstruction, the operative care of the upper extremity, and the surgical management of melanoma and complex skin cancer. The work I find most demanding — and most worth doing — is balancing what a patient needs, what is surgically possible, and what is pragmatically wise: <span class="accent">the operation that delivers the right reconstruction is not always the technically maximal one, and the goal is always a patient returning to their life with function intact.</span>
+      </p>
+    </div>
+  </section>
+
+  <AboutSection number="§ 02" label="Practice" heading="Sub-specialty training and current focus">
+    <p>
+      After plastic surgery specialty training at Hannover Medical School, my consultant-track training focused on two sub-specialty areas: microsurgical reconstruction and hand surgery. The microsurgical training was the Perth International Plastic and Reconstructive Fellowship at Sir Charles Gairdner Hospital. The hand surgery training came in the years that followed at Kantonsspital Aarau, in the Department of Plastic and Hand Surgery led by Prof. Jan Plock as Chefarzt — though my day-to-day clinical supervision came from PD Dr. Florian Früh as <em>Leitender Arzt</em> and Head of Hand Surgery, with whom I continue to consult on complex hand cases. The position was formally Oberarzt, but with daily clinical work concentrated almost entirely within the hand surgery team. In Switzerland, <em>Handchirurgie</em> is a sub-specialty separate from plastic surgery, and the Aarau years effectively served as a hand surgery fellowship period. The European Board of Hand Surgery Diploma examination, which requires at least one year of post-specialisation work in a pure hand-surgery scope, followed from that training.
+    </p>
+    <p>
+      Current clinical practice draws on both sub-specialties. The principal areas of work are hand surgery and the operative care of the upper extremity, and microsurgical reconstruction across the body. Within reconstructive practice, the surgical management of melanoma and complex skin cancer is a current area of clinical work, anchored by my role as Chair of the Melanoma and High-Risk Skin Cancer MDT at Waikato Hospital.
+    </p>
+  </AboutSection>
+
+  <PhotoBreak
+    src={img08}
+    alt="Surgical instrument tray, gold and steel handles"
+    aspect="16/9"
+  />
+
+  <AboutSection number="§ 03" label="Pathway" heading="Training and pathway">
+    <p>
+      I studied medicine at the Medical University of Warsaw between 2008 and 2014, qualifying as <em>lekarz</em> in 2014. Postgraduate training began at the Military Institute of Medicine in Warsaw, where I completed the thirteen-month obligatory internship between October 2014 and October 2015.
+    </p>
+    <p>
+      Surgical foundation training followed at the University Hospital of Zurich, where I joined the <em>Surgical Common Trunk</em> programme in November 2015 under Prof. Pierre-Alain Clavien in the Department of Surgery and Transplantation. The two years in Zurich included rotations in general surgery, emergency medicine, and thoracic surgery, with the Surgical Basic Examination passed in November 2016. After completing the Zurich training in late 2017, I began plastic surgery specialty training at Hannover Medical School in March 2018, following German medical registration.
+    </p>
+    <p>
+      The Hannover years were the substantive plastic surgery training period. I worked in the Department of Plastic, Aesthetic, Hand and Reconstructive Surgery under Prof. Peter M. Vogt, across all four sub-specialty areas of European plastic surgery. The European Board examination (FEBOPRAS) was passed in November 2021, and the German <em>Facharzt</em> qualification in plastic, reconstructive and aesthetic surgery in June 2022.
+    </p>
+    <p>
+      A short observership followed in August 2022 with Prof. Joon Pio Hong at the Asan Medical Center in Seoul. From September 2022 to July 2023, I held the Perth International Plastic and Reconstructive Fellowship at Sir Charles Gairdner Hospital in Western Australia, in the department led by Mr. Remo Papini — though my fellowship coordinator and principal microsurgery teacher was Mr. Duncan Taylor, who remains my microsurgery mentor.
+    </p>
+    <p>
+      Returning to Switzerland in October 2023, I joined the Department of Plastic and Hand Surgery at Kantonsspital Aarau as Oberarzt, working primarily within the hand surgery team. The European Board of Hand Surgery Diploma examination (FEBHS) was passed in June 2025, completing the formal credentialing in the second sub-specialty.
+    </p>
+    <p>
+      Since September 2025, I have been Senior Medical Officer and Consultant in the Department of Plastic Surgery at Waikato Hospital in Hamilton, New Zealand.
+    </p>
+  </AboutSection>
+
+  <PhotoBreak
+    src={img19}
+    alt="Mateusz Gładysz at French doors, charcoal blazer, hands at lapels"
+    aspect="4/5"
+    position="center 30%"
+    maxHeight="90vh"
+  />
+
+  <AboutSection number="§ 04" label="Research" heading="Research and academic work">
+    <p>
+      My doctoral research at the University of Zurich examined AI-assisted clinical documentation in multilingual healthcare settings. The thesis is supervised by Prof. Pietro Giovanoli at UZH as formal <em>Doktorvater</em>; the underlying clinical work was conducted at Kantonsspital Aarau under the academic supervision of Prof. Jan Plock, where the AI-scribe systems were developed and evaluated during my time there as Oberarzt. The proof-of-concept study compared four documentation workflows — including ambient AI-assisted dictation — and was particularly interested in how non-native German-speaking clinicians manage documentation burden in a Swiss tertiary hospital. The findings were published in <em>JMIR AI</em> in 2026.
+    </p>
+    <p>
+      Earlier clinical work during the Hannover years included the European Burn Journal case report on intermediate wound coverage with NovoSorb BTM in persistent <em>Pseudomonas aeruginosa</em> infection — a limb-salvage case that illustrated where dermal scaffold templates can extend the reconstructive options in heavily contaminated wounds.
+    </p>
+    <p>
+      The selected publications block on the home page lists current peer-reviewed output, and the <a href="/en/publications">publications archive</a> carries the full record.
+    </p>
+  </AboutSection>
+
+  <AboutSection number="§ 05" label="Approach" heading="Languages and approach">
+    <p>
+      Consultations are conducted in English, Polish, and German. Working in five different healthcare systems — Polish, Swiss, German, Australian, and now New Zealand — has shaped a clinical practice that adapts readily to new environments and structures. The same surgical problem is approached differently in different systems; seeing those differences from the inside, rather than reading about them, makes the underlying judgement more transferable. The questions a patient asks first often tell more than the questions they have prepared, and that observation translates across languages and cultures.
+    </p>
+  </AboutSection>
+
+  <AboutSection number="§ 06" label="Personal" heading="Outside the operating theatre" class="last">
+    <p>
+      I am the father of three young children, and most of my non-work life is shaped by them. Indoor rowing on a Concept2 ergometer is a regular morning practice — usually before the rest of the day begins. I am learning piano alongside my children, and continuing language study.
+    </p>
+  </AboutSection>
+</SiteLayout>
+
+<style>
+  .opening-narrative {
+    padding-block: clamp(60px, 10vh, 120px);
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    background: var(--bg);
+  }
+  .opening-inner {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding-inline: clamp(20px, 5vw, 80px);
+  }
+  .opening-narrative p {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(20px, 2vw, 26px);
+    line-height: 1.5;
+    color: var(--ink);
+    max-width: 760px;
+    margin: 0;
+  }
+  .opening-narrative .accent {
+    color: var(--accent);
+    font-style: italic;
+  }
+
+  /* The last About section drops its bottom rule so it doesn't double up
+     with the dark footer's top edge. */
+  :global(.about-section.last) { border-bottom: none; }
+</style>
