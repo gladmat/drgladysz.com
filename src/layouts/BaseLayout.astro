@@ -1,0 +1,116 @@
+---
+// src/layouts/BaseLayout.astro
+import '@/styles/globals.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  locale?: 'en' | 'pl';
+  alternateUrl?: string;
+  canonical?: string;
+  ogImage?: string;
+  jsonLd?: Record<string, any> | Record<string, any>[];
+}
+
+const {
+  title,
+  description = 'Mateusz Gładysz, MD, FEBOPRAS, FEBHS — Consultant Plastic and Hand Surgeon',
+  locale = 'en',
+  alternateUrl,
+  canonical,
+  ogImage = '/og/default.jpg',
+  jsonLd,
+} = Astro.props;
+
+const siteUrl = import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com';
+const fullTitle = title.includes('Mateusz') ? title : `${title} — Mateusz Gładysz, MD`;
+const canonicalUrl = canonical || `${siteUrl}${Astro.url.pathname}`;
+const langCode = locale === 'pl' ? 'pl-PL' : 'en-NZ';
+const altLangCode = locale === 'pl' ? 'en-NZ' : 'pl-PL';
+---
+
+<!DOCTYPE html>
+<html lang={locale}>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="generator" content={Astro.generator} />
+  
+  <!-- Primary meta -->
+  <title>{fullTitle}</title>
+  <meta name="description" content={description} />
+  <link rel="canonical" href={canonicalUrl} />
+  
+  <!-- Hreflang -->
+  <link rel="alternate" hreflang={langCode} href={canonicalUrl} />
+  {alternateUrl && (
+    <link rel="alternate" hreflang={altLangCode} href={`${siteUrl}${alternateUrl}`} />
+  )}
+  <link rel="alternate" hreflang="x-default" href={`${siteUrl}/en/`} />
+  
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content={fullTitle} />
+  <meta property="og:description" content={description} />
+  <meta property="og:url" content={canonicalUrl} />
+  <meta property="og:image" content={`${siteUrl}${ogImage}`} />
+  <meta property="og:locale" content={langCode.replace('-', '_')} />
+  
+  <!-- Twitter card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={fullTitle} />
+  <meta name="twitter:description" content={description} />
+  <meta name="twitter:image" content={`${siteUrl}${ogImage}`} />
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+  
+  <!-- Preload critical fonts -->
+  <link rel="preload" href="/fonts/IBMPlexSerif-Medium.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/fonts/IBMPlexSans-Regular.woff2" as="font" type="font/woff2" crossorigin />
+  
+  <!-- Schema.org JSON-LD -->
+  {jsonLd && (
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  )}
+  
+  <!-- Plausible analytics (cookie-free, EU-hosted) -->
+  <script
+    defer
+    data-domain={import.meta.env.PUBLIC_PLAUSIBLE_DOMAIN || 'drgladysz.com'}
+    src="https://plausible.io/js/script.js"
+  ></script>
+</head>
+<body>
+  <a href="#main" class="skip-to-main">Skip to main content</a>
+  
+  <slot name="header" />
+  
+  <main id="main">
+    <slot />
+  </main>
+  
+  <slot name="footer" />
+  
+  <style>
+    .skip-to-main {
+      position: absolute;
+      left: -9999px;
+      top: 0;
+      background: var(--ink);
+      color: var(--bg);
+      padding: 12px 24px;
+      z-index: 100;
+      text-decoration: none;
+      font-family: var(--sans);
+      font-size: 14px;
+    }
+    
+    .skip-to-main:focus {
+      left: 0;
+      outline: 2px solid var(--accent);
+    }
+  </style>
+</body>
+</html>

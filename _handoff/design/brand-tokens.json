@@ -1,0 +1,211 @@
+{
+  "$schema": "https://design-tokens.github.io/community-group/format/",
+  "_meta": {
+    "name": "Aarau Graphite",
+    "version": "1.6",
+    "description": "Brand design tokens for Mateusz Gładysz personal brand. Aarau Graphite palette, IBM Plex typography, 8pt spacing scale. DTCG W3C JSON format for Style Dictionary / Tokens Studio compatibility.",
+    "owner": "Mateusz Gładysz",
+    "domain": "drgladysz.com"
+  },
+
+  "color": {
+    "bg": {
+      "primary": {
+        "$value": "#FAF7F2",
+        "$type": "color",
+        "$description": "Cream — page background. Default for all standard surfaces."
+      },
+      "card": {
+        "$value": "#FFFFFF",
+        "$type": "color",
+        "$description": "White — cards, modals, forms only. Elevated surfaces."
+      },
+      "deep": {
+        "$value": "#F0EBE2",
+        "$type": "color",
+        "$description": "Cream-deep — variant backgrounds, photo placeholder, soft surfaces."
+      },
+      "dark": {
+        "$value": "#14171A",
+        "$type": "color",
+        "$description": "Near-black — dark mode and inverted blocks (footer, photo overlays)."
+      }
+    },
+    "ink": {
+      "primary": {
+        "$value": "#14171A",
+        "$type": "color",
+        "$description": "Near-black — body text, strong headings. WCAG 17.8:1 on cream. AAA."
+      },
+      "secondary": {
+        "$value": "#3D434A",
+        "$type": "color",
+        "$description": "Dark grey — secondary text (meta, captions). WCAG 11.2:1 on cream. AAA."
+      },
+      "tertiary": {
+        "$value": "#6E7173",
+        "$type": "color",
+        "$description": "Mid grey — tertiary text (footer fine print). WCAG 5.1:1 on cream. AA. Not for sustained reading."
+      },
+      "on_dark": {
+        "$value": "#FAF7F2",
+        "$type": "color",
+        "$description": "Cream — text on dark backgrounds (footer, dark blocks)."
+      }
+    },
+    "accent": {
+      "$value": "#5C2E2E",
+      "$type": "color",
+      "$description": "Oxblood — links, key CTAs only. Used at very low frequency. WCAG 9.7:1 on cream. AAA."
+    },
+    "rule": {
+      "primary": {
+        "$value": "#E8E2D8",
+        "$type": "color",
+        "$description": "Warm beige — 1px dividers, table borders. Decorative only, not for text contrast."
+      },
+      "strong": {
+        "$value": "#C9C0B0",
+        "$type": "color",
+        "$description": "Warm beige strong — table headers, card top borders, prominent dividers."
+      }
+    },
+    "_forbidden": {
+      "$description": "Colors explicitly forbidden by the brand spec. Do not introduce.",
+      "medical_navy": "Generic medical-website cliché",
+      "gold_champagne": "Reads cosmetic-clinic",
+      "true_black_000000": "Too cold; fights with cream warmth",
+      "saturated_red_orange_yellow": "Surgical association with bleeding/warning",
+      "two_color_accent_combinations": "Palette is monochromatic-plus-one by design"
+    }
+  },
+
+  "font": {
+    "family": {
+      "serif": {
+        "$value": "'IBM Plex Serif', Georgia, serif",
+        "$type": "fontFamily",
+        "$description": "Display, headings, body emphasis. Self-hosted woff2 from /fonts/."
+      },
+      "sans": {
+        "$value": "'IBM Plex Sans', system-ui, -apple-system, sans-serif",
+        "$type": "fontFamily",
+        "$description": "Body text, UI labels, navigation. Self-hosted woff2 from /fonts/."
+      },
+      "mono": {
+        "$value": "'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace",
+        "$type": "fontFamily",
+        "$description": "Section labels, credentials lines, citation identifiers, code. Self-hosted woff2 from /fonts/."
+      }
+    },
+    "weight": {
+      "regular": { "$value": 400, "$type": "fontWeight" },
+      "medium": { "$value": 500, "$type": "fontWeight" },
+      "semibold": { "$value": 600, "$type": "fontWeight" }
+    },
+    "size": {
+      "display": { "$value": "64px", "$type": "fontSize", "$description": "Home hero h1 (clamps to mobile)" },
+      "h1": { "$value": "48px", "$type": "fontSize" },
+      "h2": { "$value": "36px", "$type": "fontSize" },
+      "h3": { "$value": "28px", "$type": "fontSize" },
+      "h4": { "$value": "22px", "$type": "fontSize" },
+      "body_lg": { "$value": "18px", "$type": "fontSize" },
+      "body": { "$value": "16px", "$type": "fontSize" },
+      "body_sm": { "$value": "14px", "$type": "fontSize" },
+      "caption": { "$value": "12px", "$type": "fontSize" },
+      "cover_display": { "$value": "130px", "$type": "fontSize", "$description": "Cover-spread display variant. Clamps via clamp(50px, 10vw, 130px) on home page" }
+    },
+    "lineHeight": {
+      "display": { "$value": "1.05", "$type": "lineHeight" },
+      "h1": { "$value": "1.10", "$type": "lineHeight" },
+      "h2": { "$value": "1.15", "$type": "lineHeight" },
+      "h3": { "$value": "1.20", "$type": "lineHeight" },
+      "h4": { "$value": "1.30", "$type": "lineHeight" },
+      "body": { "$value": "1.60", "$type": "lineHeight" },
+      "tight": { "$value": "1.25", "$type": "lineHeight" }
+    },
+    "letterSpacing": {
+      "display": { "$value": "-0.02em", "$type": "letterSpacing" },
+      "h1": { "$value": "-0.015em", "$type": "letterSpacing" },
+      "h2": { "$value": "-0.01em", "$type": "letterSpacing" },
+      "h3": { "$value": "-0.005em", "$type": "letterSpacing" },
+      "body": { "$value": "0", "$type": "letterSpacing" },
+      "caption": { "$value": "0.02em", "$type": "letterSpacing" },
+      "credentials_line": { "$value": "0.14em", "$type": "letterSpacing", "$description": "Cover-spread credentials Plex Mono 16px — locked at 0.14em" },
+      "section_label_mono": { "$value": "0.12em", "$type": "letterSpacing", "$description": "Mono uppercase section labels throughout brand" },
+      "footer_caption_mono": { "$value": "0.10em", "$type": "letterSpacing" }
+    }
+  },
+
+  "spacing": {
+    "_description": "8pt base scale. Scale tokens from --s-1 to --s-16. Use only these values.",
+    "1": { "$value": "4px", "$type": "spacing" },
+    "2": { "$value": "8px", "$type": "spacing" },
+    "3": { "$value": "12px", "$type": "spacing" },
+    "4": { "$value": "16px", "$type": "spacing" },
+    "5": { "$value": "24px", "$type": "spacing" },
+    "6": { "$value": "32px", "$type": "spacing" },
+    "8": { "$value": "48px", "$type": "spacing" },
+    "10": { "$value": "64px", "$type": "spacing" },
+    "12": { "$value": "80px", "$type": "spacing" },
+    "16": { "$value": "128px", "$type": "spacing" }
+  },
+
+  "layout": {
+    "container": {
+      "max_width": { "$value": "1320px", "$type": "dimension" },
+      "padding_x": { "$value": "clamp(20px, 5vw, 80px)", "$type": "dimension" }
+    },
+    "narrow_max": {
+      "$value": "740px",
+      "$type": "dimension",
+      "$description": "Long-form prose max width. Approximately 60-65 chars per line."
+    },
+    "section_padding": {
+      "y_default": { "$value": "clamp(60px, 10vh, 100px)", "$type": "dimension" },
+      "y_section_break": { "$value": "clamp(80px, 14vh, 160px)", "$type": "dimension" }
+    },
+    "grid": {
+      "desktop_columns": { "$value": "12", "$type": "number" },
+      "desktop_gutter": { "$value": "24px", "$type": "dimension" },
+      "tablet_columns": { "$value": "8", "$type": "number" },
+      "tablet_gutter": { "$value": "16px", "$type": "dimension" },
+      "mobile_columns": { "$value": "4", "$type": "number" },
+      "mobile_gutter": { "$value": "16px", "$type": "dimension" }
+    }
+  },
+
+  "breakpoint": {
+    "mobile_max": { "$value": "767px", "$type": "dimension" },
+    "tablet_min": { "$value": "768px", "$type": "dimension" },
+    "tablet_max": { "$value": "1023px", "$type": "dimension" },
+    "desktop_min": { "$value": "1024px", "$type": "dimension" }
+  },
+
+  "wordmark": {
+    "_description": "Master wordmark and cover-spread display variant specifications",
+    "master": {
+      "weight": { "$value": 500, "$type": "fontWeight", "$description": "Plex Serif Medium 500" },
+      "case": { "$value": "lowercase except initial M and G", "$type": "string" },
+      "letter_spacing": { "$value": "-0.02em", "$type": "letterSpacing" },
+      "use": { "$value": "Site header navigation, About page, formal contexts, business card back, email signature", "$type": "string" }
+    },
+    "cover_spread": {
+      "weight": { "$value": 400, "$type": "fontWeight", "$description": "Plex Serif Regular 400 — display variant only" },
+      "size": { "$value": "clamp(50px, 10vw, 130px)", "$type": "fontSize" },
+      "case": { "$value": "lowercase except initial M and G — both names upright, never italic", "$type": "string" },
+      "letter_spacing": { "$value": "-0.04em", "$type": "letterSpacing" },
+      "credentials_pairing": { "$value": "Plex Mono 16px / 0.14em tracking / oxblood / 32px below name", "$type": "string" },
+      "ratio_max": { "$value": "1:8.1 credentials-to-name", "$type": "string" },
+      "use": { "$value": "Brand book covers, document title pages, slide deck title slides, home page hero, About hero, print collateral cover spreads", "$type": "string" }
+    }
+  },
+
+  "_design_principles": {
+    "restraint": "The brand differentiates by what it omits, not what it adds. Generous whitespace > decorative elements.",
+    "hierarchy": "Cream-graphite-oxblood is monochromatic-plus-one. Oxblood appears only at low frequency: hyperlinks, key CTAs, single 1px rules. Should never dominate any view.",
+    "typography_register": "Plex Serif headlines and emphasis; Plex Sans body and UI; Plex Mono captions, labels, credentials. Three typefaces, each with strict role.",
+    "no_decoration": "No gradients, no drop shadows, no decorative flourishes, no surgical icons, no abstract 'innovation' iconography. Numerals, em-dashes, simple line marks only.",
+    "photography": "Documentary register, not glamour. OR shots get color treatment to integrate with palette (-15-20% teal saturation, lift shadows toward warm grey)."
+  }
+}

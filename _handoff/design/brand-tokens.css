@@ -1,0 +1,198 @@
+/* ============================================================
+   AARAU GRAPHITE — Brand design tokens v1.6
+   ============================================================
+   
+   CSS custom properties mirroring brand-tokens.json.
+   Drop into globals.css or import as a separate :root layer.
+   
+   For Mateusz Gładysz personal brand, drgladysz.com.
+   ============================================================ */
+
+:root {
+  /* ============================================
+     COLOR PALETTE — Aarau Graphite
+     ============================================ */
+  
+  /* Backgrounds */
+  --bg: #FAF7F2;              /* Cream — page background */
+  --bg-card: #FFFFFF;         /* White — cards, modals, forms only */
+  --bg-deep: #F0EBE2;         /* Cream-deep — variant surfaces */
+  --bg-dark: #14171A;         /* Near-black — dark mode / inverted blocks */
+  
+  /* Text */
+  --ink: #14171A;             /* Body text, strong headings — 17.8:1 AAA on cream */
+  --ink-2: #3D434A;           /* Secondary text — 11.2:1 AAA */
+  --ink-3: #6E7173;           /* Tertiary text — 5.1:1 AA, not for sustained reading */
+  --ink-on-dark: #FAF7F2;     /* Text on dark backgrounds */
+  
+  /* Accent — use at very low frequency only */
+  --accent: #5C2E2E;          /* Oxblood — links, key CTAs, accent rules — 9.7:1 AAA */
+  
+  /* Rules and dividers */
+  --rule: #E8E2D8;            /* Warm beige — 1px dividers, decorative only */
+  --rule-strong: #C9C0B0;     /* Strong divider — table headers, card top borders */
+  
+  /* ============================================
+     TYPOGRAPHY
+     ============================================ */
+  
+  --serif: 'IBM Plex Serif', Georgia, serif;
+  --sans: 'IBM Plex Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  
+  /* Weights */
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  
+  /* Type scale (1.250 modular ratio, 16px base) */
+  --size-display: 64px;       /* Home hero h1, About hero — clamps responsively */
+  --size-h1: 48px;
+  --size-h2: 36px;
+  --size-h3: 28px;
+  --size-h4: 22px;
+  --size-body-lg: 18px;
+  --size-body: 16px;
+  --size-body-sm: 14px;
+  --size-caption: 12px;
+  
+  /* Line heights */
+  --lh-display: 1.05;
+  --lh-h1: 1.10;
+  --lh-h2: 1.15;
+  --lh-h3: 1.20;
+  --lh-h4: 1.30;
+  --lh-body: 1.60;
+  --lh-tight: 1.25;
+  
+  /* Letter spacing */
+  --ls-display: -0.02em;
+  --ls-h1: -0.015em;
+  --ls-h2: -0.01em;
+  --ls-h3: -0.005em;
+  --ls-body: 0;
+  --ls-caption: 0.02em;
+  --ls-credentials: 0.14em;   /* Cover-spread credentials line */
+  --ls-section-label: 0.12em; /* Mono uppercase section labels */
+  --ls-footer-caption: 0.10em;
+  
+  /* ============================================
+     SPACING — 8pt scale
+     ============================================ */
+  
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-8: 48px;
+  --s-10: 64px;
+  --s-12: 80px;
+  --s-16: 128px;
+  
+  /* ============================================
+     LAYOUT
+     ============================================ */
+  
+  --container-max: 1320px;
+  --narrow-max: 740px;
+  --page-padding-x: clamp(20px, 5vw, 80px);
+  --section-padding-y: clamp(60px, 10vh, 100px);
+  --section-padding-y-major: clamp(80px, 14vh, 160px);
+  
+  /* ============================================
+     RESPONSIVE BREAKPOINTS
+     ============================================ */
+  
+  --bp-mobile-max: 767px;
+  --bp-tablet-min: 768px;
+  --bp-tablet-max: 1023px;
+  --bp-desktop-min: 1024px;
+}
+
+/* ============================================
+   RESPONSIVE TYPE SCALE OVERRIDES
+   Mobile: scale display down, body stays 16px
+   ============================================ */
+
+@media (max-width: 767px) {
+  :root {
+    --size-display: 40px;
+    --size-h1: 32px;
+    --size-h2: 26px;
+    --size-h3: 22px;
+    /* body stays 16px — Polish patient demographic includes older readers */
+  }
+}
+
+/* ============================================
+   FONT LOADING — self-hosted Plex
+   Required: download woff2 files from
+   https://github.com/IBM/plex
+   and place in /public/fonts/
+   ============================================ */
+
+@font-face {
+  font-family: 'IBM Plex Serif';
+  src: url('/fonts/IBMPlexSerif-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'IBM Plex Serif';
+  src: url('/fonts/IBMPlexSerif-Italic.woff2') format('woff2');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'IBM Plex Serif';
+  src: url('/fonts/IBMPlexSerif-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'IBM Plex Sans';
+  src: url('/fonts/IBMPlexSans-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'IBM Plex Sans';
+  src: url('/fonts/IBMPlexSans-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'IBM Plex Sans';
+  src: url('/fonts/IBMPlexSans-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('/fonts/IBMPlexMono-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('/fonts/IBMPlexMono-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
