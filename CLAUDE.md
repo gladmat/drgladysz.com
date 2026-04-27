@@ -40,8 +40,8 @@ site/
 | 1 | Project scaffolding (npm install, Sanity schemas, env wiring) | ✅ done | `5abee72` |
 | 2 | Layout components (PageContainer/SiteNav/SiteFooter/SectionMasthead/PhotoBreak) + state-of-the-art image pipeline | ✅ done | `fd4c58d` |
 | 3 | Home page composition (from `_handoff/content/home-en.md` + `02-mockups/drgladysz-home-page-v1.6.html`) | ✅ done | `4ec21ee` |
-| 4 | **About page** (from `_handoff/content/about-en.md` + about mockup) | **⬜ NEXT** | — |
-| 5 | Tier 1 features — Citation system + Procedure schema | ⬜ | — |
+| 4 | About page (from `_handoff/content/about-en.md` + about mockup) | ✅ done | `ab4b5a3` |
+| 5 | **Tier 1 features — Citation system + Procedure schema** | **⬜ NEXT** | — |
 | 6 | Content infrastructure — blog index/template + WordPress MDX migration | ⬜ | — |
 | 7 | Procedure pages | ⬜ | — |
 | 8 | Supporting pages (/contact, /credentials, /imprint, /privacy, /disclaimer) | ⬜ | — |
