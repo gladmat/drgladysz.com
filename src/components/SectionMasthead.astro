@@ -1,0 +1,76 @@
+---
+interface Props {
+  label?: string;
+  heading: string;
+  headingTag?: 'h1' | 'h2' | 'h3';
+  standfirst?: string;
+  align?: 'left' | 'center';
+  class?: string;
+}
+
+const {
+  label,
+  heading,
+  headingTag: HeadingTag = 'h2',
+  standfirst,
+  align = 'left',
+  class: className = '',
+} = Astro.props;
+---
+<header class:list={['masthead', `align-${align}`, className]}>
+  {label && (
+    <div class="section-label">
+      <span class="accent-bar" aria-hidden="true"></span>
+      <span>{label}</span>
+    </div>
+  )}
+  <HeadingTag class="heading">{heading}</HeadingTag>
+  {standfirst && <p class="standfirst">{standfirst}</p>}
+  <slot />
+</header>
+
+<style>
+  .masthead { margin-bottom: 32px; }
+  .align-center { text-align: center; }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .align-center .section-label { justify-content: center; }
+
+  .accent-bar {
+    width: 24px;
+    height: 2px;
+    background: var(--accent);
+    display: inline-block;
+  }
+
+  .heading {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(28px, 3.4vw, 40px);
+    line-height: 1.15;
+    letter-spacing: -0.018em;
+    color: var(--ink);
+    margin: 0;
+  }
+
+  .standfirst {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(17px, 1.6vw, 20px);
+    line-height: 1.55;
+    color: var(--ink-2);
+    max-width: 60ch;
+    margin: 16px 0 0;
+  }
+  .align-center .standfirst { margin-inline: auto; }
+</style>

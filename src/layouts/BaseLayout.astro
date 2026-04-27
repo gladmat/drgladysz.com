@@ -1,6 +1,15 @@
 ---
 // src/layouts/BaseLayout.astro
 import '@/styles/globals.css';
+import { getImage } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import { IMAGE_WIDTHS, IMAGE_QUALITY, IMAGE_SIZES_FULLBLEED } from '@/lib/image-config';
+
+interface HeroPreload {
+  src: ImageMetadata;
+  sizes?: string;
+  widths?: number[];
+}
 
 interface Props {
   title: string;
@@ -10,6 +19,9 @@ interface Props {
   canonical?: string;
   ogImage?: string;
   jsonLd?: Record<string, any> | Record<string, any>[];
+  // Preloads the AVIF variant of the LCP image with <link rel="preload">.
+  // Browsers that don't support AVIF skip the preload and fetch via <picture>.
+  heroPreload?: HeroPreload;
 }
 
 const {
@@ -20,6 +32,7 @@ const {
   canonical,
   ogImage = '/og/default.jpg',
   jsonLd,
+  heroPreload,
 } = Astro.props;
 
 const siteUrl = import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com';
@@ -27,6 +40,24 @@ const fullTitle = title.includes('Mateusz') ? title : `${title} — Mateusz Gła
 const canonicalUrl = canonical || `${siteUrl}${Astro.url.pathname}`;
 const langCode = locale === 'pl' ? 'pl-PL' : 'en-NZ';
 const altLangCode = locale === 'pl' ? 'en-NZ' : 'pl-PL';
+
+// Compute the AVIF srcset for the LCP hero so the browser starts fetching
+// before HTML body parsing. The options here MUST match PhotoBreak's <Picture>
+// exactly (widths, quality) — otherwise the preloaded URL hashes differ from
+// what <picture> resolves and the browser fetches twice.
+let heroPreloadAttrs: { srcset: string; sizes: string } | null = null;
+if (heroPreload) {
+  const optimized = await getImage({
+    src: heroPreload.src,
+    format: 'avif',
+    widths: heroPreload.widths ?? [...IMAGE_WIDTHS],
+    quality: IMAGE_QUALITY,
+  });
+  heroPreloadAttrs = {
+    srcset: optimized.srcSet.attribute,
+    sizes: heroPreload.sizes ?? IMAGE_SIZES_FULLBLEED,
+  };
+}
 ---
 
 <!DOCTYPE html>
@@ -69,6 +100,18 @@ const altLangCode = locale === 'pl' ? 'en-NZ' : 'pl-PL';
   <!-- Preload critical fonts -->
   <link rel="preload" href="/fonts/IBMPlexSerif-Medium.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="preload" href="/fonts/IBMPlexSans-Regular.woff2" as="font" type="font/woff2" crossorigin />
+
+  <!-- LCP hero preload (AVIF) -->
+  {heroPreloadAttrs && (
+    <link
+      rel="preload"
+      as="image"
+      type="image/avif"
+      imagesrcset={heroPreloadAttrs.srcset}
+      imagesizes={heroPreloadAttrs.sizes}
+      fetchpriority="high"
+    />
+  )}
   
   <!-- Schema.org JSON-LD -->
   {jsonLd && (

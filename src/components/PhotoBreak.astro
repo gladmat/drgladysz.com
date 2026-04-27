@@ -1,0 +1,102 @@
+---
+// PhotoBreak — full-width editorial photograph block.
+//
+// Uses Astro's <Picture> to emit a responsive <picture> element with
+// AVIF + WebP + JPEG sources at multiple widths. Sharp strips EXIF and
+// generates each variant at build time.
+//
+// Performance defaults:
+//   - loading="lazy", decoding="async" (override with priority="hero")
+//   - width/height auto-injected from image metadata (prevents CLS)
+//   - sizes attribute defaults to a sensible full-bleed pattern
+//
+// Usage:
+//   ---
+//   import img08 from '@/assets/img/img-08.jpg';
+//   ---
+//   <PhotoBreak src={img08} alt="..." aspect="16/9" priority="hero" />
+import { Picture } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import {
+  IMAGE_WIDTHS,
+  IMAGE_QUALITY,
+  IMAGE_SIZES_FULLBLEED,
+  IMAGE_FORMATS,
+} from '@/lib/image-config';
+
+interface Props {
+  src: ImageMetadata;
+  alt: string;
+  aspect?: '16/9' | '4/5' | '4/3' | '1/1' | '21/9';
+  position?: string;            // CSS object-position, e.g. "center 25%"
+  saturate?: number;            // CSS filter; 0.96 for OR shots per manifest
+  maxHeight?: string;           // e.g. "90vh" for tall photo breaks
+  priority?: 'hero' | 'eager' | 'lazy';
+  widths?: readonly number[];
+  sizes?: string;
+  formats?: readonly ('avif' | 'webp' | 'jpeg')[];
+  quality?: number;
+}
+
+const {
+  src,
+  alt,
+  aspect = '16/9',
+  position = 'center',
+  saturate = 1,
+  maxHeight,
+  priority = 'lazy',
+  widths = IMAGE_WIDTHS,
+  sizes = IMAGE_SIZES_FULLBLEED,
+  formats = IMAGE_FORMATS,
+  quality = IMAGE_QUALITY,
+} = Astro.props;
+
+const loading = priority === 'lazy' ? 'lazy' : 'eager';
+const fetchpriority = priority === 'hero' ? 'high' : 'auto';
+
+const figureStyle = [
+  `--aspect: ${aspect}`,
+  `--object-position: ${position}`,
+  `--filter: saturate(${saturate})`,
+  maxHeight ? `--max-height: ${maxHeight}` : null,
+]
+  .filter(Boolean)
+  .join('; ');
+---
+<figure class="photo-break" style={figureStyle}>
+  <Picture
+    src={src}
+    alt={alt}
+    formats={formats}
+    widths={widths}
+    sizes={sizes}
+    quality={quality}
+    loading={loading}
+    decoding="async"
+    fetchpriority={fetchpriority}
+    pictureAttributes={{ class: 'photo-break-picture' }}
+  />
+  <slot name="caption" />
+</figure>
+
+<style>
+  .photo-break {
+    margin: 0;
+    aspect-ratio: var(--aspect);
+    background-color: var(--bg-deep);
+    overflow: hidden;
+    max-height: var(--max-height, none);
+  }
+  .photo-break :global(.photo-break-picture),
+  .photo-break :global(.photo-break-picture img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .photo-break :global(.photo-break-picture img) {
+    object-fit: cover;
+    object-position: var(--object-position);
+    filter: var(--filter);
+  }
+</style>

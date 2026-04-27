@@ -1,0 +1,51 @@
+---
+import SiteLayout from '@/layouts/SiteLayout.astro';
+import PageContainer from '@/components/PageContainer.astro';
+import SectionMasthead from '@/components/SectionMasthead.astro';
+import PhotoBreak from '@/components/PhotoBreak.astro';
+import img08 from '@/assets/img/img-08.jpg';
+---
+<SiteLayout
+  title="Mateusz Gładysz, MD, FEBOPRAS, FEBHS — Consultant Plastic and Hand Surgeon"
+  description="Surgical care for the hand and reconstructive microsurgery."
+  locale="en"
+  alternateUrl="/pl/"
+  heroPreload={{ src: img08 }}
+>
+  <!--
+    Phase 2 verification: this index exercises PageContainer, SectionMasthead,
+    and PhotoBreak (plus SiteNav and SiteFooter via SiteLayout). The actual
+    Home page composition lands in Phase 3 from _handoff/content/home-en.md.
+  -->
+  <PageContainer as="section" class="lede">
+    <SectionMasthead
+      label="Phase 2 — layout scaffolding"
+      heading="Mateusz Gładysz"
+      standfirst="Surgical care for the hand and reconstructive microsurgery — European double board-certified plastic and hand surgeon, with clinical practice across Switzerland, Germany, Australia, and New Zealand."
+    />
+  </PageContainer>
+
+  <PhotoBreak
+    src={img08}
+    alt="Surgical instrument tray, gold and steel handles"
+    aspect="16/9"
+    priority="hero"
+  />
+
+  <PageContainer as="section" class="next">
+    <SectionMasthead
+      label="Coming next"
+      heading="Phase 3 — home page composition"
+      headingTag="h2"
+      standfirst="The hero, sub-specialty blocks, publications cards, and articles cards from the locked content land in the next phase."
+    />
+  </PageContainer>
+</SiteLayout>
+
+<style>
+  .lede { padding-block: clamp(60px, 9vh, 110px); }
+  .next {
+    padding-block: clamp(60px, 9vh, 110px);
+    border-top: 1px solid var(--rule);
+  }
+</style>

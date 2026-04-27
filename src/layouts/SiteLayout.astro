@@ -1,0 +1,32 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import SiteNav from '@/components/SiteNav.astro';
+import SiteFooter from '@/components/SiteFooter.astro';
+import type { ImageMetadata } from 'astro';
+
+interface HeroPreload {
+  src: ImageMetadata;
+  sizes?: string;
+  widths?: number[];
+}
+
+interface Props {
+  title: string;
+  description?: string;
+  locale?: 'en' | 'pl';
+  alternateUrl?: string;
+  canonical?: string;
+  ogImage?: string;
+  jsonLd?: Record<string, any> | Record<string, any>[];
+  heroPreload?: HeroPreload;
+}
+
+const props = Astro.props;
+const locale = props.locale ?? 'en';
+const currentPath = Astro.url.pathname;
+---
+<BaseLayout {...props}>
+  <SiteNav slot="header" locale={locale} currentPath={currentPath} />
+  <slot />
+  <SiteFooter slot="footer" locale={locale} />
+</BaseLayout>

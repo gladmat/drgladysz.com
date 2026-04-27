@@ -1,0 +1,285 @@
+---
+interface Props {
+  locale?: 'en' | 'pl';
+}
+
+const { locale = 'en' } = Astro.props;
+
+// Polish footer copy is locked separately in brand spec §11; this stub uses
+// EN copy as a placeholder until Polish composition session lands.
+const t = locale === 'pl'
+  ? {
+      identityHeading: 'Tożsamość',
+      credentialsHeading: 'Uprawnienia',
+      researchHeading: 'Badania',
+      siteHeading: 'Witryna',
+      consultLanguagesLabel: 'Języki konsultacji:',
+      memberLabel: 'Członek:',
+      legalLabel: 'Informacje prawne',
+      disclaimer:
+        'Informacje zawarte na tej stronie mają charakter ogólny i edukacyjny. Nie stanowią porady medycznej i nie zastępują konsultacji z wykwalifikowanym lekarzem.',
+      colophon: 'Aarau Graphite · Złożono krojem IBM Plex',
+      rights: 'Wszelkie prawa zastrzeżone.',
+      navHome: 'Strona główna',
+      navAbout: 'O mnie',
+      navProcedures: 'Zabiegi',
+      navPublications: 'Publikacje',
+      navContact: 'Kontakt',
+      navCredentials: 'Uprawnienia',
+      navImprint: 'Nota prawna',
+      navPrivacy: 'Polityka prywatności',
+      navDisclaimer: 'Zastrzeżenie medyczne',
+    }
+  : {
+      identityHeading: 'Identity',
+      credentialsHeading: 'Credentials',
+      researchHeading: 'Research',
+      siteHeading: 'Site',
+      consultLanguagesLabel: 'Consultation languages:',
+      memberLabel: 'Member:',
+      legalLabel: 'Legal',
+      disclaimer:
+        'The information on this website is provided for general guidance and educational purposes. It does not constitute medical advice and does not replace consultation with a qualified medical practitioner.',
+      colophon: 'Aarau Graphite · Set in IBM Plex',
+      rights: 'All rights reserved.',
+      navHome: 'Home',
+      navAbout: 'About',
+      navProcedures: 'Procedures',
+      navPublications: 'Publications',
+      navContact: 'Contact',
+      navCredentials: 'Credentials',
+      navImprint: 'Imprint',
+      navPrivacy: 'Privacy Policy',
+      navDisclaimer: 'Medical Disclaimer',
+    };
+
+const localePrefix = locale === 'pl' ? '/pl' : '/en';
+
+const navLinks = locale === 'pl'
+  ? [
+      { href: '/pl/', label: t.navHome },
+      { href: '/pl/o-mnie', label: t.navAbout },
+      { href: '/pl/zabiegi', label: t.navProcedures },
+      { href: '/pl/publikacje', label: t.navPublications },
+      { href: '/pl/kontakt', label: t.navContact },
+      { href: '/pl/uprawnienia', label: t.navCredentials },
+    ]
+  : [
+      { href: '/en/', label: t.navHome },
+      { href: '/en/about', label: t.navAbout },
+      { href: '/en/procedures', label: t.navProcedures },
+      { href: '/en/publications', label: t.navPublications },
+      { href: '/en/contact', label: t.navContact },
+      { href: '/en/credentials', label: t.navCredentials },
+    ];
+
+const legalLinks = locale === 'pl'
+  ? [
+      { href: '/pl/nota-prawna', label: t.navImprint },
+      { href: '/pl/polityka-prywatnosci', label: t.navPrivacy },
+      { href: '/pl/zastrzezenie-medyczne', label: t.navDisclaimer },
+    ]
+  : [
+      { href: '/en/imprint', label: t.navImprint },
+      { href: '/en/privacy', label: t.navPrivacy },
+      { href: '/en/disclaimer', label: t.navDisclaimer },
+    ];
+
+const year = new Date().getFullYear();
+---
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="signature">
+      <span class="cap">M</span>ateusz <span class="cap">G</span>ładysz
+    </div>
+
+    <div class="columns">
+      <div class="col">
+        <h4>{t.identityHeading}</h4>
+        <div class="col-content">
+          <p>
+            Mateusz Gładysz<br />
+            MD, FEBOPRAS, FEBHS<br />
+            {locale === 'pl'
+              ? 'Konsultant chirurgii plastycznej i ręki'
+              : 'Consultant Plastic and Hand Surgeon'}
+          </p>
+          <p>
+            <a href="mailto:mateusz@drgladysz.com">mateusz@drgladysz.com</a>
+          </p>
+          <p class="muted">
+            {t.consultLanguagesLabel}<br />
+            English, Polski, Deutsch
+          </p>
+        </div>
+      </div>
+
+      <div class="col">
+        <h4>{t.credentialsHeading}</h4>
+        <div class="col-content">
+          <p>
+            Medical Council of New Zealand<br />
+            Registration 93463
+          </p>
+          <p>
+            Fellow of the European Board of Plastic, Reconstructive and Aesthetic Surgery
+          </p>
+          <p>
+            Fellow of the European Board of Hand Surgery
+          </p>
+          <p class="member-label"><em>{t.memberLabel}</em></p>
+          <p>
+            Polskie Towarzystwo Chirurgii Plastycznej, Rekonstrukcyjnej i&nbsp;Estetycznej
+          </p>
+          <p>Polskie Towarzystwo Chirurgii Ręki</p>
+          <p>International Member, ASSH</p>
+        </div>
+      </div>
+
+      <div class="col">
+        <h4>{t.researchHeading}</h4>
+        <div class="col-content">
+          <ul>
+            <li>
+              <span class="muted">ORCID:</span>{' '}
+              <a href="https://orcid.org/0009-0009-2380-4056" rel="me noopener" target="_blank">
+                0009-0009-2380-4056
+              </a>
+            </li>
+            <li>
+              <span class="muted">LinkedIn:</span>{' '}
+              <a href="https://www.linkedin.com/in/mateuszgladysz" rel="me noopener" target="_blank">
+                linkedin.com/in/mateuszgladysz
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="col">
+        <h4>{t.siteHeading}</h4>
+        <div class="col-content">
+          <ul>
+            {navLinks.map((link) => (
+              <li><a href={link.href}>{link.label}</a></li>
+            ))}
+          </ul>
+          <ul class="legal-list">
+            {legalLinks.map((link) => (
+              <li><a href={link.href}>{link.label}</a></li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <p class="disclaimer">{t.disclaimer}</p>
+
+    <div class="copyright">
+      <span>© {year} Mateusz Gładysz. {t.rights}</span>
+      <span>{t.colophon}</span>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    background: var(--bg-dark);
+    color: var(--ink-on-dark);
+    padding: clamp(60px, 10vh, 100px) 0 40px;
+    margin-top: clamp(60px, 10vh, 120px);
+  }
+  .footer-inner {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding-inline: clamp(20px, 5vw, 80px);
+  }
+  /* Signature mirrors the nav wordmark / hero name typographic treatment:
+     Plex Serif, lowercase except M and G via .cap. Sized between the two
+     (clamp 28-40px). No italic — surname reads as a wordmark, not a quote. */
+  .signature {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(28px, 3vw, 40px);
+    line-height: 1.1;
+    color: var(--ink-on-dark);
+    letter-spacing: -0.02em;
+    text-transform: lowercase;
+    margin-bottom: 32px;
+  }
+  .signature .cap { text-transform: none; }
+
+  .columns {
+    display: grid;
+    grid-template-columns: 1.2fr 1.5fr 1fr 0.8fr;
+    gap: 40px;
+    margin-bottom: 48px;
+  }
+  @media (max-width: 768px) {
+    .columns { grid-template-columns: 1fr 1fr; gap: 32px; }
+  }
+
+  h4 {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(250, 247, 242, 0.4);
+    margin: 0 0 14px;
+    font-weight: 500;
+  }
+  p {
+    color: rgba(250, 247, 242, 0.85);
+    font-size: 13px;
+    line-height: 1.6;
+    margin: 0 0 14px;
+    max-width: none;
+  }
+  p.muted, .muted { color: rgba(250, 247, 242, 0.55); }
+  .member-label { margin-top: 14px; margin-bottom: 6px; font-size: 12px; color: rgba(250, 247, 242, 0.6); }
+
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 14px;
+  }
+  li {
+    color: rgba(250, 247, 242, 0.85);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  a {
+    color: rgba(250, 247, 242, 0.85);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(250, 247, 242, 0.25);
+    padding-bottom: 1px;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  a:hover {
+    color: var(--ink-on-dark);
+    border-bottom-color: rgba(250, 247, 242, 0.6);
+  }
+
+  .legal-list { margin-top: 16px; }
+
+  .disclaimer {
+    border-top: 1px solid rgba(250, 247, 242, 0.1);
+    padding-top: 24px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: rgba(250, 247, 242, 0.6);
+    margin-bottom: 24px;
+    max-width: 80ch;
+  }
+  .copyright {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(250, 247, 242, 0.5);
+  }
+</style>

@@ -1,0 +1,142 @@
+---
+interface Props {
+  locale?: 'en' | 'pl';
+  currentPath?: string;
+}
+
+const { locale = 'en', currentPath = '' } = Astro.props;
+
+// Mirror nav items per locale. Polish slugs come from brand spec §11.
+const navItems = locale === 'pl'
+  ? [
+      { href: '/pl/', label: 'Strona główna' },
+      { href: '/pl/o-mnie', label: 'O mnie' },
+      { href: '/pl/zabiegi', label: 'Zabiegi' },
+      { href: '/pl/publikacje', label: 'Publikacje' },
+      { href: '/pl/kontakt', label: 'Kontakt' },
+    ]
+  : [
+      { href: '/en/', label: 'Home' },
+      { href: '/en/about', label: 'About' },
+      { href: '/en/procedures', label: 'Procedures' },
+      { href: '/en/publications', label: 'Publications' },
+      { href: '/en/contact', label: 'Contact' },
+    ];
+
+const wordmarkHref = locale === 'pl' ? '/pl/' : '/en/';
+
+// Strip /en or /pl prefix to compute the alternate-locale URL for the language switcher.
+const pathWithoutLocale = currentPath.replace(/^\/(en|pl)/, '') || '/';
+const altLocale = locale === 'pl' ? 'en' : 'pl';
+const altHref = `/${altLocale}${pathWithoutLocale === '/' ? '/' : pathWithoutLocale}`;
+
+function isActive(href: string): boolean {
+  if (href === wordmarkHref) return currentPath === wordmarkHref || currentPath === wordmarkHref.replace(/\/$/, '');
+  return currentPath === href || currentPath.startsWith(href + '/');
+}
+---
+<nav class="top">
+  <div class="nav-inner">
+    <a href={wordmarkHref} class="wordmark" aria-label="Mateusz Gładysz — home">
+      <span class="cap">M</span>ateusz <span class="cap">G</span>ładysz
+    </a>
+    <ul>
+      {navItems.map((item) => (
+        <li>
+          <a
+            href={item.href}
+            class:list={['menu-item', { active: isActive(item.href) }]}
+            aria-current={isActive(item.href) ? 'page' : undefined}
+          >
+            {item.label}
+          </a>
+        </li>
+      ))}
+      <li class="lang" aria-label="Language switcher">
+        {locale === 'en' ? (
+          <>
+            <span class="active">EN</span>
+            <span class="sep" aria-hidden="true">|</span>
+            <a href={altHref} hreflang="pl">PL</a>
+          </>
+        ) : (
+          <>
+            <a href={altHref} hreflang="en">EN</a>
+            <span class="sep" aria-hidden="true">|</span>
+            <span class="active">PL</span>
+          </>
+        )}
+      </li>
+    </ul>
+  </div>
+</nav>
+
+<style>
+  .top {
+    padding: 24px 0;
+    border-bottom: 1px solid var(--rule);
+    background: var(--bg);
+  }
+  .nav-inner {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding-inline: clamp(20px, 5vw, 80px);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+  }
+  .wordmark {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 22px;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    text-transform: lowercase;
+    text-decoration: none;
+  }
+  .wordmark .cap { text-transform: none; }
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 32px;
+    align-items: center;
+  }
+  .menu-item {
+    font-family: var(--sans);
+    font-size: 14px;
+    color: var(--ink-2);
+    text-decoration: none;
+    padding-bottom: 4px;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .menu-item.active {
+    color: var(--ink);
+    border-bottom-color: var(--accent);
+  }
+  .menu-item:hover { color: var(--ink); }
+
+  .lang {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-3);
+    letter-spacing: 0.05em;
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .lang .active { color: var(--ink); }
+  .lang a { color: var(--ink-3); text-decoration: none; }
+  .lang a:hover { color: var(--ink); }
+  .lang .sep { color: var(--ink-3); }
+
+  /* Mobile: stack nav items, hide menu behind a disclosure later (Phase 3 refinement). */
+  @media (max-width: 767px) {
+    .nav-inner { flex-direction: column; align-items: flex-start; gap: 16px; }
+    ul { flex-wrap: wrap; gap: 16px 24px; }
+  }
+</style>
