@@ -1,0 +1,44 @@
+---
+// Standfirst — single long-form lead paragraph in Plex Serif.
+//
+// Used for the second section on the home page (per home-en.md §2). Sits
+// between the hero and the sub-specialty blocks, separated by a 1px rule.
+// Body content takes precedence over the slot for simple consumers; the slot
+// stays available for richer markup (e.g. inline links).
+interface Props {
+  body?: string;
+  maxWidth?: string;
+}
+
+const { body, maxWidth = '760px' } = Astro.props;
+---
+<section class="standfirst-section">
+  <div class="standfirst-inner" style={`--standfirst-max: ${maxWidth}`}>
+    <div class="standfirst">
+      {body ? <p>{body}</p> : <slot />}
+    </div>
+  </div>
+</section>
+
+<style>
+  .standfirst-section {
+    padding-block: clamp(60px, 10vh, 100px) clamp(80px, 12vh, 120px);
+    border-top: 1px solid var(--rule);
+    background: var(--bg);
+  }
+  .standfirst-inner {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding-inline: clamp(20px, 5vw, 80px);
+  }
+  .standfirst { max-width: var(--standfirst-max); }
+  .standfirst :global(p) {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(18px, 1.85vw, 22px);
+    line-height: 1.6;
+    color: var(--ink);
+    max-width: 60ch;
+    margin: 0;
+  }
+</style>

@@ -1,0 +1,179 @@
+---
+// ArticlesTeaser — three-column article cards for the home page.
+//
+// Per home-en.md §6. Cards have:
+//   - 1px top border in --rule-strong
+//   - category eyebrow in Plex Mono 10px, accent, uppercase, 0.14em tracking
+//   - title in Plex Serif Medium 22px
+//   - body in Plex Sans 15px / 1.6 in --ink-2
+//   - "Read more →" link in --accent
+interface Article {
+  category: string;
+  title: string;
+  body: string;
+  href: string;
+  ctaLabel?: string;
+}
+
+interface Props {
+  label: string;
+  heading: string;
+  articles: Article[];
+  ctaLabel: string;
+  ctaHref: string;
+}
+
+const {
+  label,
+  heading,
+  articles,
+  ctaLabel,
+  ctaHref,
+} = Astro.props;
+---
+<section class="articles-section">
+  <div class="articles-inner">
+    <div class="section-label">
+      <span class="accent-bar" aria-hidden="true"></span>
+      <span>{label}</span>
+    </div>
+    <h2>{heading}</h2>
+    <div class="articles-grid">
+      {articles.map((a) => (
+        <article class="article-card">
+          <div class="category">{a.category}</div>
+          <h3>{a.title}</h3>
+          <p>{a.body}</p>
+          <a href={a.href} class="read-link">
+            <span>{a.ctaLabel ?? 'Read more'}</span>
+            <span class="arrow" aria-hidden="true">→</span>
+          </a>
+        </article>
+      ))}
+    </div>
+    <a href={ctaHref} class="all-articles-link">
+      <span>{ctaLabel}</span>
+      <span class="arrow" aria-hidden="true">→</span>
+    </a>
+  </div>
+</section>
+
+<style>
+  .articles-section {
+    padding-block: clamp(60px, 10vh, 100px) clamp(80px, 12vh, 120px);
+    border-top: 1px solid var(--rule);
+    background: var(--bg);
+  }
+  .articles-inner {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding-inline: clamp(20px, 5vw, 80px);
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .accent-bar {
+    width: 24px;
+    height: 2px;
+    background: var(--accent);
+    display: inline-block;
+  }
+
+  h2 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(28px, 3.4vw, 40px);
+    line-height: 1.15;
+    letter-spacing: -0.018em;
+    color: var(--ink);
+    margin: 0 0 48px;
+  }
+
+  .articles-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: clamp(32px, 4vw, 56px);
+  }
+  @media (max-width: 900px) {
+    .articles-grid { grid-template-columns: 1fr; gap: 40px; }
+  }
+
+  .article-card {
+    border-top: 1px solid var(--rule-strong);
+    padding-top: 24px;
+  }
+  .category {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+  .article-card h3 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 22px;
+    line-height: 1.3;
+    letter-spacing: -0.012em;
+    color: var(--ink);
+    margin: 0 0 16px;
+  }
+  .article-card p {
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--ink-2);
+    margin: 0 0 20px;
+    max-width: none;
+  }
+  .read-link {
+    font-family: var(--sans);
+    font-size: 14px;
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid var(--accent);
+    padding-bottom: 2px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: gap 0.2s, color 0.2s, border-color 0.2s;
+  }
+  .read-link:hover,
+  .read-link:focus-visible {
+    gap: 12px;
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+  .read-link .arrow { font-family: var(--mono); }
+
+  .all-articles-link {
+    margin-top: 48px;
+    font-family: var(--sans);
+    font-size: 15px;
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid var(--accent);
+    padding-bottom: 2px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: gap 0.2s, color 0.2s, border-color 0.2s;
+  }
+  .all-articles-link:hover,
+  .all-articles-link:focus-visible {
+    gap: 14px;
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+  .all-articles-link .arrow { font-family: var(--mono); }
+</style>

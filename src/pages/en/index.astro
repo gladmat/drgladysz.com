@@ -1,51 +1,160 @@
 ---
 import SiteLayout from '@/layouts/SiteLayout.astro';
-import PageContainer from '@/components/PageContainer.astro';
-import SectionMasthead from '@/components/SectionMasthead.astro';
+import HomeHero from '@/components/HomeHero.astro';
+import Standfirst from '@/components/Standfirst.astro';
+import SpecialtyBlocks from '@/components/SpecialtyBlocks.astro';
 import PhotoBreak from '@/components/PhotoBreak.astro';
-import img08 from '@/assets/img/img-08.jpg';
+import PublicationsTeaser from '@/components/PublicationsTeaser.astro';
+import ArticlesTeaser from '@/components/ArticlesTeaser.astro';
+import { IMAGE_SIZES_HERO_SPLIT } from '@/lib/image-config';
+import img12 from '@/assets/img/img-12.jpg';
+import img02 from '@/assets/img/img-02.jpg';
+
+// Locked content from _handoff/content/home-en.md (v1.6).
+// DO NOT paraphrase — wording is non-negotiable.
+const standfirstBody =
+  'My practice covers the operative treatment of the hand and upper extremity, microsurgical reconstruction across the body — including lower-limb orthoplastic care, autologous breast reconstruction, and free-flap reconstruction in head and neck collaboration — and the surgical treatment of melanoma and complex skin cancer, an area I lead at Waikato Hospital as Chair of the Melanoma and High-Risk Skin Cancer MDT. I undertook basic surgical training at the University Hospital of Zurich and plastic surgery specialty training at Hannover Medical School, completed the Perth International Plastic and Reconstructive Fellowship at Sir Charles Gairdner Hospital, completed hand surgery sub-specialty training as Oberarzt within the hand surgery team at Kantonsspital Aarau under Prof. Plock, and currently practise as a consultant at Waikato Hospital in Hamilton, New Zealand. My doctoral research at the University of Zurich addresses clinical applications of artificial intelligence in surgical care.';
+
+const specialties = [
+  {
+    heading: 'Hand Surgery',
+    href: '/en/procedures/hand-surgery',
+    body:
+      'Operative care for the hand, wrist, and upper extremity, covering elective conditions and trauma. Common indications include carpal tunnel and other compression neuropathies, scaphoid and other carpal fractures, flexor and extensor tendon injuries, and arthritis of the thumb base. Consultations are available for both acute and chronic presentations.',
+  },
+  {
+    heading: 'Reconstructive & Microsurgery',
+    href: '/en/procedures/reconstructive-microsurgery',
+    body:
+      'Reconstruction of soft tissue and complex defects following trauma, oncological resection, or chronic disease. Current practice areas include lower-limb orthoplastic reconstruction in collaboration with orthopaedic colleagues, autologous breast reconstruction with DIEP and related perforator flaps, and free-flap reconstruction in head and neck collaboration with ENT and oncological teams.',
+  },
+  {
+    heading: 'Skin Cancer Surgery',
+    href: '/en/procedures/skin-cancer',
+    body:
+      'Surgical management of melanoma and high-risk non-melanoma skin cancer, including diagnostic excision, wide local excision, sentinel lymph node biopsy, and reconstruction following oncological resection. New Zealand has among the highest incidence rates of melanoma globally; my practice is shaped by this volume and by my role as Chair of the Melanoma and High-Risk Skin Cancer MDT at Waikato Hospital.',
+  },
+];
+
+const publications = [
+  {
+    titleHtml:
+      'AI-Assisted Medical Documentation in a Multilingual Swiss Healthcare System',
+    authors: [
+      'Mateusz Gładysz',
+      'Fabrizio Fiumedinisi',
+      'Felice Burn',
+      'Nikki Rommers',
+      'Pietro Giovanoli',
+      'Jan Alexander Plock',
+    ],
+    authorsBoldIndex: 0,
+    journal: 'JMIR AI',
+    year: 2026,
+    doi: '10.2196/77351',
+    doiUrl: 'https://doi.org/10.2196/77351',
+  },
+  {
+    titleHtml:
+      'Limb Salvage with Acellular Dermal Matrix Template in Persistent <em>Pseudomonas aeruginosa</em> Burn Infection',
+    authors: [
+      'Mateusz Gładysz',
+      'Vincent März',
+      'Stefan Ruemke',
+      'Evgenii Rubalskii',
+      'Peter Maria Vogt',
+      'Nicco Krezdorn',
+    ],
+    authorsBoldIndex: 0,
+    journal: 'European Burn Journal',
+    year: 2022,
+    doi: '10.3390/ebj3010004',
+    doiUrl: 'https://doi.org/10.3390/ebj3010004',
+  },
+];
+
+const articles = [
+  {
+    category: 'Patient information',
+    title: "Carpal Tunnel Syndrome: A Patient's Guide",
+    href: '/en/blog/carpal-tunnel-syndrome',
+    body:
+      'Carpal tunnel syndrome causes numbness, tingling, and pain in the hand when the median nerve is compressed at the wrist. This guide explains how the condition is diagnosed, when surgery is indicated, and what recovery typically involves.',
+  },
+  {
+    category: 'Expert blog',
+    title: 'Scaphoid Fractures',
+    href: '/en/blog/scaphoid-fractures',
+    body:
+      'The scaphoid is the most commonly fractured carpal bone, and missed or inadequately treated fractures are a leading cause of post-traumatic wrist arthritis. A practical overview of diagnosis, classification, and surgical decision-making.',
+  },
+  {
+    category: 'Expert blog',
+    title: 'Flexor Tendon Injuries and Repair',
+    href: '/en/blog/flexor-tendon-injuries-and-repair',
+    body:
+      'Flexor tendon injuries require precise surgical repair, structured rehabilitation, and an understanding of zone-specific anatomy. A review of current technique, suture configuration, and post-operative protocol.',
+  },
+];
+
+// JSON-LD: Person + Physician schema for the home page.
+// Boosts knowledge-graph signals and qualifies for richer SERP cards.
+const personJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Physician',
+  name: 'Mateusz Gładysz',
+  honorificSuffix: 'MD, FEBOPRAS, FEBHS',
+  jobTitle: 'Consultant Plastic and Hand Surgeon',
+  email: 'mateusz@drgladysz.com',
+  url: 'https://drgladysz.com/en/',
+  medicalSpecialty: ['PlasticSurgery'],
+  knowsLanguage: ['en', 'pl', 'de'],
+  sameAs: [
+    'https://orcid.org/0009-0009-2380-4056',
+    'https://www.linkedin.com/in/mateuszgladysz',
+  ],
+};
 ---
 <SiteLayout
   title="Mateusz Gładysz, MD, FEBOPRAS, FEBHS — Consultant Plastic and Hand Surgeon"
-  description="Surgical care for the hand and reconstructive microsurgery."
+  description="Surgical care for the hand and reconstructive microsurgery. European double board-certified plastic and hand surgeon, with clinical practice across Switzerland, Germany, Australia, and New Zealand."
   locale="en"
   alternateUrl="/pl/"
-  heroPreload={{ src: img08 }}
+  heroPreload={{ src: img12, sizes: IMAGE_SIZES_HERO_SPLIT }}
+  jsonLd={personJsonLd}
 >
-  <!--
-    Phase 2 verification: this index exercises PageContainer, SectionMasthead,
-    and PhotoBreak (plus SiteNav and SiteFooter via SiteLayout). The actual
-    Home page composition lands in Phase 3 from _handoff/content/home-en.md.
-  -->
-  <PageContainer as="section" class="lede">
-    <SectionMasthead
-      label="Phase 2 — layout scaffolding"
-      heading="Mateusz Gładysz"
-      standfirst="Surgical care for the hand and reconstructive microsurgery — European double board-certified plastic and hand surgeon, with clinical practice across Switzerland, Germany, Australia, and New Zealand."
-    />
-  </PageContainer>
-
-  <PhotoBreak
-    src={img08}
-    alt="Surgical instrument tray, gold and steel handles"
-    aspect="16/9"
-    priority="hero"
+  <HomeHero
+    photo={img12}
+    photoAlt="Mateusz Gładysz under operating-room lights, in surgical scrubs"
   />
 
-  <PageContainer as="section" class="next">
-    <SectionMasthead
-      label="Coming next"
-      heading="Phase 3 — home page composition"
-      headingTag="h2"
-      standfirst="The hero, sub-specialty blocks, publications cards, and articles cards from the locked content land in the next phase."
-    />
-  </PageContainer>
-</SiteLayout>
+  <Standfirst body={standfirstBody} />
 
-<style>
-  .lede { padding-block: clamp(60px, 9vh, 110px); }
-  .next {
-    padding-block: clamp(60px, 9vh, 110px);
-    border-top: 1px solid var(--rule);
-  }
-</style>
+  <SpecialtyBlocks
+    label="Areas of practice"
+    heading="Three sub-specialty areas"
+    blocks={specialties}
+  />
+
+  <PhotoBreak
+    src={img02}
+    alt="Gloved hands holding fine surgical instruments"
+    aspect="16/9"
+  />
+
+  <PublicationsTeaser
+    label="Research"
+    heading="Selected publications"
+    publications={publications}
+    ctaLabel="All publications"
+    ctaHref="/en/publications"
+  />
+
+  <ArticlesTeaser
+    label="Knowledge base"
+    heading="Selected articles"
+    articles={articles}
+    ctaLabel="All articles"
+    ctaHref="/en/blog"
+  />
+</SiteLayout>

@@ -1,0 +1,202 @@
+---
+// PublicationsTeaser — two-column publications grid for the home page.
+//
+// Per home-en.md §5. Cards have:
+//   - 1px top border in --rule-strong
+//   - title in Plex Serif Medium 20px (titleHtml supports inline italic for
+//     binomials like *Pseudomonas aeruginosa*)
+//   - authors with current-author bolded by index
+//   - meta line in Plex Mono 12px (journal · year · DOI)
+//   - "Read publication →" link to the DOI URL
+//
+// Title accepts HTML via `set:html` so editors can italicise per scientific
+// convention. Data is owned in-repo (locked content) so injection is not a
+// concern; if this becomes Sanity-backed in Phase 6, sanitise at the boundary.
+interface Publication {
+  titleHtml: string;
+  authors: string[];
+  authorsBoldIndex?: number;
+  journal: string;
+  year: number;
+  doi: string;
+  doiUrl: string;
+}
+
+interface Props {
+  label: string;
+  heading: string;
+  publications: Publication[];
+  ctaLabel: string;
+  ctaHref: string;
+}
+
+const { label, heading, publications, ctaLabel, ctaHref } = Astro.props;
+---
+<section class="publications-section">
+  <div class="publications-inner">
+    <div class="section-label">
+      <span class="accent-bar" aria-hidden="true"></span>
+      <span>{label}</span>
+    </div>
+    <h2>{heading}</h2>
+    <div class="publications-grid">
+      {publications.map((pub) => (
+        <article class="pub-card">
+          <h3 class="pub-title" set:html={pub.titleHtml} />
+          <p class="pub-authors">
+            {pub.authors.map((author, i) => (
+              <>
+                {i > 0 && ', '}
+                {i === pub.authorsBoldIndex ? <strong>{author}</strong> : author}
+              </>
+            ))}
+          </p>
+          <div class="pub-meta">
+            <strong>{pub.journal}</strong> · {pub.year} · DOI:{' '}
+            <a href={pub.doiUrl} class="pub-doi" rel="noopener" target="_blank">
+              {pub.doi}
+            </a>
+          </div>
+          <a href={pub.doiUrl} class="pub-link" rel="noopener" target="_blank">
+            <span>Read publication</span>
+            <span class="arrow" aria-hidden="true">→</span>
+          </a>
+        </article>
+      ))}
+    </div>
+    <a href={ctaHref} class="all-pubs-link">
+      <span>{ctaLabel}</span>
+      <span class="arrow" aria-hidden="true">→</span>
+    </a>
+  </div>
+</section>
+
+<style>
+  .publications-section {
+    padding-block: clamp(60px, 10vh, 100px) clamp(80px, 12vh, 120px);
+    background: var(--bg);
+  }
+  .publications-inner {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding-inline: clamp(20px, 5vw, 80px);
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .accent-bar {
+    width: 24px;
+    height: 2px;
+    background: var(--accent);
+    display: inline-block;
+  }
+
+  h2 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(28px, 3.4vw, 40px);
+    line-height: 1.15;
+    letter-spacing: -0.018em;
+    color: var(--ink);
+    margin: 0 0 48px;
+  }
+
+  .publications-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(32px, 4vw, 64px);
+    max-width: 1080px;
+  }
+  @media (max-width: 900px) {
+    .publications-grid { grid-template-columns: 1fr; gap: 40px; }
+  }
+
+  .pub-card {
+    border-top: 1px solid var(--rule-strong);
+    padding-top: 28px;
+  }
+  .pub-title {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 20px;
+    line-height: 1.35;
+    color: var(--ink);
+    letter-spacing: -0.008em;
+    margin: 0 0 16px;
+  }
+  .pub-title :global(em) { font-style: italic; }
+  .pub-authors {
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--ink-2);
+    margin: 0 0 16px;
+    max-width: none;
+  }
+  .pub-authors strong { color: var(--ink); font-weight: 600; }
+  .pub-meta {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-3);
+    letter-spacing: 0.02em;
+    margin-bottom: 20px;
+  }
+  .pub-meta strong { color: var(--ink-2); font-weight: 500; }
+  .pub-doi {
+    color: var(--ink-3);
+    text-decoration: none;
+    border-bottom: 1px solid var(--rule-strong);
+    padding-bottom: 1px;
+  }
+  .pub-doi:hover { color: var(--ink); border-bottom-color: var(--ink); }
+
+  .pub-link {
+    font-family: var(--sans);
+    font-size: 14px;
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid var(--accent);
+    padding-bottom: 2px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: gap 0.2s, color 0.2s, border-color 0.2s;
+  }
+  .pub-link:hover,
+  .pub-link:focus-visible {
+    gap: 12px;
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+  .pub-link .arrow { font-family: var(--mono); }
+
+  .all-pubs-link {
+    margin-top: 48px;
+    font-family: var(--sans);
+    font-size: 15px;
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid var(--accent);
+    padding-bottom: 2px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: gap 0.2s, color 0.2s, border-color 0.2s;
+  }
+  .all-pubs-link:hover,
+  .all-pubs-link:focus-visible {
+    gap: 14px;
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+  .all-pubs-link .arrow { font-family: var(--mono); }
+</style>

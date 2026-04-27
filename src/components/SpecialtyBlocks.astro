@@ -1,0 +1,137 @@
+---
+// SpecialtyBlocks — three sub-specialty teaser blocks on the home page.
+//
+// Per home-en.md §3. Each block:
+//   - 2px top border in --ink (heavier than article cards, signals primary nav)
+//   - h3 in Plex Serif Medium 26px
+//   - body in Plex Sans 16px / 1.65 in --ink-2
+//   - "Read more →" link in --accent with 1px underline + arrow that nudges on hover
+interface Block {
+  heading: string;
+  body: string;
+  href: string;
+  ctaLabel?: string;
+}
+
+interface Props {
+  label: string;
+  heading: string;
+  blocks: Block[];
+  ctaDefaultLabel?: string;
+}
+
+const { label, heading, blocks, ctaDefaultLabel = 'Read more' } = Astro.props;
+---
+<section class="specialty-blocks">
+  <div class="specialty-inner">
+    <div class="section-label">
+      <span class="accent-bar" aria-hidden="true"></span>
+      <span>{label}</span>
+    </div>
+    <h2>{heading}</h2>
+    <div class="specialty-grid">
+      {blocks.map((b) => (
+        <article class="specialty-block">
+          <h3>{b.heading}</h3>
+          <p>{b.body}</p>
+          <a href={b.href} class="read-more">
+            <span>{b.ctaLabel ?? ctaDefaultLabel}</span>
+            <span class="arrow" aria-hidden="true">→</span>
+          </a>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .specialty-blocks {
+    padding-block: clamp(60px, 10vh, 100px) clamp(80px, 12vh, 120px);
+    border-top: 1px solid var(--rule);
+    background: var(--bg);
+  }
+  .specialty-inner {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding-inline: clamp(20px, 5vw, 80px);
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .accent-bar {
+    width: 24px;
+    height: 2px;
+    background: var(--accent);
+    display: inline-block;
+  }
+
+  h2 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(28px, 3.4vw, 40px);
+    line-height: 1.15;
+    letter-spacing: -0.018em;
+    color: var(--ink);
+    margin: 0;
+  }
+
+  .specialty-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: clamp(32px, 4vw, 56px);
+    margin-top: 48px;
+  }
+  @media (max-width: 900px) {
+    .specialty-grid { grid-template-columns: 1fr; gap: 48px; }
+  }
+
+  .specialty-block {
+    border-top: 2px solid var(--ink);
+    padding-top: 24px;
+  }
+  .specialty-block h3 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 26px;
+    line-height: 1.25;
+    letter-spacing: -0.012em;
+    color: var(--ink);
+    margin: 0 0 18px;
+  }
+  .specialty-block p {
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.65;
+    color: var(--ink-2);
+    margin: 0 0 24px;
+    max-width: none;
+  }
+  .read-more {
+    font-family: var(--sans);
+    font-size: 14px;
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid var(--accent);
+    padding-bottom: 2px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: gap 0.2s, color 0.2s, border-color 0.2s;
+  }
+  .read-more:hover,
+  .read-more:focus-visible {
+    gap: 12px;
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+  .read-more .arrow { font-family: var(--mono); }
+</style>
