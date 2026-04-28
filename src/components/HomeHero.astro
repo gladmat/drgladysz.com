@@ -1,12 +1,19 @@
 ---
-// HomeHero — cover-spread variant of the wordmark display.
+// HomeHero — master-wordmark hero for the Home page.
 //
-// Composition (per _handoff/content/home-en.md §1):
+// Composition (per _handoff/content/home-en.md §1, v1.6.2):
 //   - credentials line (Plex Mono, accent, uppercase, tracked)
-//   - display name on two lines (Plex Serif 116px, lowercase + cap M / cap G)
+//   - display name on two lines, master wordmark Plex Serif Medium 500,
+//     clamp(48px, 7.5vw, 96px), line-height 1.0, letter-spacing -0.02em,
+//     lowercase + cap M / cap G, both names upright (never italic)
 //   - italic positioning sentence (Plex Serif Italic, ink-2, max 28ch)
-//   - solid CTA button → /contact
+//   - solid CTA button → /en/contact
 //   - 4:5 portrait of img-12 in the right column (LCP image)
+//
+// Per brand spec v1.8 §2: "Where the master Medium 500 wordmark applies.
+// Hero blocks on web pages." The cover-spread Regular 400 variant is
+// reserved for brand-book covers, document title pages, slide title slides
+// only — v1.6 mockups used Regular 400 in error; v1.6.2 corrects this.
 //
 // The image is the LCP. To match BaseLayout's <link rel="preload"> exactly,
 // the <Picture> options here MUST stay aligned with what the page passes to
@@ -104,10 +111,10 @@ const {
 
   .hero-name {
     font-family: var(--serif);
-    font-weight: 400;
-    font-size: clamp(50px, 9vw, 116px);
-    line-height: 0.95;
-    letter-spacing: -0.03em;
+    font-weight: 500;
+    font-size: clamp(48px, 7.5vw, 96px);
+    line-height: 1.0;
+    letter-spacing: -0.02em;
     color: var(--ink);
     text-transform: lowercase;
     margin: 0 0 36px;

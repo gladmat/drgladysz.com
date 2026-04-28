@@ -132,7 +132,7 @@ const year = new Date().getFullYear();
             Polskie Towarzystwo Chirurgii Plastycznej, Rekonstrukcyjnej i&nbsp;Estetycznej
           </p>
           <p>Polskie Towarzystwo Chirurgii Ręki</p>
-          <p>International Member, ASSH</p>
+          <p>International Member, American Society for Surgery of the Hand</p>
         </div>
       </div>
 
@@ -194,12 +194,13 @@ const year = new Date().getFullYear();
     margin: 0 auto;
     padding-inline: clamp(20px, 5vw, 80px);
   }
-  /* Signature mirrors the nav wordmark / hero name typographic treatment:
-     Plex Serif, lowercase except M and G via .cap. Sized between the two
-     (clamp 28-40px). No italic — surname reads as a wordmark, not a quote. */
+  /* Footer signature uses Plex Serif Regular 400 per v1.6.2 locked content
+     (lighter than the master Medium 500 wordmark — distinctive footer
+     register). Lowercase except M and G via .cap. Both names upright,
+     never italic per Decision #5 in v1.8 spec. */
   .signature {
     font-family: var(--serif);
-    font-weight: 500;
+    font-weight: 400;
     font-size: clamp(28px, 3vw, 40px);
     line-height: 1.1;
     color: var(--ink-on-dark);

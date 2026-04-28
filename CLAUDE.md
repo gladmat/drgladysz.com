@@ -28,7 +28,7 @@ site/
 └── .env.local                         (gitignored) Sanity project ID + tokens, Plausible domain, etc.
 ```
 
-`_handoff/content/*.md` is **locked at v1.6** — do not paraphrase the wording.
+`_handoff/content/*.md` is **locked at v1.6.2** (April 2026), aligned with brand spec **v1.8**. Do not paraphrase the wording. Canonical brand spec lives at `01-brand-system/drgladysz-brand-spec-for-claude-design-v1.8.md` (parent of `site/`); the canonical single-doc locked content lives at `01-brand-system/drgladysz-locked-content-home-and-about-v1.6.2.md`. The `_handoff/content/` files mirror the canonical with build-friendly per-page YAML frontmatter.
 
 ---
 
@@ -98,8 +98,10 @@ These are non-obvious things prior sessions tripped on. Do not redo:
 
 ## Brand details encoded in components
 
-- **Wordmark / signature treatment:** `text-transform: lowercase` with `<span class="cap">M</span>` and `<span class="cap">G</span>` to keep the M and G uppercase. **No italic on the surname.** (The locked spec said italic on Gładysz; user overrode this — surname reads as a wordmark, not a quote.)
-- **OR-shot color treatment** (img-04, img-09, img-10, img-12): editorial color grading per `_handoff/design/photo-manifest.md` (saturate teal -15%, warm shadow lift). The current PhotoBreak `saturate(0.96)` CSS is an MVP approximation; properly graded source files would be a finishing touch in Phase 9.
+- **Wordmark / signature treatment:** `text-transform: lowercase` with `<span class="cap">M</span>` and `<span class="cap">G</span>` to keep the M and G uppercase. **No italic on the surname** in any context (Decision #5 in v1.8 spec, "no italic on the name in any context").
+- **Master wordmark vs cover-spread variant** (v1.8 §2): site nav, all page heroes, and any in-running reference use the **master Plex Serif Medium 500**. The cover-spread Regular 400 variant is reserved for brand-book covers, document title pages, slide title slides only.
+- **Footer signature** uses Plex Serif **Regular 400** (lighter than the master Medium 500 — a distinctive footer register), `clamp(28px, 3vw, 40px)`, lowercase + cap M/G, never italic.
+- **OR-shot color treatment** (img-04, img-09, img-10, img-12): editorial Lightroom grading per v1.8 §3 (saturate teal -15-20%, lift shadows toward warm grey, push midtones toward yellow/red). The current site-wide PhotoBreak `saturate(0.96)` CSS matches the v1.6.2 mockups; per-image Lightroom grading is a Phase 9 finishing pass.
 
 ---
 

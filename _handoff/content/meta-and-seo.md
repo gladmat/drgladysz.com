@@ -1,7 +1,9 @@
 ---
 locale: en
 status: locked
-version: 1.6
+content_version: 1.6.2
+brand_spec: v1.8
+notes: "Aligned with v1.8 brand spec; no v1.6 → v1.6.2 content changes."
 ---
 
 # Meta and SEO specifications

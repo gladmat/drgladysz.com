@@ -2,15 +2,21 @@
 component: SiteFooter
 locale: en
 status: locked
-version: 1.6
+content_version: 1.6.2
+brand_spec: v1.8
+supersedes: v1.6
 appears_on: all_pages
 ---
 
 # Footer content (English)
 
-> **Status:** Locked at v1.6. The footer appears on every page; content is identical across pages with only the EN | PL switcher reflecting the current locale.
+> **Status:** Locked at v1.6.2 (April 2026). The footer appears on every page; content is identical across pages with only the EN | PL switcher reflecting the current locale.
 
-Background: `var(--bg-dark)` (#14171A). Text: `rgba(250, 247, 242, 0.85)`. Layout: 4 columns desktop, 2 columns mobile.
+Background: `var(--bg-dark)` (`#14171A`). Text: `rgba(250, 247, 242, 0.85)`. Layout: 4 columns desktop, 2 columns mobile.
+
+**v1.6.2 corrections from v1.6:**
+- Signature treatment corrected: both names upright — **never italic**, per Decision #5 in v1.8 spec ("no italic on the name in any context"). Previous v1.6 directive ("italic on Gładysz") was an error and is rescinded.
+- ASSH expanded to "American Society for Surgery of the Hand" per Decision #24 (MCNZ first-mention rule).
 
 ---
 
@@ -20,7 +26,7 @@ Background: `var(--bg-dark)` (#14171A). Text: `rgba(250, 247, 242, 0.85)`. Layou
 component: FooterSignature
 ```
 
-`Mateusz Gładysz` — Plex Serif Regular 400, italic on "Gładysz", clamp 28-40px.
+`Mateusz Gładysz` — IBM Plex Serif **Regular 400**, both names upright (never italic), `clamp 28-40px`. Per brand spec §6 wordmark rules: no italic on the name in any context.
 
 ---
 
@@ -73,10 +79,12 @@ i Estetycznej
 
 Polskie Towarzystwo Chirurgii Ręki
 
-International Member, ASSH
+International Member, American Society for Surgery of the Hand
 ```
 
 > **Note:** WSRM (World Society for Reconstructive Microsurgery) to be added when membership confirms — application in progress April 2026.
+
+> **MCNZ first-mention rule:** ASSH must be expanded on first appearance per Decision #24. Subsequent uses on the same page may use the abbreviation.
 
 ---
 
@@ -100,19 +108,19 @@ heading: "Site"
 ```
 
 Site navigation:
-- [Home](/)
-- [About](/about)
-- [Procedures](/procedures)
-- [Publications](/publications)
-- [Contact](/contact)
-- [Credentials](/credentials)
+- [Home](/en/)
+- [About](/en/about)
+- [Procedures](/en/procedures)
+- [Publications](/en/publications)
+- [Contact](/en/contact)
+- [Credentials](/en/credentials)
 
 (visual gap of 16px)
 
 Legal:
-- [Imprint](/imprint)
-- [Privacy Policy](/privacy)
-- [Medical Disclaimer](/disclaimer)
+- [Imprint](/en/imprint)
+- [Privacy Policy](/en/privacy)
+- [Medical Disclaimer](/en/disclaimer)
 
 ---
 
@@ -125,7 +133,7 @@ border_top: 1px solid rgba(250, 247, 242, 0.1)
 
 > The information on this website is provided for general guidance and educational purposes. It does not constitute medical advice and does not replace consultation with a qualified medical practitioner.
 
-Plex Sans 12px, `line-height: 1.6`, color `rgba(250, 247, 242, 0.6)`.
+IBM Plex Sans 12px, `line-height: 1.6`, color `rgba(250, 247, 242, 0.6)`.
 
 ---
 
@@ -139,12 +147,12 @@ layout: flex_space_between
 Left: `© 2026 Mateusz Gładysz. All rights reserved.`
 Right: `Aarau Graphite · Set in IBM Plex`
 
-Plex Mono 10px, 0.1em tracking, uppercase, color `rgba(250, 247, 242, 0.5)`.
+IBM Plex Mono 10px, 0.1em tracking, uppercase, color `rgba(250, 247, 242, 0.5)`.
 
 ---
 
 ## Polish footer
 
-The Polish footer (`/pl/`) follows identical structure with native-composed Polish content. Polish footer text is locked separately (see brand spec v1.6 §11). Society names use Polish genitive case ("Polskiego Towarzystwa..." after "Członek"). Site nav links use Polish slugs (`Strona główna / O mnie / Zabiegi / Publikacje / Kontakt / Uprawnienia / Nota prawna / Polityka prywatności / Zastrzeżenie medyczne`).
+The Polish footer (`/pl/`) follows identical structure with native-composed Polish content. Polish footer text is locked separately. Society names use Polish genitive case ("Polskiego Towarzystwa..." after "Członek"). Site nav links use Polish slugs (`Strona główna / O mnie / Zabiegi / Publikacje / Kontakt / Uprawnienia / Nota prawna / Polityka prywatności / Zastrzeżenie medyczne`).
 
-> **Note:** Polish footer content is locked but documented in the brand spec markdown rather than this file. Reference brand spec §11 for full Polish footer text.
+> **Note:** ASSH expansion on the Polish footer should match: "Międzynarodowy członek American Society for Surgery of the Hand" or equivalent, with the English society name retained per Polish-language convention for international affiliations.

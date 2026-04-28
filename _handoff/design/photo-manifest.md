@@ -1,11 +1,13 @@
 ---
 locale: en
 status: locked
-version: 1.6
+content_version: 1.6.2
+brand_spec: v1.8
 total_photos: 20
 active_in_mvp: 12
 alternate_in_mvp: 7
 archive: 1
+notes: "Aligned with v1.8 brand spec §3 photography manifest; no v1.6 → v1.6.2 placement changes."
 ---
 
 # Photo manifest — build reference

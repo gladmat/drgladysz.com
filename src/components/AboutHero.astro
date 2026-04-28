@@ -1,15 +1,18 @@
 ---
-// AboutHero — slimmed-down cover-spread variant for the About page.
+// AboutHero — master-wordmark hero for the About page.
 //
-// Composition (per _handoff/content/about-en.md hero spec):
+// Composition (per _handoff/content/about-en.md hero spec, v1.6.2):
 //   - "About" eyebrow with accent bar (mono 12px, 0.12em)
-//   - H1 wordmark display (smaller than Home: clamp 40-68px). Same lowercase
-//     + cap M / cap G pattern as Home / nav / footer signature for a
-//     coherent identity treatment across the site (see CLAUDE.md "Brand
-//     details encoded in components"). Locked spec called for italic on
-//     Gładysz; the user's wordmark preference takes precedence.
+//   - H1 master wordmark Plex Serif Medium 500, clamp(40px, 6vw, 72px)
+//     (slightly smaller than Home), line-height 1.05, letter-spacing -0.02em,
+//     lowercase + cap M / cap G pattern, both names upright (never italic)
 //   - Italic standfirst (Plex Serif Italic 18-22px, ink-2)
 //   - Photo column: img-14 in 4:3, saturate(0.96)
+//
+// Per brand spec v1.8 §2 + Decision #5: web heroes use the master Medium
+// 500 wordmark; no italic on the name in any context. The v1.6 spec
+// directive "Gładysz upright italic 400" was an error and is corrected
+// in v1.6.2 locked content.
 //
 // LCP image. Same shared-config technique as HomeHero so the BaseLayout
 // preload srcset matches the <picture>'s AVIF source byte-for-byte.
@@ -102,10 +105,10 @@ const { photo, photoAlt, eyebrow = 'About', lead } = Astro.props;
 
   .hero-name {
     font-family: var(--serif);
-    font-weight: 400;
-    font-size: clamp(40px, 5.5vw, 68px);
+    font-weight: 500;
+    font-size: clamp(40px, 6vw, 72px);
     line-height: 1.05;
-    letter-spacing: -0.025em;
+    letter-spacing: -0.02em;
     color: var(--ink);
     text-transform: lowercase;
     margin: 0 0 32px;
