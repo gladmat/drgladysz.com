@@ -128,7 +128,16 @@ const personJsonLd = {
     photoAlt="Mateusz Gładysz under operating-room lights, in surgical scrubs"
   />
 
-  <Standfirst body={standfirstBody} />
+  <Standfirst body={standfirstBody}>
+    <Fragment slot="aside">
+      <span class="aside-num">Areas of practice</span>
+      <ul class="aside-list">
+        <li>Hand Surgery</li>
+        <li>Reconstructive &amp; Microsurgery</li>
+        <li>Skin Cancer Surgery</li>
+      </ul>
+    </Fragment>
+  </Standfirst>
 
   <SpecialtyBlocks
     label="Areas of practice"

@@ -1,21 +1,33 @@
 ---
-// Standfirst — single long-form lead paragraph in Plex Serif.
+// Standfirst — single long-form lead paragraph in Plex Serif, with a
+// right-margin aside slot for marginal annotations (Tufte sidenote pattern).
 //
-// Used for the second section on the home page (per home-en.md §2). Sits
-// between the hero and the sub-specialty blocks, separated by a 1px rule.
-// Body content takes precedence over the slot for simple consumers; the slot
-// stays available for richer markup (e.g. inline links).
+// Layout: 2-column grid on desktop (≥900px) — body left, aside right with
+// a narrower fixed width. Stacks on mobile (aside above body, so it reads
+// as a section preview / index before the long paragraph).
+//
+// The aside is a slot. Default is empty (a thin accent rule for visual
+// continuity with the section). Consumers can pass a marginal index, a
+// pulled phrase, structural metadata (§ 0n), or — in Phase 5 — citation
+// references.
 interface Props {
   body?: string;
-  maxWidth?: string;
+  bodyMaxWidth?: string;
 }
 
-const { body, maxWidth = '760px' } = Astro.props;
+const { body, bodyMaxWidth = '760px' } = Astro.props;
 ---
 <section class="standfirst-section">
-  <div class="standfirst-inner" style={`--standfirst-max: ${maxWidth}`}>
-    <div class="standfirst">
-      {body ? <p>{body}</p> : <slot />}
+  <div class="standfirst-inner">
+    <div class="standfirst-grid" style={`--standfirst-body-max: ${bodyMaxWidth}`}>
+      <div class="standfirst-body">
+        {body ? <p>{body}</p> : <slot />}
+      </div>
+      <aside class="standfirst-aside">
+        <slot name="aside">
+          <span class="aside-bar" aria-hidden="true"></span>
+        </slot>
+      </aside>
     </div>
   </div>
 </section>
@@ -31,8 +43,31 @@ const { body, maxWidth = '760px' } = Astro.props;
     margin: 0 auto;
     padding-inline: clamp(20px, 5vw, 80px);
   }
-  .standfirst { max-width: var(--standfirst-max); }
-  .standfirst :global(p) {
+
+  /* Desktop: body left in a 760px / 60ch reading column, aside right
+     as a narrow ~200px sidenote column (Tufte sidenote convention).
+     Mobile: stack with aside ABOVE body so the marginal index reads
+     as a section preview rather than an afterthought. */
+  .standfirst-grid {
+    display: grid;
+    grid-template-columns: minmax(0, var(--standfirst-body-max, 760px)) minmax(140px, 200px);
+    gap: clamp(40px, 6vw, 96px);
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .standfirst-grid {
+      grid-template-columns: 1fr;
+      grid-template-areas: "aside" "body";
+      gap: 28px;
+    }
+    .standfirst-body { grid-area: body; }
+    .standfirst-aside { grid-area: aside; }
+  }
+
+  .standfirst-body {
+    min-width: 0;
+  }
+  .standfirst-body :global(p) {
     font-family: var(--serif);
     font-weight: 400;
     font-size: clamp(18px, 1.85vw, 22px);
@@ -40,5 +75,50 @@ const { body, maxWidth = '760px' } = Astro.props;
     color: var(--ink);
     max-width: 60ch;
     margin: 0;
+  }
+
+  .standfirst-aside {
+    /* Editorial mono register; oxblood low-frequency, top accent rule. */
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    border-top: 2px solid var(--accent);
+    padding-top: 14px;
+    line-height: 1.5;
+  }
+  .standfirst-aside :global(.aside-bar) {
+    /* Visible only when the slot fallback runs — keeps the column from
+       collapsing without imposing text content. */
+    display: block;
+    width: 24px;
+    height: 2px;
+    background: var(--accent);
+  }
+  .standfirst-aside :global(.aside-num) {
+    color: var(--accent);
+    display: block;
+    margin-bottom: 12px;
+  }
+  .standfirst-aside :global(.aside-label) {
+    color: var(--ink-3);
+    display: block;
+    margin-bottom: 12px;
+  }
+  .standfirst-aside :global(.aside-list) {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .standfirst-aside :global(.aside-list li) {
+    color: var(--ink-2);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
   }
 </style>

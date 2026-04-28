@@ -59,9 +59,11 @@ const personJsonLd = {
 
   <section class="opening-narrative">
     <div class="opening-inner">
-      <p>
-        I am a consultant plastic and hand surgeon, currently practising at Waikato Hospital in Hamilton, New Zealand. My training pathway across Switzerland, Germany, Australia, and New Zealand has shaped a clinical practice grounded in microsurgical reconstruction, the operative care of the upper extremity, and the surgical management of melanoma and complex skin cancer. The work I find most demanding — and most worth doing — is balancing what a patient needs, what is surgically possible, and what is pragmatically wise: <span class="accent">the operation that delivers the right reconstruction is not always the technically maximal one, and the goal is always a patient returning to their life with function intact.</span>
-      </p>
+      <div class="opening-narrow">
+        <p>
+          I am a consultant plastic and hand surgeon, currently practising at Waikato Hospital in Hamilton, New Zealand. My training pathway across Switzerland, Germany, Australia, and New Zealand has shaped a clinical practice grounded in microsurgical reconstruction, the operative care of the upper extremity, and the surgical management of melanoma and complex skin cancer. The work I find most demanding — and most worth doing — is balancing what a patient needs, what is surgically possible, and what is pragmatically wise: <span class="accent">the operation that delivers the right reconstruction is not always the technically maximal one, and the goal is always a patient returning to their life with function intact.</span>
+        </p>
+      </div>
     </div>
   </section>
 
@@ -135,6 +137,11 @@ const personJsonLd = {
 </SiteLayout>
 
 <style>
+  /* Opening narrative is an editorial pull-quote moment. Per v1.6.2 about
+     mockup: the .narrow wrapper is centered (margin: 0 auto) at 760px, and
+     the <p> inside is a much narrower 28ch column anchored to the left of
+     that centered wrapper — a deliberately tight set with surrounding white
+     space, not a regular reading column. */
   .opening-narrative {
     padding-block: clamp(60px, 10vh, 120px);
     border-top: 1px solid var(--rule);
@@ -146,13 +153,17 @@ const personJsonLd = {
     margin: 0 auto;
     padding-inline: clamp(20px, 5vw, 80px);
   }
+  .opening-narrow {
+    max-width: 760px;
+    margin: 0 auto;
+  }
   .opening-narrative p {
     font-family: var(--serif);
     font-weight: 400;
     font-size: clamp(20px, 2vw, 26px);
     line-height: 1.5;
     color: var(--ink);
-    max-width: 760px;
+    max-width: 28ch;
     margin: 0;
   }
   .opening-narrative .accent {

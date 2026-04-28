@@ -1,14 +1,18 @@
 ---
 // AboutSection — numbered, labelled long-form section for About.
 //
-// Composition (per about-en.md and v1.6 mockup):
-//   - Section masthead is a 2-column grid: 80px (mono "§ 0n" with accent
-//     top border) + 1fr (mono uppercase label + h2 serif heading).
-//   - Body content (slot) sits in a 720px max-width column with 17px / 1.7
-//     serif paragraphs.
+// Composition (per about-en.md and v1.6.2 mockup):
+//   - Section masthead on top: 2-col grid 80px (mono "§ 0n" with accent
+//     top border) + 1fr (mono uppercase label + h2 serif heading)
+//   - Below the masthead: body + aside grid. Body in 720px / 64ch serif
+//     column, aside in a narrower right column reserved for marginal
+//     annotations (Tufte sidenote pattern; Phase 5 fills with citations,
+//     pulled phrases, sidenotes).
 //
-// Rendered as <section> with bottom rule; consumers chain multiple of these
-// and the last one is unbordered via :last-of-type in the page-level CSS.
+// Aside slot defaults to an empty accent rule so the right column is
+// visually intentional rather than accidentally empty. Consumers (or
+// Phase 5 citation infrastructure) override the slot with marginal
+// content as it becomes available.
 interface Props {
   number: string;
   label: string;
@@ -28,8 +32,15 @@ const { number, label, heading, headingId, class: className = '' } = Astro.props
         <h2 id={headingId}>{heading}</h2>
       </div>
     </header>
-    <div class="section-body">
-      <slot />
+    <div class="section-grid">
+      <div class="section-body">
+        <slot />
+      </div>
+      <aside class="section-aside">
+        <slot name="aside">
+          <span class="aside-bar" aria-hidden="true"></span>
+        </slot>
+      </aside>
     </div>
   </div>
 </section>
@@ -85,7 +96,20 @@ const { number, label, heading, headingId, class: className = '' } = Astro.props
     margin: 0;
   }
 
-  .section-body { max-width: 720px; }
+  /* Body + aside grid. Body sits in a 720px / 64ch reading column;
+     aside is a ~200px right gutter reserved for marginal annotations
+     (Phase 5 citation sidenotes will populate via the named slot). */
+  .section-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 720px) minmax(140px, 200px);
+    gap: clamp(40px, 6vw, 96px);
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .section-grid { grid-template-columns: 1fr; gap: 28px; }
+  }
+
+  .section-body { min-width: 0; }
   .section-body :global(p) {
     font-family: var(--serif);
     font-weight: 400;
@@ -104,4 +128,44 @@ const { number, label, heading, headingId, class: className = '' } = Astro.props
     text-decoration-thickness: 1px;
   }
   .section-body :global(a:hover) { color: var(--ink); }
+
+  .section-aside {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    border-top: 2px solid var(--accent);
+    padding-top: 14px;
+    line-height: 1.5;
+  }
+  /* On mobile, aside is moved above body so it reads as a preview rather
+     than an afterthought. Achieved with order swap. */
+  @media (max-width: 900px) {
+    .section-grid { grid-template-areas: "aside" "body"; }
+    .section-body { grid-area: body; }
+    .section-aside { grid-area: aside; }
+  }
+  .section-aside :global(.aside-bar) {
+    display: block;
+    width: 24px;
+    height: 2px;
+    background: var(--accent);
+  }
+  .section-aside :global(.aside-num) {
+    color: var(--accent);
+    display: block;
+    margin-bottom: 12px;
+  }
+  .section-aside :global(.aside-list) {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .section-aside :global(.aside-list li) {
+    color: var(--ink-2);
+  }
 </style>
