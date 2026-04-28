@@ -17,10 +17,13 @@ site/
 │   └── technical/                      Stack, routing/redirects, compliance checklist
 ├── src/
 │   ├── assets/img/                    20-photo brand library — img-NN.jpg (NOT in public/)
-│   ├── components/                    PageContainer, SiteNav, SiteFooter, SectionMasthead, PhotoBreak
+│   ├── components/                    PageContainer, SiteNav, SiteFooter, SectionMasthead, PhotoBreak,
+│   │                                  HomeHero, AboutHero, Standfirst, SpecialtyBlocks,
+│   │                                  PublicationsTeaser, ArticlesTeaser, AboutSection
 │   ├── layouts/                       BaseLayout (head/meta/preload), SiteLayout (wraps + slots nav/footer)
 │   ├── lib/                           images.ts (manifest reference), image-config.ts (shared pipeline constants)
-│   └── pages/en/                      English routes (Polish under pages/pl/, separate composition)
+│   └── pages/en/                      English routes — index.astro (Home), about.astro
+│                                       Polish routes (pages/pl/) pending native composition session
 ├── studio/schemas/                    Sanity schemas — most are stubs until their build phase
 ├── astro.config.mjs                   Astro config — i18n, redirects, sitemap, Tailwind via Vite plugin
 ├── tailwind.config.ts                 JS config holding Aarau Graphite tokens (loaded via @config in globals.css)
@@ -64,6 +67,9 @@ These are non-obvious things prior sessions tripped on. Do not redo:
 - **Image pipeline**: photos in `src/assets/img/`, NOT `public/img/`. Astro only optimizes images imported from `src/`.
 - **Image registry is per-page direct imports.** Lazy globs (`import.meta.glob` without `eager`) and dynamic-import switch statements both make Vite emit every glob target as a static asset, even unreached ones. The only thing that tree-shakes properly is direct per-page `import img12 from '@/assets/img/img-12.jpg'`.
 - **LCP preload uses shared config.** `src/lib/image-config.ts` holds widths + quality + sizes constants. Both `<Picture>` (in PhotoBreak) and `getImage()` (in BaseLayout's `heroPreload`) must use identical options or the preloaded URL hashes diverge from what the picture element resolves and the browser fetches twice.
+- **Astro dev-server CSS cache goes stale on structural refactors.** When a component's grid/layout CSS changes, Vite HMR sometimes serves the OLD compiled CSS even after a hard browser reload. The production build (`npm run build`) is correct; only dev is wrong. Symptom: `getComputedStyle(el).display` returns `block` when CSS says `grid`. Fix: `pkill -f "astro dev"` then `cd site && npm run dev` for a clean restart. Already cost two debug rounds in this session — restart pre-emptively after any AboutSection/Standfirst/grid-template refactor before judging visuals.
+- **Astro scoped CSS doesn't reach slot content.** Component templates render with a `data-astro-cid-XXX` attribute; slot content from the parent does NOT get that attribute. So `<style>` rules inside the component only match elements rendered in the component's own template. To style slot content from the parent, use `:global(...)` selectors. Both Standfirst's `.aside-num`/`.aside-list` and AboutSection's equivalents are styled via `:global()` for that reason.
+- **Readonly arrays don't cross into `<Picture>` props.** `IMAGE_WIDTHS` and `IMAGE_FORMATS` in `src/lib/image-config.ts` are `as const` (good for narrow typing), but `<Picture>` typings expect mutable arrays. At every call site spread them: `widths={[...IMAGE_WIDTHS]}`, `formats={[...IMAGE_FORMATS]}`. Forgetting this is a type error at build time, not runtime.
 
 ---
 
@@ -165,6 +171,35 @@ Per `_handoff/technical/compliance-checklist.md` and brand spec — these are no
 4. **Polish content composition.** Native Polish session pending for Home, About, procedure pages, blog posts.
 5. **Embedded vs standalone Sanity Studio.** Standalone now; revisit if you want `/studio` on drgladysz.com (would add `@sanity/astro` dep).
 6. **Dependency major bumps.** Sanity 4→5, Resend 4→6, TypeScript 5→6, Preact Signals 1→2 are available. Recommend bumping Sanity in Phase 5 when we exercise it heavily; rest can wait.
+7. **About hero pull-quote centering.** The §01 opening narrative paragraph is centered within its right-of-§-margin column rather than the full viewport (~52px right of viewport-center at 1440px). User said "looks fine for now"; if the slight off-center bothers anyone later, switch §01 to absolute-positioned in the margin so the narrow paragraph can center against the viewport.
+8. **Favicon files.** `/favicon.svg` and `/apple-touch-icon.png` are referenced by BaseLayout but absent from `public/`. Console logs a 404 in dev. MG monogram favicons (16/32/180/192/512) per spec §2 and meta-and-seo.md — outstanding asset task.
+
+---
+
+## Phase 5 starting context (next session)
+
+Phase 5 is **Tier 1 features: Citation system + Procedure schema**. Detailed feature specs at `_handoff/features/01-citation-system.md` and `02-procedure-schema.md`.
+
+**What's already in place (don't re-do):**
+
+- The `Standfirst` and `AboutSection` components have a `<slot name="aside">` reserved on the right margin, with mono caps styling, oxblood top-rule, and stacked-on-mobile behaviour. **This is the citation sidenote target on desktop.** Phase 5 needs to wire the `citation-js` + Vancouver CSL output into that slot via Astro's Portable Text renderer. The default fallback content (24px accent bar) lets the column render gracefully when a section has no citations.
+- Sanity stub schemas exist at `studio/schemas/`: `reference` (for citations) and `procedurePage` (for the AO-derived schema). They're stubs awaiting full field shape.
+- Type-checking and build are clean (`npm run type-check` 0 errors, `npm run build` 2 pages, 105 image variants generated).
+- Dev server runs from `cd site && npm run dev`; Sanity Studio standalone via `npm run studio:dev` (port 3333). After CSS-structure work, restart the dev server (see Astro 6 gotchas) before judging visuals.
+
+**Recommended first moves for Phase 5:**
+
+1. Read `_handoff/features/01-citation-system.md` end-to-end before writing any code. Confirm the `reference` Sanity field shape (authors, journal, volume, issue, year, pages, PMID, DOI, PMCID, abstract).
+2. Bump Sanity 4→5 if planning to use citation-js with the latest Sanity ecosystem (per open-items §6 — recommended this phase).
+3. Author the `reference` schema in `studio/schemas/`, redeploy the Sanity Studio, seed 2-3 references for the existing Home publication cards (JMIR AI 2026 + EBJ 2022) and one each for the three Home article teasers.
+4. Build the citation Portable Text inline mark + the build-time `citation-js` formatter. Sidenote rendering on desktop targets the existing `Standfirst` / `AboutSection` aside slot; on mobile use the native HTML Popover API (Baseline since April 2025; no polyfill).
+5. Procedure schema (`procedurePage`) follows the AO Surgery Reference structure: indications → contraindications → anatomy → patient positioning → approach → numbered key steps → closure → aftercare → complications → evidence (with citations). One MVP procedure page (Carpal Tunnel Syndrome) authored to validate the schema before committing to all six.
+
+**Things NOT to start yet** (would expand scope inappropriately):
+
+- Tier 2 features (calculators, MCQ, glossary) — post-launch
+- LMS / `learn.drgladysz.com` subdomain — 2028+ if at all
+- Polish equivalents of these features — wait for the Polish composition session
 
 ---
 
