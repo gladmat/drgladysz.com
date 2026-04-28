@@ -59,10 +59,15 @@ const personJsonLd = {
 
   <section class="opening-narrative">
     <div class="opening-inner">
-      <div class="opening-narrow">
-        <p>
-          I am a consultant plastic and hand surgeon, currently practising at Waikato Hospital in Hamilton, New Zealand. My training pathway across Switzerland, Germany, Australia, and New Zealand has shaped a clinical practice grounded in microsurgical reconstruction, the operative care of the upper extremity, and the surgical management of melanoma and complex skin cancer. The work I find most demanding — and most worth doing — is balancing what a patient needs, what is surgically possible, and what is pragmatically wise: <span class="accent">the operation that delivers the right reconstruction is not always the technically maximal one, and the goal is always a patient returning to their life with function intact.</span>
-        </p>
+      <div class="opening-layout">
+        <div class="opening-num">§ 01</div>
+        <div class="opening-main">
+          <div class="opening-narrow">
+            <p>
+              I am a consultant plastic and hand surgeon, currently practising at Waikato Hospital in Hamilton, New Zealand. My training pathway across Switzerland, Germany, Australia, and New Zealand has shaped a clinical practice grounded in microsurgical reconstruction, the operative care of the upper extremity, and the surgical management of melanoma and complex skin cancer. The work I find most demanding — and most worth doing — is balancing what a patient needs, what is surgically possible, and what is pragmatically wise: <span class="accent">the operation that delivers the right reconstruction is not always the technically maximal one, and the goal is always a patient returning to their life with function intact.</span>
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -137,15 +142,11 @@ const personJsonLd = {
 </SiteLayout>
 
 <style>
-  /* Opening narrative is an editorial pull-quote moment: a centered
-     760px column flanked by border-top/border-bottom rules, in a slightly
-     larger serif than body text. The v1.6.2 mockup specifies a 28ch
-     paragraph max-width inside the centered narrow, but at typical
-     desktop viewports that produces a too-narrow column that reads as
-     broken layout rather than as editorial restraint — so the paragraph
-     is allowed to fill the centered narrow (~46ch at 26px serif), which
-     is still a tight editorial column distinct from the 64ch body
-     register used in the long-form sections below. */
+  /* Opening narrative — the introduction section, numbered § 01 to keep
+     the section progression contiguous with §02-§06 below. § number sits
+     in the 80px left margin (matching AboutSection); the centered narrow
+     paragraph is the editorial pull-quote moment, framed by border-top
+     and border-bottom rules. */
   .opening-narrative {
     padding-block: clamp(60px, 10vh, 120px);
     border-top: 1px solid var(--rule);
@@ -156,6 +157,23 @@ const personJsonLd = {
     max-width: 1320px;
     margin: 0 auto;
     padding-inline: clamp(20px, 5vw, 80px);
+  }
+  .opening-layout {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+  @media (max-width: 600px) {
+    .opening-layout { grid-template-columns: 1fr; gap: 12px; }
+  }
+  .opening-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    padding-top: 10px;
+    border-top: 2px solid var(--accent);
   }
   .opening-narrow {
     max-width: 760px;
