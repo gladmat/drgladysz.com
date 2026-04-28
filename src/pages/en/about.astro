@@ -137,11 +137,15 @@ const personJsonLd = {
 </SiteLayout>
 
 <style>
-  /* Opening narrative is an editorial pull-quote moment. Per v1.6.2 about
-     mockup: the .narrow wrapper is centered (margin: 0 auto) at 760px, and
-     the <p> inside is a much narrower 28ch column anchored to the left of
-     that centered wrapper — a deliberately tight set with surrounding white
-     space, not a regular reading column. */
+  /* Opening narrative is an editorial pull-quote moment: a centered
+     760px column flanked by border-top/border-bottom rules, in a slightly
+     larger serif than body text. The v1.6.2 mockup specifies a 28ch
+     paragraph max-width inside the centered narrow, but at typical
+     desktop viewports that produces a too-narrow column that reads as
+     broken layout rather than as editorial restraint — so the paragraph
+     is allowed to fill the centered narrow (~46ch at 26px serif), which
+     is still a tight editorial column distinct from the 64ch body
+     register used in the long-form sections below. */
   .opening-narrative {
     padding-block: clamp(60px, 10vh, 120px);
     border-top: 1px solid var(--rule);
@@ -163,7 +167,6 @@ const personJsonLd = {
     font-size: clamp(20px, 2vw, 26px);
     line-height: 1.5;
     color: var(--ink);
-    max-width: 28ch;
     margin: 0;
   }
   .opening-narrative .accent {

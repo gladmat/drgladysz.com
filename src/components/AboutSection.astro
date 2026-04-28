@@ -1,18 +1,27 @@
 ---
 // AboutSection — numbered, labelled long-form section for About.
 //
-// Composition (per about-en.md and v1.6.2 mockup):
-//   - Section masthead on top: 2-col grid 80px (mono "§ 0n" with accent
-//     top border) + 1fr (mono uppercase label + h2 serif heading)
-//   - Below the masthead: body + aside grid. Body in 720px / 64ch serif
-//     column, aside in a narrower right column reserved for marginal
-//     annotations (Tufte sidenote pattern; Phase 5 fills with citations,
-//     pulled phrases, sidenotes).
+// Layout (after v1.6.2 mockup audit + alignment fix):
+//   ┌─────────────────────────────────────────────────────────────┐
+//   │ §0n │ Practice  (label)                                     │
+//   │     │ Sub-specialty heading (h2)                            │
+//   │     │                                                       │
+//   │     │ Body 720px / 64ch serif      │  Aside ~200px mono   │
+//   └─────────────────────────────────────────────────────────────┘
 //
-// Aside slot defaults to an empty accent rule so the right column is
-// visually intentional rather than accidentally empty. Consumers (or
-// Phase 5 citation infrastructure) override the slot with marginal
-// content as it becomes available.
+//   The § number lives in an 80px left margin; everything else
+//   (label, heading, body, aside) shares a single content column
+//   that starts to the right of the § number, so the heading and
+//   the body align vertically. The body+aside grid is nested inside
+//   that content column.
+//
+//   On <600px viewports the § column collapses inline above the
+//   header. On <900px the body+aside columns stack with aside above
+//   body so it reads as a section preview rather than a footnote.
+//
+//   Aside is a named slot ready for Phase 5 citation sidenotes;
+//   default fallback is just an oxblood accent bar so the column
+//   reads as intentional rather than collapsed.
 interface Props {
   number: string;
   label: string;
@@ -25,22 +34,24 @@ const { number, label, heading, headingId, class: className = '' } = Astro.props
 ---
 <section class:list={['about-section', className]}>
   <div class="about-inner">
-    <header class="section-masthead">
-      <div class="num">{number}</div>
-      <div class="heading-block">
-        <div class="label">{label}</div>
-        <h2 id={headingId}>{heading}</h2>
+    <div class="section-layout">
+      <div class="section-num">{number}</div>
+      <div class="section-main">
+        <header class="section-header">
+          <div class="label">{label}</div>
+          <h2 id={headingId}>{heading}</h2>
+        </header>
+        <div class="section-content">
+          <div class="section-body">
+            <slot />
+          </div>
+          <aside class="section-aside">
+            <slot name="aside">
+              <span class="aside-bar" aria-hidden="true"></span>
+            </slot>
+          </aside>
+        </div>
       </div>
-    </header>
-    <div class="section-grid">
-      <div class="section-body">
-        <slot />
-      </div>
-      <aside class="section-aside">
-        <slot name="aside">
-          <span class="aside-bar" aria-hidden="true"></span>
-        </slot>
-      </aside>
     </div>
   </div>
 </section>
@@ -56,25 +67,32 @@ const { number, label, heading, headingId, class: className = '' } = Astro.props
     padding-inline: clamp(20px, 5vw, 80px);
   }
 
-  .section-masthead {
+  /* Outer 2-col layout: § number in 80px left margin, everything else in
+     the right 1fr column. align-items: start keeps the § number at the
+     top edge; the section-num is decorated with a 2px accent top rule. */
+  .section-layout {
     display: grid;
     grid-template-columns: 80px 1fr;
     gap: 24px;
-    align-items: baseline;
-    margin-bottom: clamp(40px, 6vh, 56px);
+    align-items: start;
   }
   @media (max-width: 600px) {
-    .section-masthead { grid-template-columns: 1fr; gap: 16px; }
+    .section-layout { grid-template-columns: 1fr; gap: 12px; }
   }
 
-  .num {
+  .section-num {
     font-family: var(--mono);
     font-size: 11px;
     letter-spacing: 0.1em;
     color: var(--accent);
     padding-top: 10px;
     border-top: 2px solid var(--accent);
-    align-self: start;
+    /* On the section's first line the § number aligns with the label
+       above the h2; padding-top + 2px rule create the editorial accent. */
+  }
+
+  .section-header {
+    margin-bottom: clamp(40px, 6vh, 56px);
   }
 
   .label {
@@ -83,7 +101,7 @@ const { number, label, heading, headingId, class: className = '' } = Astro.props
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--ink-3);
-    margin-bottom: 8px;
+    margin: 0 0 8px;
   }
 
   h2 {
@@ -96,17 +114,22 @@ const { number, label, heading, headingId, class: className = '' } = Astro.props
     margin: 0;
   }
 
-  /* Body + aside grid. Body sits in a 720px / 64ch reading column;
-     aside is a ~200px right gutter reserved for marginal annotations
-     (Phase 5 citation sidenotes will populate via the named slot). */
-  .section-grid {
+  /* Inner body+aside grid sits inside the main column so the body's
+     left edge aligns with the heading's left edge above. */
+  .section-content {
     display: grid;
     grid-template-columns: minmax(0, 720px) minmax(140px, 200px);
     gap: clamp(40px, 6vw, 96px);
     align-items: start;
   }
   @media (max-width: 900px) {
-    .section-grid { grid-template-columns: 1fr; gap: 28px; }
+    .section-content {
+      grid-template-columns: 1fr;
+      grid-template-areas: "aside" "body";
+      gap: 28px;
+    }
+    .section-body { grid-area: body; }
+    .section-aside { grid-area: aside; }
   }
 
   .section-body { min-width: 0; }
@@ -138,13 +161,6 @@ const { number, label, heading, headingId, class: className = '' } = Astro.props
     border-top: 2px solid var(--accent);
     padding-top: 14px;
     line-height: 1.5;
-  }
-  /* On mobile, aside is moved above body so it reads as a preview rather
-     than an afterthought. Achieved with order swap. */
-  @media (max-width: 900px) {
-    .section-grid { grid-template-areas: "aside" "body"; }
-    .section-body { grid-area: body; }
-    .section-aside { grid-area: aside; }
   }
   .section-aside :global(.aside-bar) {
     display: block;
