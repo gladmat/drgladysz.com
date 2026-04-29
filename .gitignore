@@ -15,6 +15,9 @@ dist/
 .sanity/
 sanity-imports/
 
+# Transient artefacts produced by content-import scripts (regeneratable)
+scripts/.*.json
+
 # macOS
 .DS_Store
 

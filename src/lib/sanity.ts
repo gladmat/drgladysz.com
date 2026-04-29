@@ -82,6 +82,40 @@ export type SanityImage = {
   crop?: unknown;
 };
 
+export type SanityGlossaryTerm = {
+  _id: string;
+  _type: 'glossaryTerm';
+  term: string;
+  termPolish?: string;
+  slug: { current: string };
+  category:
+    | 'anatomy'
+    | 'condition'
+    | 'procedure'
+    | 'investigation'
+    | 'treatment'
+    | 'outcome'
+    | 'structure'
+    | 'other';
+  shortDefinition: string;
+  shortDefinitionPolish?: string;
+  fullDefinition?: PortableTextBlock[];
+  fullDefinitionPolish?: PortableTextBlock[];
+  synonyms?: string[];
+  illustration?: SanityImage;
+};
+
+export type ArticleAuthor = {
+  name: string;
+  credentials?: string;
+  // The Phase 5 seed populated post-nominals under a non-schema `title` field
+  // (the schema's `credentials` field was misused for the role). Reading both
+  // here lets the byline logic pick the post-nominals from whichever field
+  // they were stored in — defensive against the data quirk.
+  title?: string;
+  role?: string;
+};
+
 export type SanityArticle = {
   _id: string;
   _type: 'article';
@@ -89,7 +123,10 @@ export type SanityArticle = {
   slug: { current: string };
   category: 'patient' | 'expert' | 'fessh-prep' | 'news';
   audience: 'patient' | 'peer' | 'mixed';
-  author: { _ref: string };
+  // GROQ projects author->{name, credentials}; null if the reference is
+  // unresolved (deleted target). Author is required in the schema, so this
+  // should be populated for any published article.
+  author: ArticleAuthor | null;
   publishedDate: string;
   lastUpdated?: string;
   excerpt: string;
@@ -149,11 +186,20 @@ const REFERENCE_PROJECTION = /* groq */ `{
 
 const ARTICLE_PROJECTION = /* groq */ `{
   _id, _type, title, slug, category, audience,
-  author, publishedDate, lastUpdated, excerpt,
+  "author": author->{name, credentials, title, role},
+  publishedDate, lastUpdated, excerpt,
   heroImage,
   keyPoints,
   body,
   seoTitle, seoDescription
+}`;
+
+const GLOSSARY_PROJECTION = /* groq */ `{
+  _id, _type, term, termPolish, slug, category,
+  shortDefinition, shortDefinitionPolish,
+  fullDefinition, fullDefinitionPolish,
+  synonyms,
+  illustration
 }`;
 
 const PROCEDURE_PROJECTION = /* groq */ `{
@@ -249,6 +295,16 @@ export async function getReferencesByIds(
   );
 }
 
+export async function getGlossaryTermsByIds(
+  ids: string[],
+): Promise<SanityGlossaryTerm[]> {
+  if (ids.length === 0) return [];
+  return sanityClient.fetch<SanityGlossaryTerm[]>(
+    /* groq */ `*[_type == "glossaryTerm" && _id in $ids]${GLOSSARY_PROJECTION}`,
+    { ids },
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Citation extraction
 //
@@ -257,7 +313,12 @@ export async function getReferencesByIds(
 // returned order is the canonical citation index used to number the bibliography.
 // ---------------------------------------------------------------------------
 
-type MarkDef = { _type: string; _key: string; reference?: { _ref: string } };
+type MarkDef = {
+  _type: string;
+  _key: string;
+  reference?: { _ref: string };
+  term?: { _ref: string };
+};
 
 function isPortableTextBlock(b: unknown): b is PortableTextBlock & {
   _type: 'block';
@@ -272,13 +333,15 @@ function isPortableTextBlock(b: unknown): b is PortableTextBlock & {
 }
 
 /**
- * Walks every Portable Text array on the doc and returns the unique reference
- * _ids in order of first appearance. Each call site (article body, procedure
- * step descriptions, evidence section, etc.) is walked recursively so step
- * descriptions inside `keySteps[].description` count too.
+ * Walks every Portable Text array on the doc and returns the unique mark
+ * targets (citation reference _ids or glossaryTerm _ids) in order of first
+ * appearance. The walker recurses into callout content so marks inside
+ * callouts are counted.
  */
-export function extractCitationOrderFromBlocks(
+function extractMarkOrderFromBlocks(
   blockGroups: (PortableTextBlock[] | undefined)[],
+  markType: 'citation' | 'glossaryTerm',
+  refField: 'reference' | 'term',
 ): string[] {
   const order: string[] = [];
   const seen = new Set<string>();
@@ -299,19 +362,19 @@ export function extractCitationOrderFromBlocks(
         continue;
       }
       const markDefs: MarkDef[] = block.markDefs ?? [];
-      const citationKeys = new Set(
-        markDefs.filter((m) => m._type === 'citation').map((m) => m._key),
+      const matchingKeys = new Set(
+        markDefs.filter((m) => m._type === markType).map((m) => m._key),
       );
-      if (citationKeys.size === 0) continue;
+      if (matchingKeys.size === 0) continue;
       for (const child of block.children ?? []) {
         if (!Array.isArray(child.marks)) continue;
         for (const m of child.marks) {
-          if (citationKeys.has(m)) {
+          if (matchingKeys.has(m)) {
             const def = markDefs.find((d) => d._key === m);
-            const refId = def?.reference?._ref;
-            if (refId && !seen.has(refId)) {
-              seen.add(refId);
-              order.push(refId);
+            const targetId = def?.[refField]?._ref;
+            if (targetId && !seen.has(targetId)) {
+              seen.add(targetId);
+              order.push(targetId);
             }
           }
         }
@@ -321,4 +384,16 @@ export function extractCitationOrderFromBlocks(
 
   for (const group of blockGroups) walk(group);
   return order;
+}
+
+export function extractCitationOrderFromBlocks(
+  blockGroups: (PortableTextBlock[] | undefined)[],
+): string[] {
+  return extractMarkOrderFromBlocks(blockGroups, 'citation', 'reference');
+}
+
+export function extractGlossaryOrderFromBlocks(
+  blockGroups: (PortableTextBlock[] | undefined)[],
+): string[] {
+  return extractMarkOrderFromBlocks(blockGroups, 'glossaryTerm', 'term');
 }

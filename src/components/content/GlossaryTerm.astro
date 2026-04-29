@@ -1,0 +1,156 @@
+---
+// src/components/content/GlossaryTerm.astro
+//
+// Renders a single in-text glossary mark as a dashed-underline span with a
+// native HTML Popover tooltip. Hover (desktop) or tap (mobile) opens the
+// popover; the Popover API toggles state declaratively via popovertarget,
+// so zero JavaScript ships.
+//
+// The popover content shows the term, its category (mono caps), and the
+// short definition. The dedicated /en/glossary/[slug] index/detail pages
+// are Tier 2 (post-launch) — the "More about this term →" link from the
+// locked spec is suppressed for now and lights up when those pages ship.
+//
+// Per-occurrence uniqueness: the popoverId includes the mark's `_key` so
+// the same term cited multiple times in one article generates distinct
+// popover ids (avoids the duplicate-id pattern flagged in CLAUDE.md
+// open item #10 for citations).
+import type { SanityGlossaryTerm } from '@/lib/sanity';
+
+interface Props {
+  term: SanityGlossaryTerm;
+  displayText: string; // The text rendered in flow (may differ from canonical term)
+  markKey: string; // Per-occurrence _key from the Portable Text mark
+  locale?: 'en' | 'pl';
+}
+
+const { term, displayText, markKey, locale = 'en' } = Astro.props;
+
+const definition =
+  locale === 'pl' && term.shortDefinitionPolish
+    ? term.shortDefinitionPolish
+    : term.shortDefinition;
+
+const displayedTerm =
+  locale === 'pl' && term.termPolish ? term.termPolish : term.term;
+
+const popoverId = `glossary-${term._id}-${markKey}`;
+
+const CATEGORY_LABELS: Record<SanityGlossaryTerm['category'], string> = {
+  anatomy: 'Anatomy',
+  condition: 'Condition',
+  procedure: 'Procedure',
+  investigation: 'Investigation',
+  treatment: 'Treatment',
+  outcome: 'Outcome measure',
+  structure: 'Anatomical structure',
+  other: 'Glossary',
+};
+const categoryLabel = CATEGORY_LABELS[term.category] ?? 'Glossary';
+---
+<button
+  type="button"
+  class="glossary-trigger"
+  popovertarget={popoverId}
+  aria-label={`Definition of ${displayText}`}
+  aria-describedby={popoverId}
+>{displayText}</button><aside
+  id={popoverId}
+  popover="auto"
+  class="glossary-popover"
+  role="note"
+  aria-labelledby={`${popoverId}-label`}
+>
+  <p class="glossary-popover-cat">{categoryLabel}</p>
+  <h4 class="glossary-popover-term" id={`${popoverId}-label`}>{displayedTerm}</h4>
+  <p class="glossary-popover-def">{definition}</p>
+</aside>
+
+<style>
+  /* ---- In-flow trigger ------------------------------------------------- */
+  .glossary-trigger {
+    background: none;
+    border: 0;
+    padding: 0;
+    color: inherit;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    font-style: inherit;
+    font-weight: inherit;
+    cursor: help;
+    text-decoration: none;
+    border-bottom: 1px dashed var(--ink-3);
+    padding-bottom: 1px;
+    transition: border-color 0.15s ease;
+  }
+
+  .glossary-trigger:hover,
+  .glossary-trigger:focus-visible {
+    border-bottom-color: var(--accent);
+    border-bottom-style: solid;
+  }
+
+  .glossary-trigger:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 1px;
+  }
+
+  /* ---- Popover --------------------------------------------------------- */
+  /* The Popover API UA stylesheet sets `display: none` until the popover is
+     :open, then places it in the top layer with position: fixed near the
+     trigger. We refine the look but otherwise let UA defaults handle layout. */
+  .glossary-popover {
+    border: 1px solid var(--rule-strong);
+    background: var(--bg-card, var(--cream, #f5f0e6));
+    color: var(--ink);
+    padding: 16px 20px;
+    margin: 0;
+    max-width: min(360px, calc(100vw - 32px));
+    border-radius: 0;
+    box-shadow: 0 8px 24px rgba(20, 23, 26, 0.08);
+    inset: auto;
+  }
+
+  .glossary-popover::backdrop {
+    background: rgba(20, 23, 26, 0.04);
+  }
+
+  .glossary-popover-cat {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 6px;
+  }
+
+  .glossary-popover-term {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 17px;
+    line-height: 1.2;
+    margin: 0 0 10px;
+    color: var(--ink);
+  }
+
+  .glossary-popover-def {
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--ink);
+    margin: 0;
+  }
+
+  /* ---- Print ----------------------------------------------------------- */
+  @media print {
+    .glossary-trigger {
+      border-bottom-style: dashed;
+      cursor: default;
+    }
+    .glossary-popover {
+      display: none !important;
+    }
+  }
+</style>

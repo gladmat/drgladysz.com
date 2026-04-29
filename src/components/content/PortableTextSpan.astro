@@ -4,14 +4,19 @@
 // Renders a single Portable Text span with its marks. Decorators (em, strong,
 // code, underline, strike-through) wrap the text from inside out; link
 // annotations wrap the whole span; citation annotations APPEND a numbered
-// superscript marker AFTER the span's text (does not wrap it).
+// superscript marker AFTER the span's text (does not wrap it); glossaryTerm
+// annotations REPLACE the span's text with a <GlossaryTerm> trigger button.
 //
-// Decorator composition is done by building inner HTML once (string), then
-// either wrapping with <a>...</a> if a link mark is present or rendering raw.
+// When a span has a glossaryTerm mark, decorator and link composition is
+// skipped — the article body convention puts plain text inside `[gloss:slug|...]`
+// markers, and a <button> trigger can't nest an <a> per HTML interactive-content
+// rules. Decorators on the same span as a glossary mark are silently dropped.
+//
 // Citations follow the rendered span as Astro components, so they pull in
 // their own scoped styles.
 import Citation from '@/components/content/Citation.astro';
-import type { SanityRefDoc } from '@/lib/sanity';
+import GlossaryTerm from '@/components/content/GlossaryTerm.astro';
+import type { SanityRefDoc, SanityGlossaryTerm } from '@/lib/sanity';
 
 interface Span {
   _type: 'span';
@@ -34,9 +39,11 @@ interface Props {
   markDefs: MarkDef[];
   references: SanityRefDoc[];
   referenceIndex: Map<string, number>;
+  glossaryTerms: SanityGlossaryTerm[];
 }
 
-const { span, markDefs, references, referenceIndex } = Astro.props;
+const { span, markDefs, references, referenceIndex, glossaryTerms } =
+  Astro.props;
 const marks = span.marks ?? [];
 
 const ESCAPE_MAP: Record<string, string> = {
@@ -69,6 +76,10 @@ const citationAnnotations = annotationKeys
   .map((k) => markDefs.find((d) => d._key === k))
   .filter((d): d is MarkDef => Boolean(d) && d!._type === 'citation');
 
+const glossaryAnnotation = annotationKeys
+  .map((k) => markDefs.find((d) => d._key === k))
+  .find((d): d is MarkDef => Boolean(d) && d!._type === 'glossaryTerm');
+
 const citationData = citationAnnotations
   .map((annot) => {
     const refId = annot.reference?._ref;
@@ -79,6 +90,16 @@ const citationData = citationAnnotations
     return { ref, index: idx };
   })
   .filter((d): d is { ref: SanityRefDoc; index: number } => d !== null);
+
+const glossaryData = glossaryAnnotation
+  ? (() => {
+      const termId = glossaryAnnotation.term?._ref;
+      if (!termId) return null;
+      const term = glossaryTerms.find((g) => g._id === termId);
+      if (!term) return null;
+      return { term, markKey: glossaryAnnotation._key };
+    })()
+  : null;
 
 // Compose decorators from innermost outwards. Order matters cosmetically:
 // strong wraps em wraps code wraps underline wraps strike-through wraps text.
@@ -91,13 +112,22 @@ if (decorators.includes('strike-through')) inner = `<del>${inner}</del>`;
 if (decorators.includes('em')) inner = `<em>${inner}</em>`;
 if (decorators.includes('strong')) inner = `<strong>${inner}</strong>`;
 
-// Wrap with link if present.
-if (linkAnnotation && linkAnnotation.href) {
+// Wrap with link if present. Skipped when a glossary mark is present (a
+// <button> can't nest inside an <a> per HTML interactive-content rules).
+if (linkAnnotation && linkAnnotation.href && !glossaryData) {
   const targetAttr = linkAnnotation.newTab ? ' target="_blank" rel="noopener"' : '';
   inner = `<a href="${esc(linkAnnotation.href)}"${targetAttr}>${inner}</a>`;
 }
 ---
-<Fragment set:html={inner} />
+{glossaryData ? (
+  <GlossaryTerm
+    term={glossaryData.term}
+    displayText={span.text}
+    markKey={glossaryData.markKey}
+  />
+) : (
+  <Fragment set:html={inner} />
+)}
 {citationData.map(({ ref, index }) => (
   <Citation reference={ref} index={index} />
 ))}

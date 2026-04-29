@@ -23,15 +23,17 @@ import { urlForImage } from '@/lib/sanity';
 import type {
   PortableTextBlock,
   SanityRefDoc,
+  SanityGlossaryTerm,
   SanityImage,
 } from '@/lib/sanity';
 
 interface Props {
   value: PortableTextBlock[] | undefined;
   references?: SanityRefDoc[];
+  glossaryTerms?: SanityGlossaryTerm[];
 }
 
-const { value, references = [] } = Astro.props;
+const { value, references = [], glossaryTerms = [] } = Astro.props;
 const blocks = value ?? [];
 
 // Build reference-id -> index Map for fast Citation lookup. Indexes are 1-based.
@@ -95,6 +97,7 @@ function imageSrcSet(img: SanityImage) {
                   markDefs={(block.markDefs ?? []) as any}
                   references={references}
                   referenceIndex={referenceIndex}
+                  glossaryTerms={glossaryTerms}
                 />
               ) : null,
             )}
@@ -114,7 +117,11 @@ function imageSrcSet(img: SanityImage) {
     };
     return (
       <Callout type={type ?? 'info'} title={title}>
-        <Astro.self value={content} references={references} />
+        <Astro.self
+          value={content}
+          references={references}
+          glossaryTerms={glossaryTerms}
+        />
       </Callout>
     );
   }
@@ -147,6 +154,7 @@ function imageSrcSet(img: SanityImage) {
         markDefs={(block.markDefs ?? []) as any}
         references={references}
         referenceIndex={referenceIndex}
+        glossaryTerms={glossaryTerms}
       />
     ) : null,
   );

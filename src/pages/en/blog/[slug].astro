@@ -24,7 +24,9 @@ import {
   getAllArticleSlugs,
   getArticleBySlug,
   getReferencesByIds,
+  getGlossaryTermsByIds,
   extractCitationOrderFromBlocks,
+  extractGlossaryOrderFromBlocks,
   urlForImage,
 } from '@/lib/sanity';
 import { generateArticleSchema, generateBreadcrumb } from '@/lib/schema';
@@ -49,6 +51,11 @@ const referencesUnsorted = await getReferencesByIds(citationOrder);
 const references = citationOrder
   .map((id) => referencesUnsorted.find((r) => r._id === id))
   .filter((r): r is NonNullable<typeof r> => Boolean(r));
+
+// Collect glossary-term references and load. Order doesn't drive numbering
+// (unlike citations) — the lookup is keyed by _id.
+const glossaryOrder = extractGlossaryOrderFromBlocks([article.body]);
+const glossaryTerms = await getGlossaryTermsByIds(glossaryOrder);
 
 const siteUrl = (
   import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com'
@@ -89,6 +96,29 @@ const categoryLabel: Record<string, string> = {
   'fessh-prep': 'FESSH preparation',
   news: 'News & commentary',
 };
+
+// Author byline. The brand convention renders the name and post-nominals
+// mid-dot-separated ("Mateusz Gładysz · MD · FEBOPRAS · FEBHS").
+//
+// The Phase 5 seed populated post-nominals under a non-schema `title` field
+// (and put the role string into `credentials`), so we look in both fields
+// and pick whichever segment looks like post-nominals — comma-separated
+// short uppercase tokens. Newly authored author docs that follow the schema
+// will store post-nominals in `credentials` and this logic still works.
+const POSTNOM_PATTERN = /^[A-Z][A-Za-z0-9]*$/;
+function postNominalSegments(value: string | undefined): string[] {
+  if (!value) return [];
+  const parts = value.split(',').map((s) => s.trim()).filter(Boolean);
+  return parts.every((p) => POSTNOM_PATTERN.test(p)) ? parts : [];
+}
+const authorPostNominals = article.author
+  ? postNominalSegments(article.author.credentials).length > 0
+    ? postNominalSegments(article.author.credentials)
+    : postNominalSegments(article.author.title)
+  : [];
+const authorByline = article.author
+  ? [article.author.name, ...authorPostNominals].join(' · ')
+  : null;
 ---
 <SiteLayout
   title={article.seoTitle || `${article.title} — Mateusz Gładysz, MD`}
@@ -105,6 +135,7 @@ const categoryLabel: Record<string, string> = {
         <span>{categoryLabel[article.category] ?? article.category}</span>
       </p>
       <h1 class="article-title">{article.title}</h1>
+      {authorByline && <p class="article-byline">{authorByline}</p>}
       {article.excerpt && <p class="article-excerpt">{article.excerpt}</p>}
       <p class="article-meta">
         <span>
@@ -142,7 +173,11 @@ const categoryLabel: Record<string, string> = {
       )}
 
       <div class="article-body">
-        <PortableTextRenderer value={article.body} references={references} />
+        <PortableTextRenderer
+          value={article.body}
+          references={references}
+          glossaryTerms={glossaryTerms}
+        />
       </div>
 
       <Bibliography references={references} />
@@ -193,6 +228,15 @@ const categoryLabel: Record<string, string> = {
     line-height: 1.05;
     letter-spacing: -0.02em;
     color: var(--ink);
+    margin: 0 0 16px;
+  }
+
+  .article-byline {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--accent);
     margin: 0 0 24px;
   }
 

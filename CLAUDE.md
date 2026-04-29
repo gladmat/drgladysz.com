@@ -52,7 +52,7 @@ site/
 | 10 | Production cutover (DNS at Zenbox, monitor 404s, decommission WP after 30 days) | ⬜ | — |
 
 **Phase 6/7/8 deferred work (content authoring, not infrastructure):**
-- Phase 6: WordPress migration — author the 3 remaining featured articles (scaphoid-fractures, flexor-tendon-injuries-and-repair, plus the 4th legacy post extensor-tendon-injuries) and the Polish post (zespol-ciesni-nadgarstka). Schemas + slug routing are ready; author the body copy in Sanity Studio.
+- Phase 6: WordPress migration — **scaphoid-fractures published 2026-04-29** from the v1.7 implementation package (peer audience, FESSH-prep, 30 references, 16 glossary terms, JAMA Key Points box, MedicalScholarlyArticle JSON-LD, byline, no images yet — see "Phase 6 — what shipped" section below). Still to author: flexor-tendon-injuries-and-repair, extensor-tendon-injuries, and the Polish post (zespol-ciesni-nadgarstka).
 - Phase 7: 5 more procedure pages — author one per sub-specialty area at minimum (e.g. one reconstructive-microsurgery, one skin-cancer) so each category index isn't empty at launch.
 - Phase 8: Polish mirrors of all supporting pages (/pl/kontakt, /pl/uprawnienia, /pl/nota-prawna, /pl/polityka-prywatnosci, /pl/zastrzezenie-medyczne, /pl/publikacje) — pending Polish composition session.
 - Phase 8: Resend-backed contact form. Currently the form posts as `mailto:` so it works without a server endpoint; adding a real `/api/contact.ts` server endpoint is part of Phase 10 (Vercel adapter setup).
@@ -93,7 +93,7 @@ These are non-obvious things prior sessions tripped on. Do not redo:
 | `procedurePage` | ✅ full (Phase 5 — AO Surgery Reference 10-section structure) |
 | `bibReference` | ✅ full (Phase 5 — Vancouver/AMA fields, was `reference`) |
 | `callout` | ✅ shared object type (info / warning / pearl) |
-| `glossaryTerm` | 🟡 stub — flesh out post-launch (Tier 2, Feature 5) |
+| `glossaryTerm` | ✅ full (Phase 6 — Tier 2 schema pulled forward when scaphoid article shipped; rendering side ships alongside) |
 | `mcqQuestion` | 🟡 stub — flesh out post-launch (Tier 2, Feature 4) |
 | `calculator` | 🟡 stub — flesh out post-launch (Tier 2, Feature 3) |
 
@@ -260,6 +260,52 @@ The 2026-04-29 overnight session shipped infrastructure for Phases 6, 7, and 8 �
 - Verification of live registry entries: PWZ 2985148 on rejestr.nil.org.pl, MCNZ 93463 on mcnz.org.nz (per package open items list).
 
 Build status after the session: `npm run type-check` 0 errors. `npm run build` 12 pages. Working tree dirty (no commits — held off so you can review the diff).
+
+## Phase 6 — what shipped (scaphoid-fractures expert article)
+
+The 2026-04-29 session published the first long-form expert article (`/en/blog/scaphoid-fractures`) from the v1.7 implementation package at `01-brand-system/articles/scaphoid-fracture/`. Peer audience, FESSH-prep, 4,500 words, 30 references, 16 glossary terms.
+
+**User decisions for the four real gaps the package didn't cover:**
+- Glossary tooltip rendering pulled forward (Tier 2 Feature 5 partial — schema + component, not the index/detail pages).
+- `glossaryTerm` schema extended to its full Tier 2 shape (per `_handoff/features/05-glossary-system.md`) so the package YAML's `category`/`synonyms`/`relatedTerms`/`termPolish`/`fullDefinition` data isn't lost.
+- Author byline component added (was hard-coded in footer only; schema's `author` reference field was unused on the article page).
+- Heroless publish — `heroImage` is optional in the schema; figures are added incrementally as Mateusz authors the SVGs and sources the AnatomyStandard CC-BY images.
+
+**Schema and component changes**
+- `studio/schemas/glossaryTerm.ts` — extended from a 3-field stub to the full Tier 2 shape (term/termPolish/slug/category enum/shortDefinition/shortDefinitionPolish/fullDefinition+Polish blocks/synonyms tags/relatedTerms refs/illustration/notesForMateusz). Schema not yet deployed (open item #9 still applies); local Studio reads from file, so authoring works.
+- `src/components/content/GlossaryTerm.astro` — NEW. Modeled on `Citation.astro`. Renders a dashed-underline `<button>` trigger and `<aside popover="auto">` showing term, category (mono caps), and short definition. Per-occurrence unique `popoverId` via the markDef `_key` (avoids the duplicate-id pattern of `Citation.astro` open item #10). Zero JS, native Popover API. The locked spec's "More about this term →" link is suppressed for now — `/en/glossary/[slug]` index/detail pages remain Tier 2.
+- `src/components/content/PortableTextSpan.astro` — wires the `glossaryTerm` mark. When a span has a glossary mark, the text is wrapped in `<GlossaryTerm>` instead of being emitted as plain HTML. Decorators and link wrapping are skipped on glossary spans (a `<button>` can't legally nest inside an `<a>`); the article body convention puts plain text inside `[gloss:...|...]` markers, so this is a non-issue in practice.
+- `src/components/content/PortableTextRenderer.astro` — accepts and forwards a `glossaryTerms` prop alongside `references`, including down into recursive `<Astro.self>` callouts.
+- `src/lib/sanity.ts` — added `SanityGlossaryTerm` type, `getGlossaryTermsByIds()`, `extractGlossaryOrderFromBlocks()` (refactored alongside `extractCitationOrderFromBlocks` into a shared `extractMarkOrderFromBlocks()` walker filtered by mark type). `ARTICLE_PROJECTION` now projects `author->{name, credentials, title, role}` instead of the raw `_ref`. `SanityArticle.author` typed as `ArticleAuthor | null` — null when the reference is unresolved.
+- `src/pages/en/blog/[slug].astro` — fetches glossary docs via `extractGlossaryOrderFromBlocks` after the citation extraction; passes them to `<PortableTextRenderer>`. Author byline rendered as `<p class="article-byline">` between title and standfirst, mid-dot-separated (`Mateusz Gładysz · MD · FEBOPRAS · FEBHS`). Defensive byline logic: extracts post-nominal segments from whichever of `credentials` or `title` matches the all-caps comma-separated pattern (Phase 5 had populated these two fields the wrong way round in the seeded author doc).
+
+**Author doc patched**
+- The Phase 5 seed put the role string ("Consultant Plastic and Hand Surgeon") into the `credentials` field and the post-nominals ("MD, FEBOPRAS, FEBHS") into a non-schema `title` field. The seed script (`site/scripts/seed-scaphoid-article.ts`) patches the author doc on every run: `credentials` ← post-nominals, `role` ← position title, `title` unset. Idempotent. The `[slug].astro` byline logic remains defensive (handles either layout) so newly authored author docs that follow the schema also work.
+
+**Import pipeline**
+- `scripts/import-scaphoid-article.ts` — pure Node script (uses `node --experimental-strip-types`, no `tsx` dep) that reads the four package files (`02-article-body.md`, `03-article-metadata.yaml`, `04-references.yaml`, `05-glossary-terms.yaml`) and emits a single JSON file containing `bibReferences[]`, `glossaryTerms[]`, and `articles[]` ready for seeding. Strips the authoring blockquote and the standfirst (which goes into `excerpt`, not body). H2-only headings (h3+ and lists are forbidden by the package and the script throws if encountered). Em-dashes pass through verbatim — no smart-typography pass. Citation marks (`[ref:slug]`) attach to the trimmed preceding text (drops the conventional pre-marker space so the rendered output is `text¹,` not `text¹ ,`). Glossary marks (`[gloss:slug|displayed]`) emit a span whose text is the displayed string with a `glossaryTerm` markDef pointing at `glossary-{slug}`. Stable `_key`s (`b1`, `s1`, `c1`, `g1`, …) ensure idempotent re-runs.
+- `scripts/seed-scaphoid-article.ts` — one-shot seeder that uses `@sanity/client.createOrReplace()` (honors slug-form `_id`s, unlike Sanity MCP `create_documents_from_json` which always assigns fresh UUIDs). Three-stage flow: patch the author doc → seed 30 bibReferences → seed 16 glossary docs in two passes (without `relatedTerms` first to avoid circular cross-references like `scaphoid` → `avn` → `snac-wrist` → `scaphoid`, then patch each doc's `relatedTerms`) → seed the article. Idempotent (safe to re-run). Requires `SANITY_API_WRITE_TOKEN` in `.env.local`; intended to be revoked at sanity.io/manage immediately after the seed.
+- `js-yaml` + `@types/js-yaml` added to devDeps for YAML parsing in the import script. `tsx` not added — Node 24's `--experimental-strip-types` is sufficient for ad-hoc TS scripts.
+- `scripts/.scaphoid-import.json` (the import script's intermediate output) and any other `scripts/.*.json` are gitignored as transient artefacts; regenerable via `node --experimental-strip-types scripts/import-scaphoid-article.ts > scripts/.scaphoid-import.json`.
+
+**Documents seeded into Sanity (production dataset)**
+- 30 `bibReference` docs with slug-form `_id`s (`gelberman-menon-1980`, `dias-swifft-2020`, …, `bssh-girft-2024`). Plus 5 carpal-tunnel refs from Phase 5 = 35 total.
+- 16 `glossaryTerm` docs with `glossary-{slug}` `_id`s. Cross-references via `relatedTerms` patched in pass 2.
+- 1 `article` with `_id: article-scaphoid-fractures`. Plus 1 carpal-tunnel article from Phase 5 = 2 total.
+- Author doc (UUID `2cbd8bcc-…`) patched: credentials ← `MD, FEBOPRAS, FEBHS`, role ← `Consultant Plastic and Hand Surgeon`, `title` unset.
+
+**Build status after the session:** `npm run type-check` 0 errors, `npm run build` 19 pages (was 12 before; +1 article + +6 image variants). The article HTML renders with valid `MedicalScholarlyArticle` JSON-LD including a 30-entry `citation` array. Verified inline: byline `Mateusz Gładysz · MD · FEBOPRAS · FEBHS`, italic standfirst, JAMA Key Points (Question/Findings/Meaning), 49 numbered citation superscripts, 17 dashed-underline glossary triggers, 30 bibliography entries in document order, 49 em-dashes preserved as U+2014 (zero `--`), `Last clinically reviewed 29 April 2026`. Hero image suppressed cleanly when undefined.
+
+**Image asks outstanding** (8 figures referenced by `06-image-manifest.yaml`, none uploaded):
+- 3 from anatomystandard.com (CC-BY): `scaphoid-vascular-anatomy-diagram` (hero), `scaphoid-bone-morphology`, `snuffbox-anatomy-clinical-exam`
+- 5 original SVGs Mateusz to author: `herbert-classification-figure` (replaces a legacy textbook screenshot), `imaging-pathway-algorithm`, `screw-trajectory-illustration`, `snac-staging-progression`, `decision-framework-flowchart`
+
+**Quietly dropped (schema doesn't have the fields):** `relatedArticles`, `relatedProcedures` from the package metadata YAML. Cross-linking is manual until those fields are added.
+
+**Open items added in this phase:**
+- Citation popover-id duplication (open item #10) is now materially active — the scaphoid article cites multiple refs many times each. Same fix path (thread `_key` into `popoverId`).
+- Schema deploy still pending (open item #9). The extended `glossaryTerm` lives only in local files until a logged-in `npx sanity@latest schema deploy` happens.
+- Write token rotation (open item #1) — the Phase 6 seed used a temporary write token; revoke at sanity.io/manage → API → Tokens after each seed session.
 
 ## Phase 9 starting context (next session)
 
