@@ -1,0 +1,332 @@
+---
+// src/pages/pl/uprawnienia.astro
+//
+// Strona „Uprawnienia" — bilingual content package (uprawnienia-pl.md
+// v1.0-draft) at 01-brand-system/credentials-page-package/. Native Polish
+// composition (April 2026); structural parity with /en/credentials but
+// independently composed in the Polish institutional register.
+//
+// Italics convention reversed vs the English page per package §05 note:
+// German, French, Latin, and English-defined regulatory terms are italic
+// (foreign); Polish terms are upright (native). Polish institutional names
+// (Naczelna Izba Lekarska, Okręgowa Izba Lekarska w Warszawie) stay upright
+// as proper nouns.
+import SiteLayout from '@/layouts/SiteLayout.astro';
+import CredentialsHero from '@/components/CredentialsHero.astro';
+import AboutSection from '@/components/AboutSection.astro';
+
+const credentialsJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Physician',
+  name: 'Mateusz Gładysz',
+  honorificSuffix: 'MD, FEBOPRAS, FEBHS',
+  jobTitle: 'Konsultant chirurgii plastycznej i ręki',
+  url: 'https://drgladysz.com/pl/uprawnienia',
+  hasCredential: [
+    {
+      '@type': 'EducationalOccupationalCredential',
+      name: 'lekarz',
+      credentialCategory: 'Polski tytuł lekarza',
+      recognizedBy: { '@type': 'Organization', name: 'Naczelna Izba Lekarska' },
+      identifier: 'PWZ 2985148',
+    },
+    {
+      '@type': 'EducationalOccupationalCredential',
+      name: 'Facharzt für Plastische und Ästhetische Chirurgie',
+      credentialCategory: 'Niemiecki tytuł specjalisty',
+      recognizedBy: { '@type': 'Organization', name: 'Ärztekammer Niedersachsen' },
+      identifier: '2022/001150',
+      dateCreated: '2022-06-27',
+    },
+    {
+      '@type': 'EducationalOccupationalCredential',
+      name: 'FEBOPRAS',
+      credentialCategory: 'Tytuł europejski (chirurgia plastyczna)',
+      recognizedBy: { '@type': 'Organization', name: 'EBOPRAS' },
+      dateCreated: '2021-11',
+    },
+    {
+      '@type': 'EducationalOccupationalCredential',
+      name: 'FEBHS',
+      credentialCategory: 'Tytuł europejski (chirurgia ręki)',
+      recognizedBy: { '@type': 'Organization', name: 'FESSH' },
+      dateCreated: '2025-06',
+    },
+    {
+      '@type': 'EducationalOccupationalCredential',
+      name: 'Berufsausübungsbewilligung (Aargau)',
+      credentialCategory: 'Szwajcarska licencja kantonalna',
+      recognizedBy: { '@type': 'Organization', name: 'Kanton Aargau · MEBEKO · BAG' },
+      identifier: 'GLN 7601003689761',
+      dateCreated: '2023-11-06',
+    },
+    {
+      '@type': 'EducationalOccupationalCredential',
+      name: 'Provisional Vocational Registration — Plastic and Reconstructive Surgery',
+      credentialCategory: 'Rejestracja specjalistyczna w Nowej Zelandii',
+      recognizedBy: { '@type': 'Organization', name: 'Medical Council of New Zealand' },
+      identifier: '93463',
+    },
+  ],
+};
+---
+<SiteLayout
+  title="Uprawnienia — Mateusz Gładysz, MD, FEBOPRAS, FEBHS"
+  description="Strona referencyjna opisująca uprawnienia zawodowe: tytuł lekarza, niemiecki Facharzt für Plastische und Ästhetische Chirurgie, FEBOPRAS, FEBHS, polskie uznanie tytułu specjalisty chirurgii plastycznej, szwajcarskie uznanie kwalifikacji wraz z licencją kantonu Aargau, oraz rejestrację Provisional Vocational Registration w Medical Council of New Zealand."
+  locale="pl"
+  alternateUrl="/en/credentials"
+  jsonLd={credentialsJsonLd}
+>
+  <CredentialsHero
+    eyebrow="Uprawnienia"
+    leadHtml="Co oznaczają tytuły FEBOPRAS, FEBHS, <em>Facharzt</em> oraz Provisional Vocational Registration — kto je nadaje i jakie uprawnienia z nich wynikają."
+  />
+
+  <section class="opening-narrative">
+    <div class="opening-inner">
+      <div class="opening-layout">
+        <div class="opening-num">§ 01</div>
+        <div class="opening-main">
+          <div class="opening-narrow">
+            <p>
+              Tytuły zawodowe umieszczone pod moim nazwiskiem opisują drogę przez cztery krajowe systemy regulacyjne i dwie europejskie komisje egzaminacyjne. Polska izba lekarska wydała prawo wykonywania zawodu lekarza. Niemiecka izba lekarska wydała prawo wykonywania specjalizacji w chirurgii plastycznej i estetycznej. Dwie europejskie komisje egzaminacyjne — Fellow of the European Board of Plastic, Reconstructive and Aesthetic Surgery (FEBOPRAS) oraz Fellow of the European Board of Hand Surgery (FEBHS) — oceniły kompetencje specjalistyczne według ogólnoeuropejskiego standardu egzaminacyjnego. Szwajcarska Medizinalberufekommission (MEBEKO) uznała kolejno polski tytuł lekarza, a następnie niemiecki <em>Facharzt</em> — z licencją zawodową wydaną przez kanton Aargau. Nowozelandzka rada lekarska — Medical Council of New Zealand — po formalnej ocenie przeprowadzonej przez Royal Australasian College of Surgeons zarejestrowała te kompetencje do praktyki specjalistycznej w Aotearoa. Egzaminy europejskie są dobrowolne, prowadzone w języku angielskim, oceniane przez komisje złożone z egzaminatorów z całego kontynentu. Potwierdzają ukończenie szkolenia specjalizacyjnego; nie nadają prawa wykonywania zawodu. <span class="accent">Prawo wykonywania zawodu wynika z decyzji organu krajowego, nigdy z dyplomu europejskiej komisji egzaminacyjnej. Komisje europejskie poświadczają, że szkolenie zostało niezależnie zweryfikowane; izby lekarskie i rady krajowe — że praktyka jest dozwolona.</span>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <AboutSection number="§ 02" label="Wykształcenie" heading="Polski tytuł lekarza">
+    <Fragment slot="aside">
+      <span class="aside-num">Organ wydający</span>
+      <ul class="aside-list">
+        <li>Naczelna Izba Lekarska</li>
+        <li>PWZ 2985148</li>
+        <li>rejestr.nil.org.pl</li>
+      </ul>
+    </Fragment>
+    <p>
+      Tytuł lekarza jest podstawową kwalifikacją zawodową w polskim systemie ochrony zdrowia — sześcioletnie jednolite studia magisterskie na kierunku lekarskim zakończone Lekarskim Egzaminem Końcowym (200-pytaniowy test pisemny administrowany przez Centrum Egzaminów Medycznych w Łodzi) oraz trzynastomiesięcznym stażem podyplomowym obejmującym choroby wewnętrzne, pediatrię, chirurgię, ginekologię i położnictwo, anestezjologię i intensywną terapię, psychiatrię, medycynę ratunkową oraz medycynę rodzinną. Dyplom lekarza wydaje uczelnia medyczna; odpowiednie prawo wykonywania zawodu wydaje Okręgowa Izba Lekarska pod nadzorem Naczelnej Izby Lekarskiej. Tytuł lekarza znajduje się w wykazie podstawowych kwalifikacji medycznych w Załączniku V, punkt 5.1.1, dyrektywy 2005/36/WE Parlamentu Europejskiego i Rady, podlega zatem automatycznemu uznaniu w państwach członkowskich Unii Europejskiej i Europejskiego Obszaru Gospodarczego.
+    </p>
+    <p>
+      Tytuł lekarza uzyskałem na Warszawskim Uniwersytecie Medycznym w 2014 roku. Staż podyplomowy odbyłem w Wojskowym Instytucie Medycznym w Warszawie w okresie od października 2014 do października 2015. Polską rejestrację zawodową utrzymuję nieprzerwanie od 2014 roku — Numer Prawa Wykonywania Zawodu 2985148, weryfikowalny w publicznym rejestrze Naczelnej Izby Lekarskiej.
+    </p>
+  </AboutSection>
+
+  <AboutSection number="§ 03" label="Specjalizacja" heading="Niemiecki tytuł specjalisty w chirurgii plastycznej i estetycznej">
+    <Fragment slot="aside">
+      <span class="aside-num">Organ wydający</span>
+      <ul class="aside-list">
+        <li>Ärztekammer Niedersachsen</li>
+        <li>Licencja 2022/001150</li>
+        <li>27 czerwca 2022</li>
+      </ul>
+    </Fragment>
+    <p>
+      Niemiecki <em>Facharzt für Plastische und Ästhetische Chirurgie</em> — specjalista chirurgii plastycznej i estetycznej — jest podstawowym tytułem specjalisty w chirurgii plastycznej w niemieckim systemie kształcenia podyplomowego. Program szkolenia obejmuje sześć lat strukturalnej <em>Weiterbildung</em> prowadzonej pod nadzorem <em>Weiterbildungsbefugter</em> w akredytowanej <em>Weiterbildungsstätte</em>: dwadzieścia cztery miesiące wspólnego pnia chirurgicznego oraz czterdzieści osiem miesięcy w chirurgii plastycznej i estetycznej, z obowiązkowymi rotacjami na intensywnej terapii i izbie przyjęć. Kategorie operacyjne, kompetencje metodyczne oraz oceny kliniczne dokumentowane są w <em>Logbuch</em> podpisywanym przez <em>Weiterbildungsbefugter</em>. Szkolenie kończy się egzaminem <em>Facharztprüfung</em> — niepublicznym egzaminem ustnym przed komisją regionalnej izby lekarskiej.
+    </p>
+    <p>
+      Tytuł <em>Facharzt</em> jest warunkiem regulacyjnym samodzielnej praktyki specjalistycznej w Niemczech — dla <em>Niederlassung</em> (otwarcie własnej praktyki w systemie ustawowym lub prywatnym), dla stanowisk konsultanckich oraz dla pełnienia funkcji <em>Weiterbildungsbefugter</em> dla kolejnego pokolenia specjalistów. Tytuł znajduje się w wykazie kwalifikacji specjalistycznych w Załączniku V, punkt 5.1.3, dyrektywy 2005/36/WE Parlamentu Europejskiego i Rady, podlega zatem automatycznemu uznaniu w państwach członkowskich Unii Europejskiej i Europejskiego Obszaru Gospodarczego.
+    </p>
+    <p>
+      Szkolenie specjalizacyjne rozpoczęło się od programu <em>Surgical Common Trunk</em> w Szpitalu Uniwersyteckim w Zurychu pod kierunkiem prof. Pierre-Alain Claviena (od listopada 2015 do końca 2017 roku) i kontynuowane było jako szkolenie w chirurgii plastycznej w Hannover Medical School w Klinice Chirurgii Plastycznej, Estetycznej, Ręki i Rekonstrukcyjnej pod kierunkiem prof. Petera M. Vogta (od marca 2018 roku). Tytuł <em>Facharzt</em> nadała Ärztekammer Niedersachsen (Hanower) w dniu 27 czerwca 2022 roku — nr licencji 2022/001150, podpis ówczesnej <em>Präsidentin</em> dr Martiny Wenker.
+    </p>
+  </AboutSection>
+
+  <AboutSection number="§ 04" label="Egzamin europejski" heading="European Board of Plastic, Reconstructive and Aesthetic Surgery">
+    <Fragment slot="aside">
+      <span class="aside-num">Egzamin</span>
+      <ul class="aside-list">
+        <li>EBOPRAS · UEMS</li>
+        <li>Zdany w listopadzie 2021</li>
+      </ul>
+    </Fragment>
+    <p>
+      FEBOPRAS — Fellow of the European Board of Plastic, Reconstructive and Aesthetic Surgery — jest dobrowolnym ponadnarodowym tytułem nadawanym przez EBOPRAS, organ egzaminacyjny Sekcji Chirurgii Plastycznej, Rekonstrukcyjnej i Estetycznej Europejskiej Unii Lekarzy Specjalistów (UEMS, <em>Union Européenne des Médecins Spécialistes</em>). UEMS została założona w 1958 roku i działa poprzez czterdzieści trzy Sekcje Specjalistyczne, które opracowują europejskie wymogi szkoleniowe (European Training Requirements) dla poszczególnych specjalizacji medycznych.
+    </p>
+    <p>
+      Egzamin składa się z dwóch części. Część 1 to pisemny test wielokrotnego wyboru — 120 pytań w języku angielskim, czas trwania trzy godziny, obejmujący program EBOPRAS, organizowany dwa razy w roku w wielu europejskich ośrodkach egzaminacyjnych. Część 2 to egzamin ustny — dwie sesje po około dwadzieścia pięć minut każda, prowadzone przez komisje złożone z egzaminatorów z państw członkowskich UEMS, obejmujące osiem kategorii klinicznych: wady wrodzone, urazy, oparzenia, chirurgia ręki, nowotwory, rekonstrukcja, chirurgia estetyczna oraz chirurgia piersi. Egzamin ustny — w słowach samego EBOPRAS — ma na celu sprawdzenie, czy kandydat jest przygotowany do bezpiecznej, samodzielnej praktyki w chirurgii plastycznej.
+    </p>
+    <p>
+      Tytuł FEBOPRAS nie nadaje prawa wykonywania zawodu — to pozostaje w gestii organu krajowego każdego państwa. Potwierdza, że wiedza specjalistyczna posiadacza została niezależnie sprawdzona zgodnie z ogólnoeuropejskim standardem przez egzaminatorów spoza ośrodka, w którym kandydat odbywał szkolenie. Warunkiem przystąpienia jest krajowy tytuł specjalisty chirurgii plastycznej lub — w przypadku kandydatów w trakcie szkolenia — co najmniej cztery ukończone lata uznanego programu specjalizacyjnego.
+    </p>
+    <p>
+      Egzamin FEBOPRAS zdałem w listopadzie 2021 roku, w ostatnim roku szkolenia specjalizacyjnego w Hannover Medical School.
+    </p>
+  </AboutSection>
+
+  <AboutSection number="§ 05" label="Egzamin europejski" heading="European Board of Hand Surgery">
+    <Fragment slot="aside">
+      <span class="aside-num">Egzamin</span>
+      <ul class="aside-list">
+        <li>FESSH · UEMS</li>
+        <li>Zdany w czerwcu 2025</li>
+      </ul>
+    </Fragment>
+    <p>
+      FEBHS — Fellow of the European Board of Hand Surgery, nadawany również jako European Diploma in Hand Surgery — funkcjonuje w innej strukturze UEMS. Chirurgia ręki jest traktowana w UEMS jako kwalifikacja multidyscyplinarna, do której prowadzą drogi szkoleniowe z chirurgii plastycznej, ortopedii oraz chirurgii ogólnej; nadzór administracyjny sprawuje wspólnie Multidisciplinary Joint Committee on Hand Surgery przy UEMS oraz FESSH (Federation of European Societies for Surgery of the Hand, Federacja Europejskich Towarzystw Chirurgii Ręki). Egzamin europejski poprzedza powstanie formalnego komitetu wspólnego — pierwszy egzamin został przeprowadzony w Paryżu w 1996 roku pod patronatem FESSH; rekomendacja UEMS została wyrażona na posiedzeniu Rady UEMS w Pradze w październiku 2010 roku.
+    </p>
+    <p>
+      Egzamin składa się z dwóch części. Część 1 to pisemny test wielokrotnego wyboru w trybie online, organizowany raz w roku przez niezależnego dostawcę usług egzaminacyjnych. Część 2 to egzamin ustny prowadzony w trakcie kongresu FESSH w dniach poprzedzających program naukowy — trzy stanowiska egzaminacyjne, przy każdym dwóch egzaminatorów, oparte na scenariuszach klinicznych z dokumentacją zdjęciową i radiologiczną. Do każdego cyklu egzaminacyjnego przystępuje około dwustu kandydatów. Jakość egzaminu jest monitorowana przez egzaminatorów zewnętrznych oraz, od 2023 roku, przez CESMA (Council for European Specialists Medical Assessment przy UEMS).
+    </p>
+    <p>
+      Warunkiem przystąpienia jest krajowy tytuł specjalisty w chirurgii plastycznej, ortopedycznej lub ogólnej, dodatkowo co najmniej rok dedykowanego szkolenia w chirurgii ręki w akredytowanym ośrodku, z wolumenami operacyjnymi udokumentowanymi w <em>logbook</em> EBHS zgodnie z minimalnymi wymogami liczbowymi. Podobnie jak FEBOPRAS, dyplom potwierdza szkolenie zgodne z ogólnoeuropejskim standardem, ale sam w sobie nie nadaje prawa wykonywania zawodu.
+    </p>
+    <p>
+      Egzamin FEBHS zdałem w czerwcu 2025 roku, po roku pracy jako <em>Oberarzt</em> w zespole chirurgii ręki w Kantonsspital Aarau, w klinice prowadzonej przez prof. Jana Plocka jako <em>Chefarzt</em>, gdzie bezpośrednim przełożonym był PD dr Florian Früh — <em>Leitender Arzt</em> i kierownik chirurgii ręki.
+    </p>
+  </AboutSection>
+
+  <AboutSection number="§ 06" label="Uznanie i licencja" heading="Szwajcarskie uznanie kwalifikacji i licencja kantonu Aargau">
+    <Fragment slot="aside">
+      <span class="aside-num">Uznanie · licencja</span>
+      <ul class="aside-list">
+        <li>MEBEKO · BAG</li>
+        <li>Kanton Aargau</li>
+        <li>GLN 7601003689761</li>
+        <li>Aktywna od 6 listopada 2023</li>
+      </ul>
+    </Fragment>
+    <p>
+      Praktyka lekarska w Szwajcarii jest regulowana ustawą o zawodach medycznych (<em>Medizinalberufegesetz</em>, MedBG / <em>Loi fédérale sur les professions médicales</em>, LPMéd). Federalny Urząd ds. Zdrowia Publicznego (<em>Bundesamt für Gesundheit</em>, BAG) prowadzi <em>Medizinalberufekommission</em> (MEBEKO) — komisję ds. zawodów medycznych odpowiedzialną za uznawanie kwalifikacji medycznych uzyskanych poza Szwajcarią. Na podstawie umowy dwustronnej między Unią Europejską a Szwajcarią o swobodnym przepływie osób z 1999 roku, kwalifikacje medyczne wydane w państwach członkowskich Unii Europejskiej i Europejskiego Obszaru Gospodarczego podlegają uznaniu w Szwajcarii w trybie analogicznym do automatycznego uznania w ramach Załącznika V dyrektywy 2005/36/WE. Sama licencja zawodowa (<em>Berufsausübungsbewilligung</em>) wydawana jest jednak na poziomie kantonalnym, a nie federalnym — każdy z dwudziestu sześciu kantonów ma własny urząd zdrowia publicznego, który nadzoruje wykonywanie zawodu w swoim obszarze.
+    </p>
+    <p>
+      Polski tytuł lekarza został uznany przez MEBEKO 16 grudnia 2015 roku. Uznanie umożliwiło pracę jako lekarz w trakcie szkolenia <em>Surgical Common Trunk</em> w Szpitalu Uniwersyteckim w Zurychu w latach 2015–2017. Niemiecki <em>Facharzt für Plastische und Ästhetische Chirurgie</em> został uznany przez MEBEKO 27 września 2023 roku — w okresie powrotu do Szwajcarii do pracy w Kantonsspital Aarau. Licencja zawodowa kantonu Aargau na praktykę lekarską w trybie samodzielnej odpowiedzialności zawodowej (<em>Berufsausübungsbewilligung in eigener fachlicher Verantwortung</em>, na podstawie ustawy MedBG) została wydana 6 listopada 2023 roku. Status: aktywny.
+    </p>
+    <p>
+      Szwajcarski Globalny Numer Lokalizacyjny (Global Location Number, GLN) — identyfikator lekarza w szwajcarskim systemie ochrony zdrowia: 7601003689761. Rejestracja jest weryfikowalna w publicznym rejestrze zawodów medycznych Federalnego Urzędu ds. Zdrowia Publicznego pod adresem healthreg-public.admin.ch.
+    </p>
+  </AboutSection>
+
+  <AboutSection number="§ 07" label="Uznanie" heading="Uznanie polskiego tytułu specjalisty chirurgii plastycznej">
+    <Fragment slot="aside">
+      <span class="aside-num">Tryb uznania</span>
+      <ul class="aside-list">
+        <li>OIL Warszawa</li>
+        <li>Załącznik V, 5.1.3</li>
+        <li>Dyrektywa 2005/36/WE</li>
+      </ul>
+    </Fragment>
+    <p>
+      Uznanie tytułu specjalisty dla lekarzy chirurgii plastycznej, którzy odbyli szkolenie specjalizacyjne w innym państwie członkowskim Unii Europejskiej lub Europejskiego Obszaru Gospodarczego, odbywa się w Polsce zgodnie z artykułem 21 dyrektywy 2005/36/WE Parlamentu Europejskiego i Rady. Chirurgia plastyczna należy do specjalizacji medycznych wymienionych w Załączniku V, punkt 5.1.3, dyrektywy — kwalifikacje wymienione w tym wykazie podlegają automatycznemu uznaniu między państwami członkowskimi, bez konieczności przystępowania do egzaminu nostryfikacyjnego. Niemiecki tytuł <em>Facharzt für Plastische und Ästhetische Chirurgie</em> znajduje się w tym wykazie. Lekarz posiadający niemiecki tytuł jest zatem uznawany przez polską izbę lekarską jako równorzędny ze specjalistą chirurgii plastycznej, bez konieczności przystępowania do polskiego Państwowego Egzaminu Specjalizacyjnego. Decyzję o uznaniu podejmuje okręgowa izba lekarska; wpis o tytule specjalisty trafia następnie do centralnego rejestru prowadzonego przez Naczelną Izbę Lekarską.
+    </p>
+    <p>
+      Niemiecki <em>Facharzt</em> oraz niemiecką <em>Approbation</em> złożyłem w Okręgowej Izbie Lekarskiej w Warszawie, która uznała kwalifikację w trybie automatycznego uznawania na podstawie Załącznika V. Polski tytuł specjalisty chirurgii plastycznej widnieje w centralnym rejestrze Naczelnej Izby Lekarskiej.
+    </p>
+    <p>
+      Uznanie odzwierciedla strukturalną symetrię europejskiego wykazu specjalizacji. Samo szkolenie specjalizacyjne odbyłem w Szwajcarii i Niemczech — żaden jego etap nie został zrealizowany w Polsce.
+    </p>
+  </AboutSection>
+
+  <AboutSection number="§ 08" label="Rejestracja" heading="Rejestracja specjalistyczna w Nowej Zelandii" class="last-credentials-section">
+    <Fragment slot="aside">
+      <span class="aside-num">Rejestracja</span>
+      <ul class="aside-list">
+        <li>Medical Council of NZ</li>
+        <li>Numer 93463</li>
+        <li>Provisional Vocational</li>
+        <li>Plastic & Reconstructive</li>
+      </ul>
+    </Fragment>
+    <p>
+      Praktyka lekarska w Nowej Zelandii wymaga rejestracji w Medical Council of New Zealand (Rada Lekarska Nowej Zelandii) na podstawie ustawy <em>Health Practitioners Competence Assurance Act 2003</em>. Rada uznaje trzydzieści sześć vocational scopes — zakresów praktyki specjalistycznej, z których dziewięć to zakresy chirurgiczne, dla których organem doradczo-edukacyjnym (Vocational Educational and Advisory Body) jest Royal Australasian College of Surgeons (RACS, Królewski Australazjatycki Kolegium Chirurgów). Jednym z tych dziewięciu zakresów jest <em>Plastic and Reconstructive Surgery</em>, definiowany przez Radę jako diagnostyka i leczenie — operacyjne i nieoperacyjne — pacjentów wymagających odtworzenia, korekty lub poprawy struktur ciała wadliwych lub uszkodzonych w wyniku wad wrodzonych, urazów, chorób, wzrostu lub rozwoju; zakres ten obejmuje również wszystkie aspekty chirurgii estetycznej. Standardem odniesienia dla równoważności jest tytuł FRACS (Fellowship of the Royal Australasian College of Surgeons) w chirurgii plastycznej i rekonstrukcyjnej, nadawany po pięcioletnim programie Specialist Education and Training (SET) prowadzonym przez RACS.
+    </p>
+    <p>
+      W przypadku chirurga z wykształceniem specjalizacyjnym uzyskanym w Unii Europejskiej dokumentacja kandydata przekazywana jest przez Radę do RACS, które dokonuje porównania kompetencji ze standardem FRACS. RACS wydaje opinię w jednej z trzech form: kwalifikacje, szkolenie i doświadczenie ocenione jako <em>równoważne</em> nowozelandzkiemu specjaliście w danym zakresie; jako <em>zadowalające na poziomie odpowiadającym</em>; albo jako niewystarczające. Opinia o równoważności prowadzi do wpisu na <em>Provisional Vocational Scope of Practice</em> — Rejestracji Specjalistycznej Tymczasowej — z określonym okresem nadzorowanej praktyki specjalistycznej (maksymalnie do osiemnastu miesięcy) przed przejściem do pełnej rejestracji specjalistycznej. Opinia „zadowalające na poziomie odpowiadającym" dodatkowo wymaga <em>Vocational Practice Assessment</em> — jednodniowej oceny w miejscu pracy przeprowadzanej przez dwóch specjalistów tego samego zakresu. Przez cały okres rejestracji tymczasowej chirurg pracuje jako specjalista na określonym stanowisku, w ramach umowy o nadzorze zarejestrowanej w Radzie.
+    </p>
+    <p>
+      Rejestracja specjalistyczna tymczasowa daje prawo do samodzielnej praktyki specjalistycznej w określonym zakresie i na określonym stanowisku. Jest to kategoria rejestracji odrębna od <em>General Scope</em> — rejestracji ogólnej; lekarze z rejestracją ogólną nie są wpisani jako specjaliści i nie mogą używać tytułów specjalistycznych. Aktualnie posiadam rejestrację w Medical Council of New Zealand na <em>Provisional Vocational Scope of Practice</em> w zakresie <em>Plastic and Reconstructive Surgery</em> (numer rejestracyjny 93463), na stanowisku Senior Medical Officer i Konsultanta w Klinice Chirurgii Plastycznej Waikato Hospital w Hamilton.
+    </p>
+  </AboutSection>
+
+  <section class="closing-line-section">
+    <div class="closing-inner">
+      <hr />
+      <p class="closing-line">
+        <em>Treść zaświadczeń i wpisy w rejestrach są źródłem rozstrzygającym. Każdy, kto chce zweryfikować poszczególne uprawnienie — kolega lekarz, komisja kredencjalizacyjna szpitala, dziennikarz — powinien zwrócić się bezpośrednio do organu wydającego: Naczelnej Izby Lekarskiej w sprawie polskiej rejestracji lekarskiej i tytułu specjalisty, Ärztekammer Niedersachsen w sprawie niemieckiego tytułu Facharzt, Federalnego Urzędu ds. Zdrowia Publicznego (BAG/MEBEKO) oraz urzędu zdrowia kantonu Aargau w sprawie szwajcarskiej rejestracji i licencji, EBOPRAS oraz FESSH w sprawie tytułów europejskich, oraz Medical Council of New Zealand w sprawie aktualnej rejestracji nowozelandzkiej.</em>
+      </p>
+    </div>
+  </section>
+</SiteLayout>
+
+<style>
+  /* Same opening-narrative + closing-line treatments as /en/credentials —
+     mirror image. CSS duplicated rather than extracted to a shared
+     stylesheet because each page's <style> is scoped and Tailwind v4 is
+     CSS-first; extracting would require a third partial component for two
+     consumers, which adds more complexity than it removes. */
+  .opening-narrative {
+    padding-block: clamp(60px, 10vh, 120px);
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    background: var(--bg);
+  }
+  .opening-inner {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding-inline: clamp(20px, 5vw, 80px);
+  }
+  .opening-layout {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+  @media (max-width: 600px) {
+    .opening-layout { grid-template-columns: 1fr; gap: 12px; }
+  }
+  .opening-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    padding-top: 10px;
+    border-top: 2px solid var(--accent);
+  }
+  .opening-narrow {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  .opening-narrative p {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(20px, 2vw, 26px);
+    line-height: 1.5;
+    color: var(--ink);
+    margin: 0;
+    max-width: none;
+  }
+  .opening-narrative .accent {
+    color: var(--accent);
+    font-style: italic;
+  }
+
+  :global(.about-section.last-credentials-section) { border-bottom: none; }
+
+  .closing-line-section {
+    padding-block: clamp(40px, 6vh, 64px) clamp(60px, 8vh, 96px);
+    background: var(--bg);
+  }
+  .closing-inner {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding-inline: clamp(20px, 5vw, 80px);
+  }
+  .closing-line-section hr {
+    border: 0;
+    border-top: 1px solid rgba(20, 23, 26, 0.1);
+    margin: 0 0 28px;
+  }
+  .closing-line {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-style: italic;
+    font-size: clamp(15px, 1.3vw, 17px);
+    line-height: 1.55;
+    color: var(--ink-2);
+    margin: 0;
+    max-width: 820px;
+  }
+  .closing-line em { font-style: italic; }
+</style>
