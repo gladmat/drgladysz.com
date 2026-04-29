@@ -44,12 +44,18 @@ site/
 | 2 | Layout components (PageContainer/SiteNav/SiteFooter/SectionMasthead/PhotoBreak) + state-of-the-art image pipeline | ✅ done | `fd4c58d` |
 | 3 | Home page composition (from `_handoff/content/home-en.md` + `02-mockups/drgladysz-home-page-v1.6.html`) | ✅ done | `4ec21ee` |
 | 4 | About page (from `_handoff/content/about-en.md` + about mockup) | ✅ done | `ab4b5a3` |
-| 5 | **Tier 1 features — Citation system + Procedure schema** | **⬜ NEXT** | — |
-| 6 | Content infrastructure — blog index/template + WordPress MDX migration | ⬜ | — |
-| 7 | Procedure pages | ⬜ | — |
-| 8 | Supporting pages (/contact, /credentials, /imprint, /privacy, /disclaimer) | ⬜ | — |
-| 9 | Pre-launch QA (compliance, perf, a11y) | ⬜ | — |
+| 5 | Tier 1 features — Citation system + Procedure schema | ✅ done | (uncommitted) |
+| 6 | Content infrastructure — blog index | ✅ done | (uncommitted) |
+| 7 | Procedure pages — index + category anchors | ✅ done (infra) | (uncommitted) |
+| 8 | Supporting pages (/contact, /credentials, /imprint, /privacy, /disclaimer, /publications) | ✅ done | (uncommitted) |
+| 9 | **Pre-launch QA (compliance, perf, a11y)** | **⬜ NEXT** | — |
 | 10 | Production cutover (DNS at Zenbox, monitor 404s, decommission WP after 30 days) | ⬜ | — |
+
+**Phase 6/7/8 deferred work (content authoring, not infrastructure):**
+- Phase 6: WordPress migration — author the 3 remaining featured articles (scaphoid-fractures, flexor-tendon-injuries-and-repair, plus the 4th legacy post extensor-tendon-injuries) and the Polish post (zespol-ciesni-nadgarstka). Schemas + slug routing are ready; author the body copy in Sanity Studio.
+- Phase 7: 5 more procedure pages — author one per sub-specialty area at minimum (e.g. one reconstructive-microsurgery, one skin-cancer) so each category index isn't empty at launch.
+- Phase 8: Polish mirrors of all supporting pages (/pl/kontakt, /pl/uprawnienia, /pl/nota-prawna, /pl/polityka-prywatnosci, /pl/zastrzezenie-medyczne, /pl/publikacje) — pending Polish composition session.
+- Phase 8: Resend-backed contact form. Currently the form posts as `mailto:` so it works without a server endpoint; adding a real `/api/contact.ts` server endpoint is part of Phase 10 (Vercel adapter setup).
 
 Tier 2 features (calculators, MCQ, glossary) ship **post-launch** in months 1-12.
 
@@ -82,15 +88,19 @@ These are non-obvious things prior sessions tripped on. Do not redo:
 | Schema | Status |
 |---|---|
 | `author` | ✅ full |
-| `article` | ✅ full |
+| `article` | ✅ full (citation mark wired to `bibReference`) |
 | `podcastEpisode` | ✅ full |
-| `procedurePage` | 🟡 stub — flesh out in Phase 5 (Feature 2) |
-| `reference` | 🟡 stub — flesh out in Phase 5 (Feature 1, citation system) |
+| `procedurePage` | ✅ full (Phase 5 — AO Surgery Reference 10-section structure) |
+| `bibReference` | ✅ full (Phase 5 — Vancouver/AMA fields, was `reference`) |
+| `callout` | ✅ shared object type (info / warning / pearl) |
 | `glossaryTerm` | 🟡 stub — flesh out post-launch (Tier 2, Feature 5) |
 | `mcqQuestion` | 🟡 stub — flesh out post-launch (Tier 2, Feature 4) |
 | `calculator` | 🟡 stub — flesh out post-launch (Tier 2, Feature 3) |
 
-- Sanity ecosystem at v4 (current); bump to v5 in Phase 5 when we exercise it heavily.
+- **Schema rename:** `reference` → `bibReference` because `reference` is reserved by Sanity (collides with the built-in document-reference type). All GROQ queries, schema files, and Studio config use `bibReference`. The user-facing Studio label is still "Reference (citation source)".
+- **`useCdn: false`** on the Sanity client (`src/lib/sanity.ts`). Sanity's CDN can serve stale results for a few minutes after a publish, which during builds means a freshly published doc may be invisible to `getStaticPaths` even though it's queryable elsewhere. Build-time freshness > CDN read perf.
+- **Schema deploy:** the schema needs to be deployed for the Sanity MCP `get_schema` tool to work and for any deploy-time schema validation. Run `npx sanity@latest schema deploy` from the local Studio after `sanity login`. Skipped this session because deploy needs interactive CLI auth; documents were created via MCP regardless. Studio reads schema from local files, so the editing UI is unaffected.
+- Sanity ecosystem at v4 (current); v5 bump deferred — Phase 5 worked cleanly on v4 and bumping is a separate risk.
 
 ---
 
@@ -165,41 +175,106 @@ Per `_handoff/technical/compliance-checklist.md` and brand spec — these are no
 
 ## Open items / decisions deferred
 
-1. **Sanity API token rotation.** A read+write token was pasted in chat history during Phase 1 setup (2026-04-28). Rotate it in Sanity → Manage → API → Tokens, replace with a **read-only** token in `.env.local` (frontend doesn't need write). Studio uses session auth, no token.
+1. **Sanity API token rotation.** A read+write token was pasted in chat history during Phase 1 setup (2026-04-28). Rotate it in Sanity → Manage → API → Tokens, replace with a **read-only** token in `.env.local` (frontend doesn't need write). Studio uses session auth, no token. (Phase 5 used the Sanity MCP for seeding instead of the API token.)
 2. **OR-shot color grading.** Editorial pass in Lightroom for img-04, 09, 10, 12 vs accepting current CSS `saturate(0.96)` approximation. Defer decision to Phase 9.
 3. **Image storage strategy.** Currently 68MB of source photos in git history. Migrate to Sanity asset CDN if git size becomes annoying — schemas already designed for it.
 4. **Polish content composition.** Native Polish session pending for Home, About, procedure pages, blog posts.
 5. **Embedded vs standalone Sanity Studio.** Standalone now; revisit if you want `/studio` on drgladysz.com (would add `@sanity/astro` dep).
-6. **Dependency major bumps.** Sanity 4→5, Resend 4→6, TypeScript 5→6, Preact Signals 1→2 are available. Recommend bumping Sanity in Phase 5 when we exercise it heavily; rest can wait.
+6. **Dependency major bumps.** Sanity 4→5, Resend 4→6, TypeScript 5→6, Preact Signals 1→2 are available. Phase 5 deferred the v4→v5 bump because the existing v4 worked cleanly with the new schemas; revisit when there's a feature reason to bump (rather than for its own sake).
 7. **About hero pull-quote centering.** The §01 opening narrative paragraph is centered within its right-of-§-margin column rather than the full viewport (~52px right of viewport-center at 1440px). User said "looks fine for now"; if the slight off-center bothers anyone later, switch §01 to absolute-positioned in the margin so the narrow paragraph can center against the viewport.
 8. **Favicon files.** `/favicon.svg` and `/apple-touch-icon.png` are referenced by BaseLayout but absent from `public/`. Console logs a 404 in dev. MG monogram favicons (16/32/180/192/512) per spec §2 and meta-and-seo.md — outstanding asset task.
+9. **Sanity schema not deployed.** `npx sanity@latest schema deploy` requires interactive `sanity login` which Phase 5 couldn't run autonomously. Studio reads schemas from local files so the editing UI works either way; only the Sanity MCP `get_schema` tool and any deploy-time validation need the deployed schema. Run from a logged-in CLI session when convenient.
+10. **Citation popover IDs duplicate when same ref cited multiple times in one doc.** `Citation.astro` builds `popoverId = cite-{refId}-{index}`. The bibliography index is per-ref (so the same ref cited twice gets the same number), which means the popover element is rendered twice with the same id — invalid HTML, though browser popover behaviour still works because both `popovertarget` buttons point at the same id. Fix: thread the markDef `_key` (already unique per occurrence) into Citation as a suffix. Low priority; affects the seeded procedure page which cites refs 1, 4, 5 twice each.
+11. **`/en/blog` and `/en/procedures` index pages not built.** Phase 5 detail pages link back to these (and the home page links to `/en/blog`); they currently 404. Phase 6 builds the blog index; Phase 7 builds the procedures index.
+12. **Article schema `author` field validation will reject seeded test article on a clean publish.** The seeded article references the seeded author UUID via the built-in Sanity reference type — that works. But if you re-seed without the author existing, the publish will fail validation. Author is a required reference. Worth knowing if you delete-and-reimport.
 
 ---
 
-## Phase 5 starting context (next session)
+## Phase 5 — what shipped (citation system + procedure schema)
 
-Phase 5 is **Tier 1 features: Citation system + Procedure schema**. Detailed feature specs at `_handoff/features/01-citation-system.md` and `02-procedure-schema.md`.
+Phase 5 delivered the Tier 1 features specified in `_handoff/features/01-citation-system.md` and `02-procedure-schema.md`. Detailed change log in `PHASE-5-NOTES.md` (root of `site/`). Summary:
 
-**What's already in place (don't re-do):**
+**Sanity schemas**
+- `studio/schemas/bibReference.ts` — full Vancouver field shape (authors, journal, volume, issue, year, pages, PMID, DOI, PMCID, URL, pubType, editors/publisher for books, abstractPreview).
+- `studio/schemas/procedurePage.ts` — AO Surgery Reference 10-section structure with required-field discipline (indications/anatomy/approach/keySteps/aftercare/complications/evidence required; contraindications/positioning/closure/patientSummary optional).
+- `studio/schemas/callout.ts` — shared `info`/`warning`/`pearl` object type, used inline in both `article.body` and procedure clinical sections.
+- `article.ts` citation mark now points at `bibReference` (the type was renamed from `reference` because Sanity reserves that name).
 
-- The `Standfirst` and `AboutSection` components have a `<slot name="aside">` reserved on the right margin, with mono caps styling, oxblood top-rule, and stacked-on-mobile behaviour. **This is the citation sidenote target on desktop.** Phase 5 needs to wire the `citation-js` + Vancouver CSL output into that slot via Astro's Portable Text renderer. The default fallback content (24px accent bar) lets the column render gracefully when a section has no citations.
-- Sanity stub schemas exist at `studio/schemas/`: `reference` (for citations) and `procedurePage` (for the AO-derived schema). They're stubs awaiting full field shape.
-- Type-checking and build are clean (`npm run type-check` 0 errors, `npm run build` 2 pages, 105 image variants generated).
-- Dev server runs from `cd site && npm run dev`; Sanity Studio standalone via `npm run studio:dev` (port 3333). After CSS-structure work, restart the dev server (see Astro 6 gotchas) before judging visuals.
+**Frontend**
+- `src/lib/sanity.ts` — typed Sanity client + GROQ accessors + `extractCitationOrderFromBlocks()` (recursive walk that builds the per-doc bibliography order, traversing nested callout content too).
+- `src/lib/citations.ts` — pure-JS Vancouver/AMA formatter (no `citation-js` runtime — kept the dep installed for future advanced cases). Handles ICMJE 6-author truncation, journal/book/chapter/online/guideline pubTypes, PubMed/DOI/PMC link assembly.
+- `src/lib/schema.ts` — JSON-LD generators for `MedicalScholarlyArticle` (peer/expert audience), `MedicalWebPage` (patient audience), `MedicalProcedure`, plus a `BreadcrumbList` helper. Citations populate the `citation` array in JSON-LD.
+- `src/components/content/Citation.astro` — superscript marker + `<aside popover="auto">` that floats into the right-gutter as a Tufte sidenote on desktop ≥1024px and behaves as a native HTML Popover on mobile. Zero JS shipped.
+- `src/components/content/Bibliography.astro` — numbered Vancouver-formatted reference list at end of article; `id="ref-N"` anchors with sticky-header `scroll-margin-top` and `:target` highlight.
+- `src/components/content/KeyPoints.astro` — JAMA-style summary box (Question / Findings (or Indications) / Meaning (or Clinical relevance)).
+- `src/components/content/Callout.astro` — info / warning / pearl visual treatments.
+- `src/components/content/PortableTextRenderer.astro` — custom Portable Text walker. Handles block styles (h2-h6, blockquote), bullet/number lists, callouts (recurses via `<Astro.self>`), images (Sanity CDN URLs), and the marks tree (em / strong / underline / strike-through / link / **citation** / glossaryTerm passthrough).
+- `src/components/content/PortableTextSpan.astro` — span-level mark renderer; decorators stack from inside out, link wraps, citation appends a numbered superscript marker AFTER the span.
 
-**Recommended first moves for Phase 5:**
+**Routes**
+- `src/pages/en/blog/[slug].astro` — article detail page; `getStaticPaths` over Sanity articles. Layout reserves a 320px right gutter on desktop ≥1024px so floated citation sidenotes land in the margin without overlapping body. Mobile collapses the gutter and shows citations as native popovers from the inline marker.
+- `src/pages/en/procedures/[slug].astro` — procedure detail page with the AO 10-section structure, in-page table of contents, numbered key steps with optional pitfall callouts, optional collapsible "For patients" plain-language summary, end-of-page bibliography.
 
-1. Read `_handoff/features/01-citation-system.md` end-to-end before writing any code. Confirm the `reference` Sanity field shape (authors, journal, volume, issue, year, pages, PMID, DOI, PMCID, abstract).
-2. Bump Sanity 4→5 if planning to use citation-js with the latest Sanity ecosystem (per open-items §6 — recommended this phase).
-3. Author the `reference` schema in `studio/schemas/`, redeploy the Sanity Studio, seed 2-3 references for the existing Home publication cards (JMIR AI 2026 + EBJ 2022) and one each for the three Home article teasers.
-4. Build the citation Portable Text inline mark + the build-time `citation-js` formatter. Sidenote rendering on desktop targets the existing `Standfirst` / `AboutSection` aside slot; on mobile use the native HTML Popover API (Baseline since April 2025; no polyfill).
-5. Procedure schema (`procedurePage`) follows the AO Surgery Reference structure: indications → contraindications → anatomy → patient positioning → approach → numbered key steps → closure → aftercare → complications → evidence (with citations). One MVP procedure page (Carpal Tunnel Syndrome) authored to validate the schema before committing to all six.
+**Seed content (live in Sanity)**
+- 1 author (Mateusz Gładysz)
+- 5 references on carpal tunnel syndrome literature: Atroshi 1999 (JAMA), Padua 2016 (Lancet Neurol), Phalen 1966 (JBJS), Louie 2012 (Hand), Vasiliadis 2014 (Cochrane). All have valid PMIDs/DOIs and abstract previews.
+- 1 article: `/en/blog/carpal-tunnel-syndrome` (patient audience) — uses 3 of the references inline, demonstrates KeyPoints + pearl callout + 3 citation sidenotes.
+- 1 procedure: `/en/procedures/open-carpal-tunnel-release` (peer audience) — full AO 10-section structure with all 5 references distributed, 4 numbered key steps with 2 pitfall callouts, patientSummary populated.
 
-**Things NOT to start yet** (would expand scope inappropriately):
+Build status: `npm run type-check` 0 errors, `npm run build` 4 pages (home, about, 1 article, 1 procedure), 105 image variants. The article and procedure HTML render with valid Schema.org JSON-LD (`MedicalWebPage` and `MedicalProcedure` respectively, each with a populated `citation` array).
 
-- Tier 2 features (calculators, MCQ, glossary) — post-launch
-- LMS / `learn.drgladysz.com` subdomain — 2028+ if at all
-- Polish equivalents of these features — wait for the Polish composition session
+## Phase 6/7/8 — what shipped (content infra + supporting pages)
+
+The 2026-04-29 overnight session shipped infrastructure for Phases 6, 7, and 8 — a single push because the work was tightly related (index pages and supporting pages all share the same shell). Detailed change log in `PHASE-6-8-NOTES.md`.
+
+**Routes added under `/en/`:**
+- `blog/index.astro` — knowledge-base index. Groups articles by category in fixed editorial order (Patient information → Expert blog → FESSH prep → News & commentary). Empty categories suppressed; the page renders gracefully with one article today.
+- `procedures/index.astro` — procedures index. Three sub-specialty sections with `id="hand-surgery"`, `id="reconstructive-microsurgery"`, `id="skin-cancer"` anchors so the home page Specialty Blocks now link cleanly into the right section.
+- `contact.astro` — email + practice context + a `mailto:`-action form (no Resend server endpoint until Phase 10 adds the Vercel adapter).
+- `credentials.astro` — explains MD / Facharzt / FEBOPRAS / FEBHS / MCNZ / PWZ / Swiss GLN with links to the relevant public registers.
+- `imprint.astro` / `privacy.astro` / `disclaimer.astro` / `credentials.astro` / `consent.astro` (EN) and `nota-prawna.astro` / `polityka-prywatnosci.astro` / `zastrzezenie-medyczne.astro` / `uprawnienia.astro` / `zgoda.astro` (PL) — **all ten render the locked legal-pages-package** at `01-brand-system/legal-pages-package/`. Each route is a 5-line file that pulls the matching markdown from the `legal` content collection and renders via `LegalPageLayout`. Source markdown lives at `src/content/legal/{en,pl}/*.md` (verbatim copy of the package; do not edit there — update the canonical package and re-copy).
+- `publications.astro` — full publications archive grouped by year. Currently 2 entries (JMIR AI 2026 + EBJ 2022); add to `PUBLICATIONS` array to extend.
+
+**Legal pages content pipeline:**
+- `src/content.config.ts` — `legal` collection with frontmatter zod schema matching the package's `_meta/manifest.json#frontmatterSchema`.
+- `src/plugins/remark-section-masthead.mjs` — remark transform that recognises the locked `§ 0n — Theme` paragraph pattern and marks it with `class="section-masthead"` so the layout CSS renders it in Plex Mono small caps with oxblood accent (per package README "Required render conventions" point 1).
+- `src/layouts/LegalPageLayout.astro` — wraps the rendered markdown in `SiteLayout` + `ContentPage`, builds the version + last-updated meta line in the page locale, and provides `:global()` CSS for `.section-masthead`, tables (rule-strong borders, mono caps headers per brand spec §2), and document-control trailing blocks.
+- `astro.config.mjs` markdown.remarkPlugins — registers the section-masthead plugin globally so it applies to all markdown including future content collections.
+- **Collection entry IDs are flat basenames** (e.g. `imprint`, not `en/imprint`) when using Astro v6's glob loader without a custom `generateId`. All 10 docs have unique basenames across en/ and pl/ so this works without collision; if a future page (e.g. `/en/x.md` and `/pl/x.md`) needs the same basename in both locales, configure the loader's `generateId` option.
+
+**Shared component added:**
+- `src/components/ContentPage.astro` — content-page shell used by all five supporting pages. Provides label/title/standfirst/meta header + a slot for body content. Body content uses `:global()` rules for h2/h3/h4/p/ul/ol/dl/blockquote so consumer pages can write plain HTML without re-declaring typography. Picks up the same serif-body / oxblood-accent / mono-cap-label register as the rest of the site.
+
+**Sanity client extended:**
+- `getAllArticleSummaries()` and `getAllProcedureSummaries()` — lightweight projections used by the index pages. Avoids pulling full Portable Text bodies just to render cards.
+
+**Home page tweak:**
+- The Specialty Blocks links at `/en/index.astro` switched from `/en/procedures/<category>` to `/en/procedures#<category>` so they land on the existing procedures-index anchor. Reverts to slash-form when dedicated category pages ship.
+
+**What's still required to launch (Phase 9 QA):**
+- Author 3 more articles (scaphoid-fractures, flexor-tendon-injuries-and-repair, extensor-tendon-injuries) so the home Articles teaser links resolve.
+- Author 1-2 more procedures so each procedure-index category isn't empty.
+- Polish-language `Contact` and `Publications` pages — these are the ONLY supporting pages without Polish mirrors (the legal pages all have PL mirrors via the locked legal-pages-package). Wait for the Polish composition session.
+- Resend-backed contact form server endpoint — Phase 10 (needs Vercel adapter).
+- Formal lawyer review (NZ + PL) of all five legal documents — queued for October 2027 per legal-pages-package `_meta/README.md`.
+- Verification of live registry entries: PWZ 2985148 on rejestr.nil.org.pl, MCNZ 93463 on mcnz.org.nz (per package open items list).
+
+Build status after the session: `npm run type-check` 0 errors. `npm run build` 12 pages. Working tree dirty (no commits — held off so you can review the diff).
+
+## Phase 9 starting context (next session)
+
+Phase 9 is **pre-launch QA — compliance, performance, accessibility**. See `_handoff/technical/compliance-checklist.md` for the full list.
+
+**Recommended sweep:**
+1. Lighthouse audit on each route — confirm LCP ≤ 2.5s, CLS ≤ 0.05, INP ≤ 200ms (the perf budgets in the don'ts list above).
+2. axe / WAVE accessibility audit — focus on the new supporting pages (forms, dl semantics) and the citation popovers (focus management, escape behaviour).
+3. Compliance audit — run through `_handoff/technical/compliance-checklist.md` line by line. Particular attention to: no testimonials, no patient images, expanded post-nominals on first appearance per page, footer disclaimer band on every page (already implemented in `SiteFooter.astro`).
+4. Polish composition session — once locked PL content exists, mirror all `/en/...` routes under `/pl/...` per the `routing-and-redirects.md` slug table.
+5. Schema deploy — run `cd site && npx sanity login` then `npx sanity@latest schema deploy` so the deployed schema matches local for any third-party validators.
+
+**Things NOT to start yet:**
+- Tier 2 features (calculators, MCQ, glossary) — post-launch.
+- Vercel deployment — Phase 10.
 
 ---
 

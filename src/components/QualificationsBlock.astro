@@ -1,0 +1,93 @@
+---
+// src/components/QualificationsBlock.astro
+//
+// Reusable credential disclosure block — abbreviation followed by em-dash
+// followed by full expansion. Implements the MCNZ Statement on Advertising
+// requirement that medical post-nominals be expanded at first appearance on
+// every page.
+//
+// First use is the home page (between HomeHero and Standfirst). Designed to
+// be reused on About hero, the Credentials page, and procedure pages without
+// modification — the page is responsible for the surrounding section padding,
+// the component renders only the labelled list.
+//
+// Pure presentational: no state, no Sanity, no interactivity.
+interface QualItem {
+  abbr: string;
+  expansion: string;
+}
+
+interface Props {
+  /** Mono-caps eyebrow above the list. Defaults to "Qualifications". */
+  label?: string;
+  items: QualItem[];
+  /** Pass-through class on the outer div for caller-side overrides. */
+  class?: string;
+}
+
+const { label = 'Qualifications', items, class: className = '' } = Astro.props;
+---
+<div class:list={['quals', className]}>
+  <div class="quals-label">
+    <span class="accent-bar" aria-hidden="true"></span>
+    <span>{label}</span>
+  </div>
+  <ul class="quals-list">
+    {items.map(({ abbr, expansion }) => (
+      <li>
+        <span class="abbr">{abbr}</span>
+        <span class="em" aria-hidden="true">—</span>
+        <span class="expansion">{expansion}</span>
+      </li>
+    ))}
+  </ul>
+</div>
+
+<style>
+  /* Compact register — no own block-margin, parent context owns the gap.
+     Sized to sit comfortably inside the hero text column without growing
+     the hero's overall vertical footprint, while still being readable as
+     a standalone block in other contexts. */
+  .quals {
+    margin: 0;
+    max-width: 60ch;
+  }
+  .quals-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .accent-bar {
+    width: 18px;
+    height: 1px;
+    background: var(--accent);
+    display: inline-block;
+  }
+  .quals-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .quals-list li {
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--ink-3);
+    padding: 2px 0;
+  }
+  .abbr {
+    font-weight: 600;
+    color: var(--ink-2);
+    margin-right: 4px;
+  }
+  .em {
+    margin: 0 6px;
+    color: var(--ink-3);
+  }
+</style>

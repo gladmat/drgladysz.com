@@ -1,6 +1,7 @@
 ---
 import SiteLayout from '@/layouts/SiteLayout.astro';
 import HomeHero from '@/components/HomeHero.astro';
+import QualificationsBlock from '@/components/QualificationsBlock.astro';
 import Standfirst from '@/components/Standfirst.astro';
 import SpecialtyBlocks from '@/components/SpecialtyBlocks.astro';
 import PhotoBreak from '@/components/PhotoBreak.astro';
@@ -15,22 +16,25 @@ import img02 from '@/assets/img/img-02.jpg';
 const standfirstBody =
   'My practice covers the operative treatment of the hand and upper extremity, microsurgical reconstruction across the body — including lower-limb orthoplastic care, autologous breast reconstruction, and free-flap reconstruction in head and neck collaboration — and the surgical treatment of melanoma and complex skin cancer, an area I lead at Waikato Hospital as Chair of the Melanoma and High-Risk Skin Cancer MDT. I undertook basic surgical training at the University Hospital of Zurich and plastic surgery specialty training at Hannover Medical School, completed the Perth International Plastic and Reconstructive Fellowship at Sir Charles Gairdner Hospital, completed hand surgery sub-specialty training as Oberarzt within the hand surgery team at Kantonsspital Aarau under Prof. Plock, and currently practise as a consultant at Waikato Hospital in Hamilton, New Zealand. My doctoral research at the University of Zurich addresses clinical applications of artificial intelligence in surgical care.';
 
+// Specialty-area links target anchors on /en/procedures (each anchor lands on
+// the corresponding category section). When dedicated category pages ship
+// (Phase 7+), these can switch back to /en/procedures/<category>.
 const specialties = [
   {
     heading: 'Hand Surgery',
-    href: '/en/procedures/hand-surgery',
+    href: '/en/procedures#hand-surgery',
     body:
       'Operative care for the hand, wrist, and upper extremity, covering elective conditions and trauma. Common indications include carpal tunnel and other compression neuropathies, scaphoid and other carpal fractures, flexor and extensor tendon injuries, and arthritis of the thumb base. Consultations are available for both acute and chronic presentations.',
   },
   {
     heading: 'Reconstructive & Microsurgery',
-    href: '/en/procedures/reconstructive-microsurgery',
+    href: '/en/procedures#reconstructive-microsurgery',
     body:
       'Reconstruction of soft tissue and complex defects following trauma, oncological resection, or chronic disease. Current practice areas include lower-limb orthoplastic reconstruction in collaboration with orthopaedic colleagues, autologous breast reconstruction with DIEP and related perforator flaps, and free-flap reconstruction in head and neck collaboration with ENT and oncological teams.',
   },
   {
     heading: 'Skin Cancer Surgery',
-    href: '/en/procedures/skin-cancer',
+    href: '/en/procedures#skin-cancer',
     body:
       'Surgical management of melanoma and high-risk non-melanoma skin cancer, including diagnostic excision, wide local excision, sentinel lymph node biopsy, and reconstruction following oncological resection. New Zealand has among the highest incidence rates of melanoma globally; my practice is shaped by this volume and by my role as Chair of the Melanoma and High-Risk Skin Cancer MDT at Waikato Hospital.',
   },
@@ -126,7 +130,13 @@ const personJsonLd = {
   <HomeHero
     photo={img12}
     photoAlt="Mateusz Gładysz under operating-room lights, in surgical scrubs"
-  />
+  >
+    <QualificationsBlock slot="qualifications" items={[
+      { abbr: 'MD', expansion: 'Medical University of Warsaw' },
+      { abbr: 'FEBOPRAS', expansion: 'Fellow of the European Board of Plastic, Reconstructive and Aesthetic Surgery' },
+      { abbr: 'FEBHS', expansion: 'Fellow of the European Board of Hand Surgery' },
+    ]} />
+  </HomeHero>
 
   <Standfirst body={standfirstBody}>
     <Fragment slot="aside">

@@ -52,6 +52,11 @@ const {
         <h1 class="hero-name">
           <span class="cap">M</span>ateusz <span class="second"><span class="cap">G</span>ładysz</span>
         </h1>
+        {Astro.slots.has('qualifications') && (
+          <div class="hero-qualifications">
+            <slot name="qualifications" />
+          </div>
+        )}
         <p class="hero-positioning">
           Surgical care for the hand and reconstructive microsurgery — European double board-certified plastic and hand surgeon, with clinical practice across Switzerland, Germany, Australia, and New Zealand.
         </p>
@@ -117,10 +122,19 @@ const {
     letter-spacing: -0.02em;
     color: var(--ink);
     text-transform: lowercase;
-    margin: 0 0 36px;
+    margin: 0 0 28px;
   }
   .hero-name .cap { text-transform: none; }
   .hero-name .second { display: block; }
+
+  /* Qualifications slot — sits between wordmark and positioning sentence.
+     The slot wrapper's margin replaces the wordmark's lower margin, keeping
+     vertical rhythm tight so the hero text column stays well within the
+     image column's height (image dominates the row, so nothing here adds
+     to the hero's overall vertical footprint). */
+  .hero-qualifications {
+    margin: 0 0 28px;
+  }
 
   .hero-positioning {
     font-family: var(--serif);
