@@ -1,0 +1,236 @@
+// src/lib/schema.ts
+//
+// Schema.org JSON-LD generators.
+//
+// Three shapes used:
+//   - MedicalScholarlyArticle for clinical articles (peer/expert audience).
+//   - MedicalWebPage for patient-facing articles.
+//   - MedicalProcedure for procedure pages.
+//
+// All include a citation array sourced from the page's references, surfacing
+// the scholarly evidence directly in the structured data so search engines
+// and LLMs can index the supporting literature alongside the article content.
+import type {
+  SanityArticle,
+  SanityProcedurePage,
+  SanityRefDoc,
+  PortableTextBlock,
+} from './sanity';
+
+const SITE_URL = (
+  import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com'
+).replace(/\/$/, '');
+
+const PERSON_ID = `${SITE_URL}/#person`;
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Best-effort plain-text extraction from a Portable Text array. Used to
+ *  populate `description` / `abstract` properties from a block field without
+ *  shipping the full Portable Text tree. */
+function blocksToPlainText(
+  blocks: PortableTextBlock[] | undefined,
+  options: { maxChars?: number } = {},
+): string {
+  if (!blocks) return '';
+  const { maxChars = 800 } = options;
+  let text = '';
+  for (const block of blocks) {
+    if (!block || (block as { _type?: unknown })._type !== 'block') continue;
+    const children =
+      (block as { children?: { text?: string }[] }).children ?? [];
+    const lineText = children.map((c) => c.text ?? '').join('');
+    text += lineText + ' ';
+    if (text.length >= maxChars) break;
+  }
+  return text.trim().slice(0, maxChars);
+}
+
+function refToCitationItem(ref: SanityRefDoc) {
+  // CreativeWork-shaped citation entry for inclusion under
+  // MedicalScholarlyArticle.citation. We use ScholarlyArticle for journal
+  // articles (the dominant case); books/chapters get CreativeWork.
+  const isJournal = !ref.pubType || ref.pubType === 'journal';
+  return {
+    '@type': isJournal ? 'ScholarlyArticle' : 'CreativeWork',
+    name: ref.title,
+    headline: ref.title,
+    author: ref.authors.map((a) => ({ '@type': 'Person', name: a })),
+    datePublished: String(ref.year),
+    isPartOf: ref.journal
+      ? {
+          '@type': isJournal ? 'Periodical' : 'CreativeWork',
+          name: ref.journal,
+          ...(ref.volume ? { volumeNumber: ref.volume } : {}),
+          ...(ref.issue ? { issueNumber: ref.issue } : {}),
+        }
+      : undefined,
+    ...(ref.doi ? { sameAs: `https://doi.org/${ref.doi}` } : {}),
+    ...(ref.pmid
+      ? {
+          identifier: [
+            { '@type': 'PropertyValue', propertyID: 'PMID', value: ref.pmid },
+          ],
+        }
+      : {}),
+    ...(ref.pages ? { pageStart: ref.pages.split(/[-–]/)[0] } : {}),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Article JSON-LD
+// ---------------------------------------------------------------------------
+
+interface ArticleSchemaInput {
+  article: SanityArticle;
+  references: SanityRefDoc[];
+  url: string; // canonical URL of the article
+  authorName?: string;
+}
+
+export function generateArticleSchema({
+  article,
+  references,
+  url,
+  authorName = 'Mateusz Gładysz',
+}: ArticleSchemaInput) {
+  const isPatientFacing = article.audience === 'patient';
+  const articleType = isPatientFacing
+    ? 'MedicalWebPage'
+    : 'MedicalScholarlyArticle';
+
+  const description =
+    article.seoDescription ||
+    article.excerpt ||
+    blocksToPlainText(article.body, { maxChars: 200 });
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': articleType,
+    headline: article.title,
+    name: article.title,
+    description,
+    inLanguage: 'en-NZ',
+    url,
+    mainEntityOfPage: { '@type': 'WebPage', '@id': url },
+    datePublished: article.publishedDate,
+    dateModified: article.lastUpdated || article.publishedDate,
+    author: {
+      '@type': 'Physician',
+      '@id': PERSON_ID,
+      name: authorName,
+    },
+    publisher: {
+      '@type': 'Person',
+      '@id': PERSON_ID,
+      name: authorName,
+    },
+    audience: {
+      '@type': 'MedicalAudience',
+      audienceType: isPatientFacing ? 'Patient' : 'MedicalProfessional',
+    },
+    ...(references.length > 0
+      ? { citation: references.map(refToCitationItem) }
+      : {}),
+    ...(article.heroImage
+      ? {
+          image: {
+            '@type': 'ImageObject',
+            description: article.heroImage.alt,
+          },
+        }
+      : {}),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Procedure JSON-LD
+// ---------------------------------------------------------------------------
+
+interface ProcedureSchemaInput {
+  procedure: SanityProcedurePage;
+  references: SanityRefDoc[];
+  url: string;
+  authorName?: string;
+}
+
+export function generateProcedureSchema({
+  procedure,
+  references,
+  url,
+  authorName = 'Mateusz Gładysz',
+}: ProcedureSchemaInput) {
+  const description =
+    procedure.seoDescription ||
+    procedure.summary ||
+    blocksToPlainText(procedure.indications, { maxChars: 200 });
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'MedicalProcedure',
+    name: procedure.title,
+    description,
+    procedureType: 'SurgicalProcedure',
+    url,
+    mainEntityOfPage: { '@type': 'WebPage', '@id': url },
+    dateModified: procedure.lastUpdated,
+    inLanguage: 'en-NZ',
+    bodyLocation: blocksToPlainText(procedure.anatomy, { maxChars: 240 }),
+    preparation: blocksToPlainText(procedure.positioning, { maxChars: 240 }),
+    followup: blocksToPlainText(procedure.aftercare, { maxChars: 300 }),
+    expectedPrognosis: blocksToPlainText(procedure.complications, {
+      maxChars: 300,
+    }),
+    indication: {
+      '@type': 'MedicalIndication',
+      name: 'Indications',
+      description: blocksToPlainText(procedure.indications, { maxChars: 300 }),
+    },
+    performedBy: {
+      '@type': 'Physician',
+      '@id': PERSON_ID,
+      name: authorName,
+    },
+    audience: {
+      '@type': 'MedicalAudience',
+      audienceType:
+        procedure.audience === 'patient'
+          ? 'Patient'
+          : procedure.audience === 'mixed'
+            ? 'Patient'
+            : 'MedicalProfessional',
+    },
+    ...(references.length > 0
+      ? { citation: references.map(refToCitationItem) }
+      : {}),
+    ...(procedure.heroImage
+      ? {
+          image: {
+            '@type': 'ImageObject',
+            description: procedure.heroImage.alt,
+          },
+        }
+      : {}),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Breadcrumb JSON-LD (optional helper)
+// ---------------------------------------------------------------------------
+
+export function generateBreadcrumb(
+  items: { name: string; url: string }[],
+) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: item.name,
+      item: item.url,
+    })),
+  };
+}

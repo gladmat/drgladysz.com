@@ -1,0 +1,288 @@
+---
+// src/components/content/PortableTextRenderer.astro
+//
+// Custom Portable Text renderer for article body / procedure section content.
+// Walks the standard Sanity Portable Text shape and emits semantic HTML using:
+//   - <p>, <h2>, <h3>, <h4>, <blockquote> for block styles
+//   - <ul> / <ol> for bullet / number lists
+//   - <Callout> for { _type: 'callout' } blocks
+//   - <figure> for { _type: 'image' } blocks (Sanity asset URLs)
+//   - <Citation> append for citation marks within blocks (sidenote/popover)
+//
+// The renderer does its own marks tree walking — kept inline here rather than
+// relying on astro-portabletext's component-prop pattern, because the citation
+// mark needs the per-page reference index and Astro components don't have
+// closures over outer-page state when wired through that pattern. This way
+// references is just a prop.
+//
+// Per-page reference index: parents pass a `references` array (already in
+// citation-document order), and we build a Map<refId, index> for span lookups.
+import PortableTextSpan from '@/components/content/PortableTextSpan.astro';
+import Callout from '@/components/content/Callout.astro';
+import { urlForImage } from '@/lib/sanity';
+import type {
+  PortableTextBlock,
+  SanityRefDoc,
+  SanityImage,
+} from '@/lib/sanity';
+
+interface Props {
+  value: PortableTextBlock[] | undefined;
+  references?: SanityRefDoc[];
+}
+
+const { value, references = [] } = Astro.props;
+const blocks = value ?? [];
+
+// Build reference-id -> index Map for fast Citation lookup. Indexes are 1-based.
+const referenceIndex = new Map<string, number>();
+for (let i = 0; i < references.length; i++) {
+  referenceIndex.set(references[i]._id, i + 1);
+}
+
+interface Block {
+  _type: string;
+  _key?: string;
+  style?: string;
+  level?: number;
+  listItem?: 'bullet' | 'number';
+  children?: { _type: string; _key?: string; text?: string; marks?: string[] }[];
+  markDefs?: { _type: string; _key: string; [k: string]: unknown }[];
+  [k: string]: unknown;
+}
+
+// Group consecutive list-item blocks of the same listItem type so we can wrap
+// them in a single <ul>/<ol>. Other block types and standalone blocks stay as-is.
+type Group =
+  | { kind: 'list'; listItem: 'bullet' | 'number'; items: Block[] }
+  | { kind: 'block'; block: Block };
+
+const groups: Group[] = [];
+for (const b of blocks as Block[]) {
+  if (b._type === 'block' && b.listItem) {
+    const last = groups[groups.length - 1];
+    if (last && last.kind === 'list' && last.listItem === b.listItem) {
+      last.items.push(b);
+    } else {
+      groups.push({ kind: 'list', listItem: b.listItem, items: [b] });
+    }
+  } else {
+    groups.push({ kind: 'block', block: b });
+  }
+}
+
+function imageUrl(img: SanityImage, width = 1200) {
+  return urlForImage(img).width(width).fit('max').url();
+}
+
+function imageSrcSet(img: SanityImage) {
+  return [800, 1200, 1600, 2000]
+    .map((w) => `${urlForImage(img).width(w).fit('max').url()} ${w}w`)
+    .join(', ');
+}
+---
+{groups.map((g) => {
+  if (g.kind === 'list') {
+    const Tag = g.listItem === 'number' ? 'ol' : 'ul';
+    return (
+      <Tag class={`pt-list pt-list--${g.listItem}`}>
+        {g.items.map((block) => (
+          <li>
+            {(block.children ?? []).map((child) =>
+              child._type === 'span' ? (
+                <PortableTextSpan
+                  span={child as any}
+                  markDefs={(block.markDefs ?? []) as any}
+                  references={references}
+                  referenceIndex={referenceIndex}
+                />
+              ) : null,
+            )}
+          </li>
+        ))}
+      </Tag>
+    );
+  }
+
+  const block = g.block;
+
+  if (block._type === 'callout') {
+    const { type, title, content } = block as unknown as {
+      type?: 'info' | 'warning' | 'pearl';
+      title?: string;
+      content?: PortableTextBlock[];
+    };
+    return (
+      <Callout type={type ?? 'info'} title={title}>
+        <Astro.self value={content} references={references} />
+      </Callout>
+    );
+  }
+
+  if (block._type === 'image') {
+    const img = block as unknown as SanityImage;
+    if (!img.asset) return null;
+    return (
+      <figure class="pt-figure">
+        <img
+          src={imageUrl(img, 1200)}
+          srcset={imageSrcSet(img)}
+          sizes="(max-width: 720px) 100vw, 720px"
+          alt={img.alt}
+          loading="lazy"
+          decoding="async"
+        />
+        {img.caption && <figcaption>{img.caption}</figcaption>}
+      </figure>
+    );
+  }
+
+  if (block._type !== 'block') return null;
+
+  const style = block.style ?? 'normal';
+  const renderedChildren = (block.children ?? []).map((child) =>
+    child._type === 'span' ? (
+      <PortableTextSpan
+        span={child as any}
+        markDefs={(block.markDefs ?? []) as any}
+        references={references}
+        referenceIndex={referenceIndex}
+      />
+    ) : null,
+  );
+
+  if (style === 'h2') return <h2 class="pt-h2">{renderedChildren}</h2>;
+  if (style === 'h3') return <h3 class="pt-h3">{renderedChildren}</h3>;
+  if (style === 'h4') return <h4 class="pt-h4">{renderedChildren}</h4>;
+  if (style === 'h5') return <h5 class="pt-h5">{renderedChildren}</h5>;
+  if (style === 'h6') return <h6 class="pt-h6">{renderedChildren}</h6>;
+  if (style === 'blockquote') {
+    return <blockquote class="pt-blockquote">{renderedChildren}</blockquote>;
+  }
+  return <p class="pt-p">{renderedChildren}</p>;
+})}
+
+<style>
+  /* Block-level body typography. The article page wraps this in
+     `.article-content` whose padding-right is reserved for sidenote floats. */
+  .pt-p {
+    font-family: var(--serif);
+    font-size: 19px;
+    line-height: 1.7;
+    color: var(--ink);
+    margin: 0 0 24px;
+    max-width: none;
+  }
+
+  .pt-h2 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(24px, 2.4vw, 32px);
+    line-height: 1.25;
+    color: var(--ink);
+    margin: 56px 0 20px;
+    letter-spacing: -0.018em;
+  }
+
+  .pt-h3 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(20px, 2vw, 24px);
+    line-height: 1.3;
+    color: var(--ink);
+    margin: 40px 0 14px;
+    letter-spacing: -0.012em;
+  }
+
+  .pt-h4 {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 17px;
+    color: var(--ink);
+    margin: 32px 0 12px;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .pt-h5,
+  .pt-h6 {
+    font-family: var(--mono);
+    font-weight: 500;
+    font-size: 12px;
+    color: var(--ink-3);
+    margin: 28px 0 10px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+  }
+
+  .pt-blockquote {
+    margin: 32px 0;
+    padding: 8px 0 8px 24px;
+    border-left: 3px solid var(--accent);
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 19px;
+    line-height: 1.6;
+    color: var(--ink-2);
+  }
+
+  .pt-list {
+    margin: 0 0 24px;
+    padding-left: 24px;
+    font-family: var(--serif);
+    font-size: 19px;
+    line-height: 1.7;
+    color: var(--ink);
+  }
+
+  .pt-list--bullet { list-style-type: disc; }
+  .pt-list--number { list-style-type: decimal; }
+
+  .pt-list li {
+    margin-bottom: 8px;
+  }
+
+  .pt-list li::marker {
+    color: var(--accent);
+  }
+
+  .pt-figure {
+    margin: 32px 0;
+  }
+
+  .pt-figure img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .pt-figure figcaption {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--ink-3);
+    line-height: 1.55;
+    margin-top: 12px;
+    font-style: italic;
+  }
+
+  /* Inline link styling within prose. */
+  .pt-p :global(a),
+  .pt-list :global(a),
+  .pt-blockquote :global(a) {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid var(--accent);
+    padding-bottom: 1px;
+  }
+
+  .pt-p :global(a:hover),
+  .pt-list :global(a:hover),
+  .pt-blockquote :global(a:hover) {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+
+  /* Inline em/strong tone */
+  .pt-p :global(em) { font-style: italic; }
+  .pt-p :global(strong) { font-weight: 600; color: var(--ink); }
+</style>

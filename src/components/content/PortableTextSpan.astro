@@ -1,0 +1,103 @@
+---
+// src/components/content/PortableTextSpan.astro
+//
+// Renders a single Portable Text span with its marks. Decorators (em, strong,
+// code, underline, strike-through) wrap the text from inside out; link
+// annotations wrap the whole span; citation annotations APPEND a numbered
+// superscript marker AFTER the span's text (does not wrap it).
+//
+// Decorator composition is done by building inner HTML once (string), then
+// either wrapping with <a>...</a> if a link mark is present or rendering raw.
+// Citations follow the rendered span as Astro components, so they pull in
+// their own scoped styles.
+import Citation from '@/components/content/Citation.astro';
+import type { SanityRefDoc } from '@/lib/sanity';
+
+interface Span {
+  _type: 'span';
+  _key?: string;
+  text: string;
+  marks?: string[];
+}
+
+interface MarkDef {
+  _type: string;
+  _key: string;
+  href?: string;
+  newTab?: boolean;
+  reference?: { _ref: string };
+  term?: { _ref: string };
+}
+
+interface Props {
+  span: Span;
+  markDefs: MarkDef[];
+  references: SanityRefDoc[];
+  referenceIndex: Map<string, number>;
+}
+
+const { span, markDefs, references, referenceIndex } = Astro.props;
+const marks = span.marks ?? [];
+
+const ESCAPE_MAP: Record<string, string> = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;',
+};
+function esc(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => ESCAPE_MAP[c]);
+}
+
+// Split marks into decorators and annotation keys.
+const annotationKeys: string[] = [];
+const decorators: string[] = [];
+for (const m of marks) {
+  if (markDefs.some((d) => d._key === m)) {
+    annotationKeys.push(m);
+  } else {
+    decorators.push(m);
+  }
+}
+
+const linkAnnotation = annotationKeys
+  .map((k) => markDefs.find((d) => d._key === k))
+  .find((d): d is MarkDef => Boolean(d) && d!._type === 'link');
+
+const citationAnnotations = annotationKeys
+  .map((k) => markDefs.find((d) => d._key === k))
+  .filter((d): d is MarkDef => Boolean(d) && d!._type === 'citation');
+
+const citationData = citationAnnotations
+  .map((annot) => {
+    const refId = annot.reference?._ref;
+    if (!refId) return null;
+    const idx = referenceIndex.get(refId);
+    const ref = references.find((r) => r._id === refId);
+    if (!idx || !ref) return null;
+    return { ref, index: idx };
+  })
+  .filter((d): d is { ref: SanityRefDoc; index: number } => d !== null);
+
+// Compose decorators from innermost outwards. Order matters cosmetically:
+// strong wraps em wraps code wraps underline wraps strike-through wraps text.
+let inner = esc(span.text);
+if (decorators.includes('code')) inner = `<code>${inner}</code>`;
+if (decorators.includes('underline')) {
+  inner = `<span style="text-decoration: underline;">${inner}</span>`;
+}
+if (decorators.includes('strike-through')) inner = `<del>${inner}</del>`;
+if (decorators.includes('em')) inner = `<em>${inner}</em>`;
+if (decorators.includes('strong')) inner = `<strong>${inner}</strong>`;
+
+// Wrap with link if present.
+if (linkAnnotation && linkAnnotation.href) {
+  const targetAttr = linkAnnotation.newTab ? ' target="_blank" rel="noopener"' : '';
+  inner = `<a href="${esc(linkAnnotation.href)}"${targetAttr}>${inner}</a>`;
+}
+---
+<Fragment set:html={inner} />
+{citationData.map(({ ref, index }) => (
+  <Citation reference={ref} index={index} />
+))}

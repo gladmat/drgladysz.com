@@ -1,0 +1,119 @@
+---
+// src/components/content/KeyPoints.astro
+//
+// JAMA-style 75-100 word summary box at the top of an article or procedure
+// page. Three-line structure: Question, Findings (or Indications), Meaning.
+// Each line label is a mono cap rule; the body sits in the serif voice so
+// the box reads as a clinical summary, not a UI panel.
+//
+// Render-policy: only emits the section if at least one of the three fields
+// is populated. A box with all three empty is suppressed entirely.
+interface Props {
+  question?: string;
+  findings?: string;
+  meaning?: string;
+  /**
+   * Whether the third line is "Meaning" (typical article) or "Clinical relevance"
+   * (procedure pages). Defaults to "Meaning".
+   */
+  meaningLabel?: string;
+  /**
+   * Whether the second line is "Findings" (typical article) or "Indications"
+   * (procedure pages). Defaults to "Findings".
+   */
+  findingsLabel?: string;
+}
+
+const {
+  question,
+  findings,
+  meaning,
+  meaningLabel = 'Meaning',
+  findingsLabel = 'Findings',
+} = Astro.props;
+
+const hasContent = Boolean(question || findings || meaning);
+---
+{hasContent && (
+  <aside class="keypoints" aria-label="Key points">
+    <h2 class="keypoints-heading">Key Points</h2>
+    <dl class="keypoints-list">
+      {question && (
+        <div class="kp-row">
+          <dt>Question</dt>
+          <dd>{question}</dd>
+        </div>
+      )}
+      {findings && (
+        <div class="kp-row">
+          <dt>{findingsLabel}</dt>
+          <dd>{findings}</dd>
+        </div>
+      )}
+      {meaning && (
+        <div class="kp-row">
+          <dt>{meaningLabel}</dt>
+          <dd>{meaning}</dd>
+        </div>
+      )}
+    </dl>
+  </aside>
+)}
+
+<style>
+  .keypoints {
+    margin: 48px 0;
+    padding: 28px 32px;
+    background: var(--bg-deep);
+    border-left: 3px solid var(--accent);
+  }
+
+  .keypoints-heading {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 20px;
+    font-weight: 500;
+  }
+
+  .keypoints-list {
+    margin: 0;
+    display: grid;
+    gap: 16px;
+  }
+
+  .kp-row {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 20px;
+    align-items: baseline;
+  }
+
+  @media (max-width: 600px) {
+    .kp-row {
+      grid-template-columns: 1fr;
+      gap: 4px;
+    }
+  }
+
+  .kp-row dt {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 0;
+    padding-top: 4px;
+  }
+
+  .kp-row dd {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--ink);
+    margin: 0;
+  }
+</style>

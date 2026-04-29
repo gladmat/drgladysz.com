@@ -1,0 +1,252 @@
+---
+// src/components/content/Citation.astro
+//
+// Renders a single in-text citation as:
+//   - A superscript marker number (always shown inline at the citation point).
+//   - A floated right-margin sidenote on desktop ≥1024px (Tufte pattern).
+//   - A native HTML Popover (popover="auto") on mobile / narrow viewports.
+//
+// One element does both jobs. The <aside popover="auto"> is invisible by
+// default per the Popover API UA stylesheet. On desktop we override `display`
+// and float it into the article's reserved right margin so it sits next to its
+// in-text marker. On mobile the override doesn't apply, so the popover stays
+// hidden until the marker (a popovertarget button) is tapped.
+//
+// JavaScript shipped: zero. The Popover API toggles state declaratively via
+// the popovertarget attribute on the <button>.
+//
+// Article-page layout requirements (set by the article/procedure page):
+//   - `.article-content` MUST have `padding-right: 320px` on desktop and
+//     `position: relative` so floats land in the gutter, not overlapping body.
+//   - Each <aside class="cite-sidenote"> uses `clear: right` so successive
+//     sidenotes don't overlap when their markers are vertically close.
+import { formatShortRef, pubmedUrl, doiUrl, pmcUrl } from '@/lib/citations';
+import type { SanityRefDoc } from '@/lib/sanity';
+
+interface Props {
+  reference: SanityRefDoc;
+  index: number; // 1-based bibliography index
+}
+
+const { reference, index } = Astro.props;
+const popoverId = `cite-${reference._id}-${index}`;
+
+const shortHtml = formatShortRef(reference);
+const pubmed = pubmedUrl(reference.pmid);
+const doi = doiUrl(reference.doi);
+const pmc = pmcUrl(reference.pmcid);
+---
+<sup class="cite-marker"><button
+    type="button"
+    class="cite-button"
+    popovertarget={popoverId}
+    aria-label={`Citation ${index}: open reference card`}
+    aria-describedby={popoverId}
+  >{index}</button></sup><aside
+    id={popoverId}
+    popover="auto"
+    class="cite-sidenote"
+    data-sidenote-index={index}
+    role="note"
+    aria-labelledby={`${popoverId}-label`}
+  >
+  <span class="cite-sidenote-num" id={`${popoverId}-label`}>
+    Reference {index}
+  </span>
+  <p class="cite-sidenote-body" set:html={shortHtml} />
+  {reference.abstractPreview && (
+    <p class="cite-sidenote-abstract">{reference.abstractPreview}</p>
+  )}
+  <div class="cite-sidenote-actions">
+    {pubmed && (
+      <a class="cite-link" href={pubmed} target="_blank" rel="noopener">
+        PubMed
+      </a>
+    )}
+    {doi && (
+      <a class="cite-link" href={doi} target="_blank" rel="noopener">
+        DOI
+      </a>
+    )}
+    {pmc && (
+      <a class="cite-link" href={pmc} target="_blank" rel="noopener">
+        PMC
+      </a>
+    )}
+    <a class="cite-link cite-link-jump" href={`#ref-${index}`}>
+      References ↓
+    </a>
+  </div>
+</aside>
+
+<style>
+  /* ---- In-text marker -------------------------------------------------- */
+  .cite-marker {
+    /* Inline-block so the superscript stays glued to the preceding word
+       without affecting line-height. */
+    font-family: var(--mono);
+    font-size: 0.72em;
+    line-height: 1;
+    vertical-align: super;
+  }
+
+  .cite-button {
+    background: none;
+    border: 0;
+    padding: 0 2px;
+    color: var(--accent);
+    font: inherit;
+    cursor: pointer;
+    text-decoration: none;
+    border-bottom: 1px dotted var(--accent);
+    border-radius: 0;
+  }
+
+  .cite-button:hover {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+
+  .cite-button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* ---- Mobile popover (narrow viewports) ------------------------------- */
+  /* The Popover API UA stylesheet sets `display: none` until the popover is
+     :open. On open the browser places the element in the top layer with
+     position: fixed. We refine the look but otherwise let UA defaults handle
+     positioning on narrow viewports. */
+  .cite-sidenote {
+    border: 1px solid var(--rule-strong);
+    background: var(--bg-card);
+    color: var(--ink);
+    padding: 16px 20px;
+    margin: 0;
+    max-width: min(360px, calc(100vw - 32px));
+    border-radius: 0;
+    box-shadow: 0 12px 32px rgba(20, 23, 26, 0.10);
+    inset: auto;
+    /* Position:fixed centred near the viewport top — the UA defaults lay it
+       out in the top layer; we tweak inset for a more readable placement. */
+    /* Note: leaving the UA default open-state inset works fine on mobile; the
+       browser places it near the trigger. */
+  }
+
+  .cite-sidenote::backdrop {
+    background: rgba(20, 23, 26, 0.10);
+  }
+
+  .cite-sidenote-num {
+    display: block;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 8px;
+  }
+
+  .cite-sidenote-body {
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--ink);
+    margin: 0 0 12px;
+  }
+
+  .cite-sidenote-abstract {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    margin: 0 0 12px;
+    padding-left: 12px;
+    border-left: 2px solid var(--rule);
+  }
+
+  .cite-sidenote-actions {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .cite-link {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid var(--accent);
+    padding-bottom: 1px;
+  }
+
+  .cite-link:hover {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+
+  .cite-link-jump {
+    margin-left: auto;
+    color: var(--ink-3);
+    border-bottom-color: var(--rule-strong);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* ---- Desktop sidenote (≥1024px) -------------------------------------- */
+  /* The article page reserves a 320px right gutter via padding-right and sets
+     position: relative on the article container. The sidenote is forced
+     visible (`display: block !important`) and floated right with a negative
+     margin so it lands in the reserved gutter, vertically aligned with its
+     in-text marker. `clear: right` prevents successive sidenotes from
+     overlapping when their markers are close together. */
+  @media (min-width: 1024px) {
+    .cite-sidenote {
+      display: block !important;
+      position: static;
+      inset: auto;
+      float: right;
+      clear: right;
+      width: 240px;
+      max-width: 240px;
+      margin: 0.2em -280px 1.5em 0;
+      padding: 0 0 0 16px;
+      background: transparent;
+      border: 0;
+      border-left: 2px solid var(--rule);
+      box-shadow: none;
+    }
+
+    .cite-sidenote::backdrop {
+      display: none;
+    }
+
+    .cite-sidenote-num {
+      margin-top: 0;
+    }
+  }
+
+  /* ---- Print --------------------------------------------------------- */
+  /* In print the sidenotes go inline below their paragraphs; the bibliography
+     handles the canonical reference list. */
+  @media print {
+    .cite-sidenote {
+      display: block !important;
+      position: static;
+      float: none;
+      width: auto;
+      max-width: none;
+      margin: 12px 0;
+      padding: 8px 12px;
+      border: 1px solid var(--rule);
+      background: transparent;
+      box-shadow: none;
+      page-break-inside: avoid;
+    }
+    .cite-sidenote-actions { display: none; }
+    .cite-button { color: var(--accent); }
+  }
+</style>

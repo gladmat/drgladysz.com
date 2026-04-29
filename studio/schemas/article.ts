@@ -136,7 +136,7 @@ export const article = defineType({
                 type: 'object',
                 title: 'Citation',
                 fields: [
-                  { name: 'reference', type: 'reference', to: [{ type: 'reference' }], validation: (Rule) => Rule.required() },
+                  { name: 'reference', type: 'reference', to: [{ type: 'bibReference' }], validation: (Rule) => Rule.required() },
                 ],
               },
               {
@@ -158,26 +158,7 @@ export const article = defineType({
             { name: 'alt', title: 'Alt text', type: 'string', validation: (Rule) => Rule.required() },
           ],
         },
-        {
-          type: 'object',
-          name: 'callout',
-          title: 'Callout box',
-          fields: [
-            {
-              name: 'type',
-              type: 'string',
-              options: {
-                list: [
-                  { title: 'Info', value: 'info' },
-                  { title: 'Warning', value: 'warning' },
-                  { title: 'Pearl / Pitfall', value: 'pearl' },
-                ],
-              },
-              initialValue: 'info',
-            },
-            { name: 'content', type: 'array', of: [{ type: 'block' }] },
-          ],
-        },
+        { type: 'callout' },
       ],
     }),
     defineField({

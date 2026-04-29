@@ -1,0 +1,559 @@
+---
+// src/pages/en/procedures/[slug].astro
+//
+// Procedure detail page — AO Surgery Reference structure (10 numbered
+// sections + Key Points box). Each clinical section renders Portable Text
+// content via the shared renderer; citation marks within evidence/anatomy/
+// approach/etc. attach numbered sidenotes (desktop) or popovers (mobile).
+//
+// Schema.org JSON-LD: MedicalProcedure with bodyLocation/preparation/followup/
+// expectedPrognosis populated from the matching clinical sections.
+import SiteLayout from '@/layouts/SiteLayout.astro';
+import KeyPoints from '@/components/content/KeyPoints.astro';
+import Bibliography from '@/components/content/Bibliography.astro';
+import PortableTextRenderer from '@/components/content/PortableTextRenderer.astro';
+import {
+  getAllProcedureSlugs,
+  getProcedureBySlug,
+  getReferencesByIds,
+  extractCitationOrderFromBlocks,
+  urlForImage,
+} from '@/lib/sanity';
+import { generateProcedureSchema, generateBreadcrumb } from '@/lib/schema';
+
+export async function getStaticPaths() {
+  const slugs = await getAllProcedureSlugs();
+  return slugs.map((slug) => ({ params: { slug } }));
+}
+
+const { slug } = Astro.params;
+if (!slug) throw new Error('Missing slug param');
+
+const procedure = await getProcedureBySlug(slug);
+if (!procedure) {
+  return Astro.redirect('/en/procedures');
+}
+
+// Pull references in document order across all sections that may contain
+// citations. Order: indications → contraindications → anatomy → positioning →
+// approach → keySteps[].description → closure → aftercare → complications →
+// patientSummary → evidence. Matches the visual section order.
+const stepDescriptions = procedure.keySteps.map((s) => s.description).flat();
+
+const citationOrder = extractCitationOrderFromBlocks([
+  procedure.indications,
+  procedure.contraindications,
+  procedure.anatomy,
+  procedure.positioning,
+  procedure.approach,
+  stepDescriptions,
+  procedure.closure,
+  procedure.aftercare,
+  procedure.complications,
+  procedure.patientSummary,
+  procedure.evidence,
+]);
+
+const referencesUnsorted = await getReferencesByIds(citationOrder);
+const references = citationOrder
+  .map((id) => referencesUnsorted.find((r) => r._id === id))
+  .filter((r): r is NonNullable<typeof r> => Boolean(r));
+
+const siteUrl = (
+  import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com'
+).replace(/\/$/, '');
+const canonicalUrl = `${siteUrl}/en/procedures/${slug}`;
+
+const procedureJsonLd = generateProcedureSchema({
+  procedure,
+  references,
+  url: canonicalUrl,
+});
+
+const categoryLabels: Record<string, string> = {
+  'hand-surgery': 'Hand surgery',
+  'reconstructive-microsurgery': 'Reconstructive & microsurgery',
+  'skin-cancer': 'Skin cancer surgery',
+};
+
+const breadcrumbJsonLd = generateBreadcrumb([
+  { name: 'Home', url: `${siteUrl}/en/` },
+  { name: 'Procedures', url: `${siteUrl}/en/procedures` },
+  {
+    name: categoryLabels[procedure.category] || procedure.category,
+    url: `${siteUrl}/en/procedures#${procedure.category}`,
+  },
+  { name: procedure.title, url: canonicalUrl },
+]);
+
+const lastUpdatedLabel = new Date(procedure.lastUpdated).toLocaleDateString(
+  'en-NZ',
+  { year: 'numeric', month: 'long', day: 'numeric' },
+);
+
+const heroImageUrl = procedure.heroImage
+  ? urlForImage(procedure.heroImage).width(2000).fit('max').url()
+  : null;
+
+const hasContraindications =
+  procedure.contraindications && procedure.contraindications.length > 0;
+const hasPositioning =
+  procedure.positioning && procedure.positioning.length > 0;
+const hasClosure = procedure.closure && procedure.closure.length > 0;
+const hasPatientSummary =
+  procedure.patientSummary && procedure.patientSummary.length > 0;
+---
+<SiteLayout
+  title={procedure.seoTitle || `${procedure.title} — Mateusz Gładysz, MD`}
+  description={procedure.seoDescription || procedure.summary}
+  locale="en"
+  canonical={canonicalUrl}
+  jsonLd={[procedureJsonLd, breadcrumbJsonLd]}
+>
+  <article class="procedure-shell">
+    <header class="procedure-header">
+      <p class="procedure-kicker">
+        <a href="/en/procedures">Procedures</a>
+        <span aria-hidden="true">·</span>
+        <span>{categoryLabels[procedure.category] ?? procedure.category}</span>
+      </p>
+      <h1 class="procedure-title">{procedure.title}</h1>
+      {procedure.summary && (
+        <p class="procedure-summary">{procedure.summary}</p>
+      )}
+      <p class="procedure-meta">
+        Last clinically reviewed
+        <time datetime={procedure.lastUpdated}>{lastUpdatedLabel}</time>
+      </p>
+    </header>
+
+    {heroImageUrl && (
+      <figure class="procedure-hero">
+        <img
+          src={heroImageUrl}
+          alt={procedure.heroImage?.alt ?? ''}
+          loading="eager"
+          decoding="async"
+        />
+        {procedure.heroImage?.caption && (
+          <figcaption>{procedure.heroImage.caption}</figcaption>
+        )}
+      </figure>
+    )}
+
+    <div class="article-content">
+      {procedure.keyPoints && (
+        <KeyPoints
+          question={procedure.keyPoints.question}
+          findings={procedure.keyPoints.findings}
+          meaning={procedure.keyPoints.meaning}
+          findingsLabel="Indications"
+          meaningLabel="Clinical relevance"
+        />
+      )}
+
+      <nav class="procedure-toc" aria-label="Procedure sections">
+        <p class="toc-label">Sections</p>
+        <ol>
+          <li><a href="#indications">Indications</a></li>
+          {hasContraindications && (
+            <li><a href="#contraindications">Contraindications</a></li>
+          )}
+          <li><a href="#anatomy">Anatomy</a></li>
+          {hasPositioning && (
+            <li><a href="#positioning">Patient positioning</a></li>
+          )}
+          <li><a href="#approach">Approach</a></li>
+          <li><a href="#key-steps">Key steps</a></li>
+          {hasClosure && <li><a href="#closure">Closure</a></li>}
+          <li><a href="#aftercare">Aftercare</a></li>
+          <li><a href="#complications">Complications</a></li>
+          <li><a href="#evidence">Evidence</a></li>
+        </ol>
+      </nav>
+
+      <section id="indications" class="proc-section" aria-labelledby="h-indications">
+        <h2 id="h-indications" class="proc-h"><span class="proc-num">1.</span> Indications</h2>
+        <PortableTextRenderer value={procedure.indications} references={references} />
+      </section>
+
+      {hasContraindications && (
+        <section id="contraindications" class="proc-section" aria-labelledby="h-contraind">
+          <h2 id="h-contraind" class="proc-h"><span class="proc-num">2.</span> Contraindications</h2>
+          <PortableTextRenderer value={procedure.contraindications} references={references} />
+        </section>
+      )}
+
+      <section id="anatomy" class="proc-section" aria-labelledby="h-anatomy">
+        <h2 id="h-anatomy" class="proc-h"><span class="proc-num">3.</span> Relevant anatomy</h2>
+        <PortableTextRenderer value={procedure.anatomy} references={references} />
+      </section>
+
+      {hasPositioning && (
+        <section id="positioning" class="proc-section" aria-labelledby="h-pos">
+          <h2 id="h-pos" class="proc-h"><span class="proc-num">4.</span> Patient positioning</h2>
+          <PortableTextRenderer value={procedure.positioning} references={references} />
+        </section>
+      )}
+
+      <section id="approach" class="proc-section" aria-labelledby="h-approach">
+        <h2 id="h-approach" class="proc-h"><span class="proc-num">5.</span> Approach</h2>
+        <PortableTextRenderer value={procedure.approach} references={references} />
+      </section>
+
+      <section id="key-steps" class="proc-section proc-steps" aria-labelledby="h-steps">
+        <h2 id="h-steps" class="proc-h"><span class="proc-num">6.</span> Key steps</h2>
+        <ol class="steps-list">
+          {procedure.keySteps.map((step, i) => (
+            <li id={`step-${i + 1}`} class="step">
+              <h3 class="step-h">
+                <span class="step-num">{i + 1}.</span>
+                {step.title}
+              </h3>
+              <PortableTextRenderer value={step.description} references={references} />
+              {step.image && step.image.asset && (
+                <figure class="step-figure">
+                  <img
+                    src={urlForImage(step.image).width(1200).fit('max').url()}
+                    srcset={[800, 1200, 1600]
+                      .map((w) => `${urlForImage(step.image!).width(w).fit('max').url()} ${w}w`)
+                      .join(', ')}
+                    sizes="(max-width: 720px) 100vw, 720px"
+                    alt={step.image.alt}
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  {step.image.caption && (
+                    <figcaption>{step.image.caption}</figcaption>
+                  )}
+                </figure>
+              )}
+              {step.pitfall && (
+                <aside class="pitfall" role="note">
+                  <p class="pitfall-label">Pitfall</p>
+                  <p class="pitfall-body">{step.pitfall}</p>
+                </aside>
+              )}
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      {hasClosure && (
+        <section id="closure" class="proc-section" aria-labelledby="h-closure">
+          <h2 id="h-closure" class="proc-h"><span class="proc-num">7.</span> Closure</h2>
+          <PortableTextRenderer value={procedure.closure} references={references} />
+        </section>
+      )}
+
+      <section id="aftercare" class="proc-section" aria-labelledby="h-aftercare">
+        <h2 id="h-aftercare" class="proc-h"><span class="proc-num">8.</span> Aftercare</h2>
+        <PortableTextRenderer value={procedure.aftercare} references={references} />
+      </section>
+
+      <section id="complications" class="proc-section" aria-labelledby="h-comp">
+        <h2 id="h-comp" class="proc-h"><span class="proc-num">9.</span> Complications</h2>
+        <PortableTextRenderer value={procedure.complications} references={references} />
+      </section>
+
+      <section id="evidence" class="proc-section" aria-labelledby="h-evidence">
+        <h2 id="h-evidence" class="proc-h"><span class="proc-num">10.</span> Evidence</h2>
+        <PortableTextRenderer value={procedure.evidence} references={references} />
+      </section>
+
+      {hasPatientSummary && (
+        <details class="patient-summary">
+          <summary>For patients — plain-language summary</summary>
+          <div class="patient-summary-body">
+            <PortableTextRenderer
+              value={procedure.patientSummary}
+              references={references}
+            />
+          </div>
+        </details>
+      )}
+
+      <Bibliography references={references} />
+    </div>
+  </article>
+</SiteLayout>
+
+<style>
+  .procedure-shell {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: clamp(40px, 7vw, 96px) clamp(20px, 5vw, 80px) 120px;
+  }
+
+  .procedure-header {
+    margin-bottom: clamp(40px, 6vw, 72px);
+    max-width: 760px;
+  }
+
+  .procedure-kicker {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 0 0 24px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .procedure-kicker a {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid var(--accent);
+    padding-bottom: 1px;
+  }
+
+  .procedure-title {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(34px, 5vw, 52px);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin: 0 0 20px;
+  }
+
+  .procedure-summary {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(17px, 1.5vw, 20px);
+    line-height: 1.55;
+    color: var(--ink-2);
+    margin: 0 0 24px;
+    max-width: 60ch;
+  }
+
+  .procedure-meta {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: var(--ink-3);
+    margin: 0;
+  }
+
+  .procedure-hero {
+    margin: 0 0 64px;
+  }
+
+  .procedure-hero img {
+    width: 100%;
+    height: auto;
+    display: block;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+  }
+
+  .procedure-hero figcaption {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--ink-3);
+    line-height: 1.55;
+    margin-top: 12px;
+    font-style: italic;
+  }
+
+  .article-content {
+    max-width: 720px;
+    margin: 0;
+    position: relative;
+  }
+
+  @media (min-width: 1024px) {
+    .article-content {
+      padding-right: 320px;
+      max-width: 1040px;
+    }
+  }
+
+  .procedure-toc {
+    margin: 0 0 64px;
+    padding: 24px 28px;
+    background: var(--bg-deep);
+    border-left: 3px solid var(--rule-strong);
+  }
+
+  .toc-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 0 0 16px;
+  }
+
+  .procedure-toc ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 8px 24px;
+  }
+
+  .procedure-toc li {
+    counter-increment: toc-counter;
+  }
+
+  .procedure-toc a {
+    font-family: var(--sans);
+    font-size: 14px;
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--rule-strong);
+    padding-bottom: 1px;
+  }
+
+  .procedure-toc a:hover {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  .proc-section {
+    margin-bottom: 72px;
+    scroll-margin-top: 96px;
+  }
+
+  .proc-section::after {
+    content: '';
+    display: block;
+    clear: both;
+  }
+
+  .proc-h {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(26px, 2.6vw, 36px);
+    line-height: 1.2;
+    color: var(--ink);
+    margin: 0 0 28px;
+    letter-spacing: -0.018em;
+  }
+
+  .proc-num {
+    font-family: var(--mono);
+    font-weight: 400;
+    font-size: 0.7em;
+    color: var(--accent);
+    margin-right: 12px;
+    letter-spacing: 0.04em;
+  }
+
+  .steps-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .step {
+    margin-bottom: 64px;
+    scroll-margin-top: 96px;
+  }
+
+  .step-h {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(20px, 1.8vw, 24px);
+    line-height: 1.25;
+    color: var(--ink);
+    margin: 0 0 20px;
+    letter-spacing: -0.012em;
+  }
+
+  .step-num {
+    font-family: var(--mono);
+    font-weight: 400;
+    color: var(--accent);
+    margin-right: 10px;
+  }
+
+  .step-figure {
+    margin: 24px 0;
+  }
+
+  .step-figure img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .step-figure figcaption {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--ink-3);
+    line-height: 1.55;
+    margin-top: 8px;
+    font-style: italic;
+  }
+
+  .pitfall {
+    margin-top: 24px;
+    padding: 16px 20px 4px;
+    background: var(--bg-deep);
+    border-left: 3px solid var(--accent);
+  }
+
+  .pitfall-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 8px;
+    font-weight: 500;
+  }
+
+  .pitfall-body {
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--ink);
+    margin: 0 0 12px;
+    max-width: none;
+  }
+
+  .patient-summary {
+    margin: 56px 0;
+    padding: 24px 28px;
+    background: var(--bg-deep);
+    border-left: 3px solid var(--accent);
+  }
+
+  .patient-summary summary {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 18px;
+    color: var(--accent);
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .patient-summary summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .patient-summary summary::before {
+    content: '+ ';
+    font-family: var(--mono);
+    color: var(--accent);
+    margin-right: 8px;
+    font-weight: 400;
+  }
+
+  .patient-summary[open] summary::before {
+    content: '− ';
+  }
+
+  .patient-summary[open] summary {
+    margin-bottom: 16px;
+  }
+
+  .patient-summary-body {
+    margin-top: 16px;
+  }
+</style>

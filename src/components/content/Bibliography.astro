@@ -1,0 +1,116 @@
+---
+// src/components/content/Bibliography.astro
+//
+// End-of-article numbered reference list (Vancouver/AMA style). The list is
+// numbered in document-citation order, matching the superscript markers in
+// the body. Each entry has a stable `id="ref-{n}"` used by the in-text
+// citation jump link ("References ↓").
+//
+// Format is computed at build time via formatVancouver(); the markup carries
+// no client JS.
+import { formatVancouver } from '@/lib/citations';
+import type { SanityRefDoc } from '@/lib/sanity';
+
+interface Props {
+  references: SanityRefDoc[];
+  heading?: string;
+  id?: string;
+}
+
+const { references, heading = 'References', id = 'references' } = Astro.props;
+const refsHtml = references.map((ref) => formatVancouver(ref, { withLinks: true }));
+---
+{references.length > 0 && (
+  <section class="bibliography" aria-labelledby={`${id}-heading`} id={id}>
+    <h2 id={`${id}-heading`} class="bibliography-heading">{heading}</h2>
+    <ol class="bibliography-list">
+      {references.map((ref, i) => (
+        <li id={`ref-${i + 1}`} class="bibliography-entry" data-ref-id={ref._id}>
+          <span class="ref-content" set:html={refsHtml[i]} />
+        </li>
+      ))}
+    </ol>
+  </section>
+)}
+
+<style>
+  .bibliography {
+    margin-top: 96px;
+    padding-top: 40px;
+    border-top: 1px solid var(--rule);
+  }
+
+  .bibliography-heading {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(24px, 2.4vw, 32px);
+    margin: 0 0 32px;
+    color: var(--ink);
+    letter-spacing: -0.018em;
+  }
+
+  .bibliography-list {
+    list-style: none;
+    counter-reset: ref-counter;
+    padding: 0;
+    margin: 0;
+  }
+
+  .bibliography-entry {
+    counter-increment: ref-counter;
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--ink-2);
+    padding-left: 36px;
+    position: relative;
+    margin-bottom: 18px;
+    /* Sticky-header offset so the anchor target lands clear of the nav. */
+    scroll-margin-top: 96px;
+  }
+
+  .bibliography-entry::before {
+    content: counter(ref-counter) ".";
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .bibliography-entry :global(em) {
+    font-style: italic;
+    color: var(--ink);
+  }
+
+  .bibliography-entry :global(.ref-actions) {
+    display: inline-flex;
+    gap: 12px;
+    margin-left: 8px;
+    flex-wrap: wrap;
+  }
+
+  .bibliography-entry :global(.ref-link) {
+    font-family: var(--sans);
+    font-size: 12px;
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid var(--accent);
+    padding-bottom: 1px;
+  }
+
+  .bibliography-entry :global(.ref-link:hover) {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+
+  /* Highlight on anchor jump from a sidenote */
+  .bibliography-entry:target {
+    background: var(--bg-deep);
+    margin-left: -16px;
+    padding-left: 52px;
+    transition: background 0.3s ease;
+  }
+</style>

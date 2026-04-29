@@ -18,7 +18,7 @@ export default defineConfig({
           .items([
             S.documentTypeListItem('article').title('Articles'),
             S.documentTypeListItem('procedurePage').title('Procedure pages'),
-            S.documentTypeListItem('reference').title('References'),
+            S.documentTypeListItem('bibReference').title('References'),
             S.divider(),
             S.documentTypeListItem('glossaryTerm').title('Glossary terms'),
             S.documentTypeListItem('mcqQuestion').title('MCQ questions'),

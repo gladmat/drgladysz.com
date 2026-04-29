@@ -1,0 +1,258 @@
+---
+// src/pages/en/blog/[slug].astro
+//
+// Article detail page. Statically generates one page per published article in
+// Sanity. The route is `getStaticPaths`-driven, so when there are no articles
+// (Phase 5 baseline) the route resolves to zero generated pages and the build
+// is clean.
+//
+// Layout responsibilities:
+//   - Sidenote gutter: `.article-content` reserves padding-right: 320px on
+//     desktop ≥1024px so Citation.astro's right-floated sidenote lands clear
+//     of the body. Below 1024px, citations open as native HTML popovers from
+//     the inline marker.
+//   - Heading sequence:
+//        H1 (article title) → KeyPoints box → ARTICLE BODY (PortableText)
+//        → Bibliography (numbered references)
+//   - Schema.org JSON-LD: MedicalScholarlyArticle (peer/expert) or
+//     MedicalWebPage (patient), populated via lib/schema.ts.
+import SiteLayout from '@/layouts/SiteLayout.astro';
+import KeyPoints from '@/components/content/KeyPoints.astro';
+import Bibliography from '@/components/content/Bibliography.astro';
+import PortableTextRenderer from '@/components/content/PortableTextRenderer.astro';
+import {
+  getAllArticleSlugs,
+  getArticleBySlug,
+  getReferencesByIds,
+  extractCitationOrderFromBlocks,
+  urlForImage,
+} from '@/lib/sanity';
+import { generateArticleSchema, generateBreadcrumb } from '@/lib/schema';
+
+export async function getStaticPaths() {
+  const slugs = await getAllArticleSlugs();
+  return slugs.map((slug) => ({ params: { slug } }));
+}
+
+const { slug } = Astro.params;
+if (!slug) throw new Error('Missing slug param');
+
+const article = await getArticleBySlug(slug);
+if (!article) {
+  // Sanity returned no doc with this slug — let Astro 404 handle it.
+  return Astro.redirect('/en/blog');
+}
+
+// Collect citation references in document order, then load.
+const citationOrder = extractCitationOrderFromBlocks([article.body]);
+const referencesUnsorted = await getReferencesByIds(citationOrder);
+const references = citationOrder
+  .map((id) => referencesUnsorted.find((r) => r._id === id))
+  .filter((r): r is NonNullable<typeof r> => Boolean(r));
+
+const siteUrl = (
+  import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com'
+).replace(/\/$/, '');
+const canonicalUrl = `${siteUrl}/en/blog/${slug}`;
+
+const articleJsonLd = generateArticleSchema({
+  article,
+  references,
+  url: canonicalUrl,
+});
+
+const breadcrumbJsonLd = generateBreadcrumb([
+  { name: 'Home', url: `${siteUrl}/en/` },
+  { name: 'Knowledge base', url: `${siteUrl}/en/blog` },
+  { name: article.title, url: canonicalUrl },
+]);
+
+const publishedDateLabel = new Date(article.publishedDate).toLocaleDateString(
+  'en-NZ',
+  { year: 'numeric', month: 'long', day: 'numeric' },
+);
+const updatedDateLabel = article.lastUpdated
+  ? new Date(article.lastUpdated).toLocaleDateString('en-NZ', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    })
+  : null;
+
+const heroImageUrl = article.heroImage
+  ? urlForImage(article.heroImage).width(2000).fit('max').url()
+  : null;
+
+const categoryLabel: Record<string, string> = {
+  patient: 'Patient information',
+  expert: 'Expert blog',
+  'fessh-prep': 'FESSH preparation',
+  news: 'News & commentary',
+};
+---
+<SiteLayout
+  title={article.seoTitle || `${article.title} — Mateusz Gładysz, MD`}
+  description={article.seoDescription || article.excerpt}
+  locale="en"
+  canonical={canonicalUrl}
+  jsonLd={[articleJsonLd, breadcrumbJsonLd]}
+>
+  <article class="article-shell">
+    <header class="article-header">
+      <p class="article-kicker">
+        <a href="/en/blog">Knowledge base</a>
+        <span aria-hidden="true">·</span>
+        <span>{categoryLabel[article.category] ?? article.category}</span>
+      </p>
+      <h1 class="article-title">{article.title}</h1>
+      {article.excerpt && <p class="article-excerpt">{article.excerpt}</p>}
+      <p class="article-meta">
+        <span>
+          Published <time datetime={article.publishedDate}>{publishedDateLabel}</time>
+        </span>
+        {updatedDateLabel && (
+          <>
+            <span aria-hidden="true">·</span>
+            <span>
+              Last clinically reviewed <time datetime={article.lastUpdated}>{updatedDateLabel}</time>
+            </span>
+          </>
+        )}
+      </p>
+    </header>
+
+    {heroImageUrl && (
+      <figure class="article-hero">
+        <img
+          src={heroImageUrl}
+          alt={article.heroImage?.alt ?? ''}
+          loading="eager"
+          decoding="async"
+        />
+      </figure>
+    )}
+
+    <div class="article-content">
+      {article.keyPoints && (
+        <KeyPoints
+          question={article.keyPoints.question}
+          findings={article.keyPoints.findings}
+          meaning={article.keyPoints.meaning}
+        />
+      )}
+
+      <div class="article-body">
+        <PortableTextRenderer value={article.body} references={references} />
+      </div>
+
+      <Bibliography references={references} />
+    </div>
+  </article>
+</SiteLayout>
+
+<style>
+  .article-shell {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: clamp(40px, 7vw, 96px) clamp(20px, 5vw, 80px) 120px;
+  }
+
+  .article-header {
+    margin-bottom: clamp(40px, 6vw, 80px);
+    max-width: 760px;
+  }
+
+  .article-kicker {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 0 0 24px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .article-kicker a {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid var(--accent);
+    padding-bottom: 1px;
+  }
+
+  .article-kicker a:hover {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+
+  .article-title {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(34px, 5vw, 56px);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin: 0 0 24px;
+  }
+
+  .article-excerpt {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(18px, 1.6vw, 22px);
+    line-height: 1.55;
+    color: var(--ink-2);
+    margin: 0 0 28px;
+    max-width: 60ch;
+  }
+
+  .article-meta {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: var(--ink-3);
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 0;
+  }
+
+  .article-hero {
+    margin: 0 0 64px;
+  }
+
+  .article-hero img {
+    width: 100%;
+    height: auto;
+    display: block;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+  }
+
+  /* Body container — reserves a 320px right gutter on desktop ≥1024px so
+     <Citation>'s right-floated sidenote can land in the margin without
+     overlapping prose. Below 1024px the gutter collapses and citations open
+     as native popovers from the inline marker. */
+  .article-content {
+    max-width: 720px;
+    margin: 0;
+    position: relative;
+  }
+
+  @media (min-width: 1024px) {
+    .article-content {
+      padding-right: 320px;
+      max-width: 1040px;
+    }
+  }
+
+  .article-body {
+    /* clearfix so floated sidenotes don't bleed past the body */
+  }
+
+  .article-body::after {
+    content: '';
+    display: block;
+    clear: both;
+  }
+</style>
