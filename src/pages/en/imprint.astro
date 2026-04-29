@@ -1,0 +1,13 @@
+---
+// Renders the locked Imprint document from the legal content collection.
+// Source: src/content/legal/en/imprint.md (mirrored from
+// 01-brand-system/legal-pages-package/en/imprint.md). Do not edit content
+// here — update the canonical package and re-copy.
+import { getEntry, render } from 'astro:content';
+import LegalPageLayout from '@/layouts/LegalPageLayout.astro';
+
+const entry = await getEntry('legal', 'imprint');
+if (!entry) throw new Error('Missing legal entry: imprint');
+const { Content } = await render(entry);
+---
+<LegalPageLayout entry={entry} Content={Content} />

@@ -1,0 +1,202 @@
+---
+// src/components/ContentPage.astro
+//
+// Shared shell for static content pages (imprint, privacy, disclaimer,
+// credentials, contact). Renders a kicker label, title, optional standfirst,
+// then a slot for the body. Keeps padding/max-width/typography consistent
+// across the supporting pages without re-writing the same layout six times.
+//
+// Body content typography is wrapped in a `.content-body` class with
+// :global() rules so plain HTML inside the slot picks up serif body, h2/h3
+// rhythm, and link treatment without each page re-declaring it.
+interface Props {
+  label?: string;
+  title: string;
+  standfirst?: string;
+  meta?: string;
+}
+
+const { label, title, standfirst, meta } = Astro.props;
+---
+<article class="content-shell">
+  <header class="content-header">
+    {label && <p class="content-kicker">{label}</p>}
+    <h1 class="content-title">{title}</h1>
+    {standfirst && <p class="content-standfirst">{standfirst}</p>}
+    {meta && <p class="content-meta">{meta}</p>}
+  </header>
+  <div class="content-body">
+    <slot />
+  </div>
+</article>
+
+<style>
+  .content-shell {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: clamp(56px, 8vw, 112px) clamp(20px, 5vw, 80px) 120px;
+  }
+
+  .content-header {
+    max-width: 760px;
+    margin-bottom: clamp(40px, 5vw, 64px);
+  }
+
+  .content-kicker {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 24px;
+  }
+
+  .content-title {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(34px, 5vw, 52px);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin: 0 0 24px;
+  }
+
+  .content-standfirst {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(18px, 1.6vw, 22px);
+    line-height: 1.55;
+    color: var(--ink-2);
+    margin: 0 0 24px;
+    max-width: 60ch;
+  }
+
+  .content-meta {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: var(--ink-3);
+    margin: 0;
+  }
+
+  .content-body {
+    max-width: 720px;
+  }
+
+  .content-body :global(h2) {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(24px, 2.4vw, 32px);
+    line-height: 1.2;
+    color: var(--ink);
+    margin: 56px 0 20px;
+    letter-spacing: -0.018em;
+  }
+
+  .content-body :global(h2:first-child) {
+    margin-top: 0;
+  }
+
+  .content-body :global(h3) {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(20px, 2vw, 24px);
+    line-height: 1.3;
+    color: var(--ink);
+    margin: 40px 0 14px;
+    letter-spacing: -0.012em;
+  }
+
+  .content-body :global(h4) {
+    font-family: var(--mono);
+    font-weight: 500;
+    font-size: 12px;
+    color: var(--ink-3);
+    text-transform: uppercase;
+    letter-spacing: 0.10em;
+    margin: 32px 0 8px;
+  }
+
+  .content-body :global(p) {
+    font-family: var(--serif);
+    font-size: 18px;
+    line-height: 1.7;
+    color: var(--ink);
+    margin: 0 0 22px;
+    max-width: 64ch;
+  }
+
+  .content-body :global(ul),
+  .content-body :global(ol) {
+    font-family: var(--serif);
+    font-size: 18px;
+    line-height: 1.65;
+    color: var(--ink);
+    margin: 0 0 22px;
+    padding-left: 24px;
+  }
+
+  .content-body :global(li) {
+    margin-bottom: 8px;
+  }
+
+  .content-body :global(li::marker) {
+    color: var(--accent);
+  }
+
+  .content-body :global(a) {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid var(--accent);
+    padding-bottom: 1px;
+  }
+
+  .content-body :global(a:hover) {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+
+  .content-body :global(em) {
+    font-style: italic;
+  }
+
+  .content-body :global(strong) {
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .content-body :global(blockquote) {
+    margin: 32px 0;
+    padding: 8px 0 8px 24px;
+    border-left: 3px solid var(--accent);
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 19px;
+    line-height: 1.55;
+    color: var(--ink-2);
+  }
+
+  .content-body :global(dl) {
+    margin: 0 0 22px;
+    display: grid;
+    gap: 16px;
+  }
+
+  .content-body :global(dt) {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 0;
+  }
+
+  .content-body :global(dd) {
+    font-family: var(--serif);
+    font-size: 18px;
+    line-height: 1.65;
+    color: var(--ink);
+    margin: 4px 0 0;
+    max-width: 64ch;
+  }
+</style>

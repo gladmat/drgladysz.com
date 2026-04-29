@@ -1,0 +1,278 @@
+---
+// src/pages/en/blog/index.astro
+//
+// Knowledge base index — lists all published articles, grouped by category in
+// a fixed editorial order (Patient information → Expert blog → FESSH prep →
+// News & commentary). Within each category, sorted by publishedDate desc.
+//
+// Empty categories are suppressed; the page renders cleanly even when only
+// one or two articles exist (Phase 6 baseline). When the WordPress migration
+// completes the page will fill out without further code changes.
+import SiteLayout from '@/layouts/SiteLayout.astro';
+import SectionMasthead from '@/components/SectionMasthead.astro';
+import { getAllArticleSummaries, type ArticleSummary } from '@/lib/sanity';
+
+const articles = await getAllArticleSummaries();
+
+const CATEGORIES: {
+  value: ArticleSummary['category'];
+  label: string;
+  blurb: string;
+}[] = [
+  {
+    value: 'patient',
+    label: 'Patient information',
+    blurb:
+      'Plain-language guides to common conditions, what diagnosis involves, and what to expect from treatment.',
+  },
+  {
+    value: 'expert',
+    label: 'Expert blog',
+    blurb:
+      'Surgical technique, evidence reviews, and operative decision-making written for clinical peers.',
+  },
+  {
+    value: 'fessh-prep',
+    label: 'FESSH preparation',
+    blurb:
+      'Reading notes and structured summaries for the FESSH Diploma examination in hand surgery.',
+  },
+  {
+    value: 'news',
+    label: 'News & commentary',
+    blurb: 'Notes on conferences, meetings, and current developments in the field.',
+  },
+];
+
+const grouped = CATEGORIES.map((c) => ({
+  ...c,
+  items: articles.filter((a) => a.category === c.value),
+})).filter((c) => c.items.length > 0);
+
+const totalCount = articles.length;
+
+const collectionJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'Knowledge base — Mateusz Gładysz, MD',
+  url: 'https://drgladysz.com/en/blog',
+  inLanguage: 'en-NZ',
+  hasPart: articles.map((a) => ({
+    '@type': 'Article',
+    headline: a.title,
+    url: `https://drgladysz.com/en/blog/${a.slug.current}`,
+    datePublished: a.publishedDate,
+    description: a.excerpt,
+  })),
+};
+
+function fmtDate(d?: string) {
+  if (!d) return '';
+  return new Date(d).toLocaleDateString('en-NZ', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+
+const categoryLabels: Record<ArticleSummary['category'], string> = {
+  patient: 'Patient information',
+  expert: 'Expert blog',
+  'fessh-prep': 'FESSH preparation',
+  news: 'News & commentary',
+};
+---
+<SiteLayout
+  title="Knowledge base — Mateusz Gładysz, MD"
+  description="Patient guides, expert clinical writing on hand and reconstructive surgery, and FESSH Diploma preparation notes."
+  locale="en"
+  alternateUrl="/pl/blog"
+  jsonLd={collectionJsonLd}
+>
+  <section class="index-masthead-shell">
+    <SectionMasthead
+      label="Knowledge base"
+      heading="Articles, technique notes, and reading"
+      headingTag="h1"
+      standfirst="Patient-facing guides written in plain language alongside expert clinical writing for peers — covering operative technique, evidence appraisal, and decision-making in hand and reconstructive surgery."
+    />
+  </section>
+
+  <section class="blog-index">
+    <div class="blog-index-inner">
+      {totalCount === 0 ? (
+        <div class="empty">
+          <p>The first articles are in preparation. Check back shortly.</p>
+        </div>
+      ) : (
+        grouped.map((cat) => (
+          <section class="cat-section" aria-labelledby={`cat-${cat.value}`}>
+            <header class="cat-header">
+              <h2 id={`cat-${cat.value}`} class="cat-heading">{cat.label}</h2>
+              <p class="cat-blurb">{cat.blurb}</p>
+            </header>
+            <ol class="article-list">
+              {cat.items.map((article) => (
+                <li class="article-card">
+                  <a href={`/en/blog/${article.slug.current}`} class="article-card-link">
+                    <p class="card-meta">
+                      <span class="card-cat">{categoryLabels[article.category]}</span>
+                      <span aria-hidden="true">·</span>
+                      <time datetime={article.publishedDate}>
+                        {fmtDate(article.publishedDate)}
+                      </time>
+                      {article.lastUpdated && article.lastUpdated !== article.publishedDate && (
+                        <>
+                          <span aria-hidden="true">·</span>
+                          <span class="card-updated">
+                            Updated {fmtDate(article.lastUpdated)}
+                          </span>
+                        </>
+                      )}
+                    </p>
+                    <h3 class="card-title">{article.title}</h3>
+                    <p class="card-excerpt">{article.excerpt}</p>
+                  </a>
+                </li>
+              ))}
+            </ol>
+          </section>
+        ))
+      )}
+    </div>
+  </section>
+</SiteLayout>
+
+<style>
+  .index-masthead-shell {
+    padding: clamp(56px, 8vw, 120px) clamp(20px, 5vw, 80px) 0;
+    max-width: 1320px;
+    margin: 0 auto;
+  }
+
+  .blog-index {
+    padding: clamp(40px, 6vw, 80px) 0 120px;
+  }
+
+  .blog-index-inner {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding-inline: clamp(20px, 5vw, 80px);
+  }
+
+  .empty {
+    max-width: 60ch;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 18px;
+    color: var(--ink-2);
+  }
+
+  .cat-section {
+    margin-bottom: clamp(56px, 8vw, 96px);
+    padding-top: 32px;
+    border-top: 1px solid var(--rule);
+  }
+
+  .cat-section:first-child {
+    border-top: none;
+    padding-top: 0;
+  }
+
+  .cat-header {
+    max-width: 720px;
+    margin-bottom: 40px;
+  }
+
+  .cat-heading {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(28px, 3vw, 40px);
+    line-height: 1.15;
+    color: var(--ink);
+    margin: 0 0 12px;
+    letter-spacing: -0.018em;
+  }
+
+  .cat-blurb {
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    margin: 0;
+    max-width: 60ch;
+  }
+
+  .article-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 32px;
+  }
+
+  .article-card {
+    border-top: 1px solid var(--rule);
+    padding-top: 28px;
+  }
+
+  .article-card-link {
+    display: grid;
+    gap: 12px;
+    text-decoration: none;
+    color: inherit;
+    grid-template-columns: 1fr;
+    max-width: 760px;
+  }
+
+  .article-card-link:hover .card-title {
+    color: var(--accent);
+  }
+
+  .article-card-link:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 6px;
+  }
+
+  .card-meta {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: var(--ink-3);
+    margin: 0;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: baseline;
+  }
+
+  .card-cat {
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  .card-updated {
+    color: var(--ink-3);
+  }
+
+  .card-title {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(22px, 2.2vw, 28px);
+    line-height: 1.2;
+    color: var(--ink);
+    margin: 0;
+    letter-spacing: -0.012em;
+    transition: color 0.15s ease;
+  }
+
+  .card-excerpt {
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    margin: 0;
+    max-width: 60ch;
+  }
+</style>

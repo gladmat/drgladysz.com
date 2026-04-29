@@ -1,0 +1,13 @@
+---
+// The glob loader produces flat basenames as IDs ("consent", not "en/consent").
+// All 10 legal docs have unique basenames across en/ and pl/ so the flat
+// IDs don't collide. Locale separation is preserved via the frontmatter
+// `locale` field rather than the path.
+import { getEntry, render } from 'astro:content';
+import LegalPageLayout from '@/layouts/LegalPageLayout.astro';
+
+const entry = await getEntry('legal', 'consent');
+if (!entry) throw new Error('Missing legal entry: consent');
+const { Content } = await render(entry);
+---
+<LegalPageLayout entry={entry} Content={Content} />

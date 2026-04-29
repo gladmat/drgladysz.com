@@ -5,8 +5,11 @@ interface Props {
 
 const { locale = 'en' } = Astro.props;
 
-// Polish footer copy is locked separately in brand spec §11; this stub uses
-// EN copy as a placeholder until Polish composition session lands.
+// Footer copy and link order match the locked legal-pages-package
+// `_meta/footer-config.json` exactly. The legal-link order is:
+//   Imprint → Privacy Policy → Medical Disclaimer → Consent → Credentials.
+// The disclaimer-band text and colophon are the locked copy from the same
+// source. Brand spec §11.
 const t = locale === 'pl'
   ? {
       identityHeading: 'Tożsamość',
@@ -16,9 +19,11 @@ const t = locale === 'pl'
       consultLanguagesLabel: 'Języki konsultacji:',
       memberLabel: 'Członek:',
       legalLabel: 'Informacje prawne',
+      // Locked: footer-config.json#pl.disclaimerBand
       disclaimer:
-        'Informacje zawarte na tej stronie mają charakter ogólny i edukacyjny. Nie stanowią porady medycznej i nie zastępują konsultacji z wykwalifikowanym lekarzem.',
-      colophon: 'Aarau Graphite · Złożono krojem IBM Plex',
+        'Informacje zawarte na niniejszej stronie mają charakter ogólny i edukacyjny. Nie stanowią porady lekarskiej i nie zastępują konsultacji z wykwalifikowanym specjalistą.',
+      // Locked: footer-config.json#pl.typeAttribution
+      colophon: 'Aarau Graphite · Krój IBM Plex',
       rights: 'Wszelkie prawa zastrzeżone.',
       navHome: 'Strona główna',
       navAbout: 'O mnie',
@@ -29,6 +34,7 @@ const t = locale === 'pl'
       navImprint: 'Nota prawna',
       navPrivacy: 'Polityka prywatności',
       navDisclaimer: 'Zastrzeżenie medyczne',
+      navConsent: 'Zgoda',
     }
   : {
       identityHeading: 'Identity',
@@ -38,8 +44,10 @@ const t = locale === 'pl'
       consultLanguagesLabel: 'Consultation languages:',
       memberLabel: 'Member:',
       legalLabel: 'Legal',
+      // Locked: footer-config.json#en.disclaimerBand
       disclaimer:
         'The information on this website is provided for general guidance and educational purposes. It does not constitute medical advice and does not replace consultation with a qualified medical practitioner.',
+      // Locked: footer-config.json#en.typeAttribution
       colophon: 'Aarau Graphite · Set in IBM Plex',
       rights: 'All rights reserved.',
       navHome: 'Home',
@@ -51,6 +59,7 @@ const t = locale === 'pl'
       navImprint: 'Imprint',
       navPrivacy: 'Privacy Policy',
       navDisclaimer: 'Medical Disclaimer',
+      navConsent: 'Consent',
     };
 
 const localePrefix = locale === 'pl' ? '/pl' : '/en';
@@ -73,16 +82,24 @@ const navLinks = locale === 'pl'
       { href: '/en/credentials', label: t.navCredentials },
     ];
 
+// Locked link order from footer-config.json: Imprint → Privacy → Disclaimer
+// → Consent → Credentials. Credentials appears here even though it's also
+// in `navLinks` above — `_meta/README.md` "Footer integration" makes the
+// duplication explicit.
 const legalLinks = locale === 'pl'
   ? [
       { href: '/pl/nota-prawna', label: t.navImprint },
       { href: '/pl/polityka-prywatnosci', label: t.navPrivacy },
       { href: '/pl/zastrzezenie-medyczne', label: t.navDisclaimer },
+      { href: '/pl/zgoda', label: t.navConsent },
+      { href: '/pl/uprawnienia', label: t.navCredentials },
     ]
   : [
       { href: '/en/imprint', label: t.navImprint },
       { href: '/en/privacy', label: t.navPrivacy },
       { href: '/en/disclaimer', label: t.navDisclaimer },
+      { href: '/en/consent', label: t.navConsent },
+      { href: '/en/credentials', label: t.navCredentials },
     ];
 
 const year = new Date().getFullYear();

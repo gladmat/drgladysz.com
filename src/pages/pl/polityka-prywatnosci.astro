@@ -1,0 +1,9 @@
+---
+import { getEntry, render } from 'astro:content';
+import LegalPageLayout from '@/layouts/LegalPageLayout.astro';
+
+const entry = await getEntry('legal', 'polityka-prywatnosci');
+if (!entry) throw new Error('Missing legal entry: polityka-prywatnosci');
+const { Content } = await render(entry);
+---
+<LegalPageLayout entry={entry} Content={Content} />

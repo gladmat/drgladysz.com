@@ -1,0 +1,165 @@
+---
+// src/layouts/LegalPageLayout.astro
+//
+// Layout for legal pages sourced from the `legal` content collection. Wraps
+// the rendered markdown in SiteLayout + ContentPage and provides:
+//
+//   - h1 from frontmatter `title`
+//   - meta line: version + last-updated date
+//   - section-masthead styling (Plex Mono small caps, oxblood accent) for the
+//     `§ 0n — Theme` paragraphs that the remark-section-masthead plugin marks
+//   - language switcher with the correct counterpart URL from frontmatter
+//
+// The collection's source markdown is the verbatim drop-in from
+// `01-brand-system/legal-pages-package/`. Do not edit the source files in
+// `src/content/legal/` to alter content; update the canonical package and
+// re-copy.
+import SiteLayout from '@/layouts/SiteLayout.astro';
+import ContentPage from '@/components/ContentPage.astro';
+import type { CollectionEntry } from 'astro:content';
+import type { ImageMetadata } from 'astro';
+
+interface Props {
+  entry: CollectionEntry<'legal'>;
+  Content: any; // The compiled markdown component returned by entry.render()
+}
+
+const { entry, Content } = Astro.props;
+const { data } = entry;
+
+// Format the lastUpdated frontmatter (YYYY-MM) into a readable label
+// according to the page locale. Handles both "2026-04" and full dates.
+function formatLastUpdated(value: string, locale: 'en' | 'pl'): string {
+  // value is "YYYY-MM" or "YYYY-MM-DD"
+  const parts = value.split('-').map(Number);
+  if (parts.length < 2) return value;
+  const year = parts[0];
+  const monthIdx = (parts[1] || 1) - 1;
+  const day = parts[2];
+
+  const monthNames =
+    locale === 'pl'
+      ? [
+          'styczeń',
+          'luty',
+          'marzec',
+          'kwiecień',
+          'maj',
+          'czerwiec',
+          'lipiec',
+          'sierpień',
+          'wrzesień',
+          'październik',
+          'listopad',
+          'grudzień',
+        ]
+      : [
+          'January',
+          'February',
+          'March',
+          'April',
+          'May',
+          'June',
+          'July',
+          'August',
+          'September',
+          'October',
+          'November',
+          'December',
+        ];
+  const month = monthNames[monthIdx] ?? '';
+  return day ? `${day} ${month} ${year}` : `${month} ${year}`;
+}
+
+const versionLabel =
+  data.locale === 'pl'
+    ? `Wersja ${data.version} · ostatnia aktualizacja ${formatLastUpdated(
+        data.lastUpdated,
+        'pl',
+      )}`
+    : `Version ${data.version} · last updated ${formatLastUpdated(
+        data.lastUpdated,
+        'en',
+      )}`;
+
+const labelText =
+  data.locale === 'pl' ? 'Informacje prawne' : 'Legal';
+
+const heroPreloadProp: { src: ImageMetadata } | undefined = undefined;
+---
+<SiteLayout
+  title={`${data.title} — Mateusz Gładysz, MD`}
+  description={data.description}
+  locale={data.locale}
+  alternateUrl={data.counterpart}
+  heroPreload={heroPreloadProp}
+>
+  <ContentPage label={labelText} title={data.title} meta={versionLabel}>
+    <Content />
+  </ContentPage>
+</SiteLayout>
+
+<style is:global>
+  /* Section masthead — paragraphs of the form `§ 0n — Theme` are marked by
+     the remark-section-masthead plugin. They render in IBM Plex Mono small
+     caps with the oxblood accent, immediately before their h2. Brand spec
+     v1.7 §11/§12. */
+  .content-body p.section-masthead {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 500;
+    margin: 56px 0 12px;
+    max-width: none;
+    /* Visually attach to the following h2 */
+  }
+
+  .content-body p.section-masthead + h2 {
+    margin-top: 0;
+  }
+
+  /* Tables — privacy & disclaimer documents use legal-bases / retention tables.
+     Brand spec §2: rule-strong border colour (#C9C0B0), Plex Mono headers. */
+  .content-body table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 32px 0;
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.55;
+    border-top: 2px solid var(--rule-strong);
+    border-bottom: 2px solid var(--rule-strong);
+  }
+
+  .content-body th,
+  .content-body td {
+    border-top: 1px solid var(--rule);
+    padding: 10px 14px 10px 0;
+    vertical-align: top;
+    text-align: left;
+  }
+
+  .content-body th {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    font-weight: 500;
+    border-top: none;
+  }
+
+  .content-body td:not(:last-child),
+  .content-body th:not(:last-child) {
+    padding-right: 24px;
+  }
+
+  /* Document-control trailing block — h3 followed by short bullet list, ends
+     each legal document. Light visual separation from the body. */
+  .content-body h3 + ul:last-child,
+  .content-body h3 + p:last-child {
+    margin-bottom: 0;
+  }
+</style>

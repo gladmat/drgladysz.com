@@ -4,6 +4,7 @@ import mdx from '@astrojs/mdx';
 import preact from '@astrojs/preact';
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
+import remarkSectionMasthead from './src/plugins/remark-section-masthead.mjs';
 
 export default defineConfig({
   site: 'https://drgladysz.com',
@@ -60,6 +61,13 @@ export default defineConfig({
     '/wp-content/': '/en/',
     '/feed/': '/en/blog',
     '/sitemap_index.xml': '/sitemap-index.xml',
+  },
+
+  // Markdown pipeline. The section-masthead plugin recognises the locked
+  // brand-spec `§ 0n — Theme` paragraph pattern in legal pages and marks it
+  // with the `section-masthead` class for downstream styling.
+  markdown: {
+    remarkPlugins: [remarkSectionMasthead],
   },
 
   // Vite plugins — Tailwind 4 ships as a Vite plugin (no Astro integration in v6)

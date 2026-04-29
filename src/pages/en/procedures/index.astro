@@ -1,0 +1,259 @@
+---
+// src/pages/en/procedures/index.astro
+//
+// Procedures index — lists procedure pages grouped by sub-specialty category.
+// Order mirrors the home page Specialty Blocks: Hand surgery →
+// Reconstructive & microsurgery → Skin cancer surgery.
+//
+// Each category has an anchor (#hand-surgery, etc.) so cross-links from the
+// procedure detail breadcrumb (`/en/procedures#hand-surgery`) land at the
+// right section.
+import SiteLayout from '@/layouts/SiteLayout.astro';
+import SectionMasthead from '@/components/SectionMasthead.astro';
+import { getAllProcedureSummaries, type ProcedureSummary } from '@/lib/sanity';
+
+const procedures = await getAllProcedureSummaries();
+
+const CATEGORIES: {
+  value: ProcedureSummary['category'];
+  label: string;
+  blurb: string;
+}[] = [
+  {
+    value: 'hand-surgery',
+    label: 'Hand surgery',
+    blurb:
+      'Operative care for the hand, wrist, and upper extremity — compression neuropathies, carpal fractures, tendon injuries, and arthritis of the thumb base.',
+  },
+  {
+    value: 'reconstructive-microsurgery',
+    label: 'Reconstructive & microsurgery',
+    blurb:
+      'Reconstruction of soft-tissue and complex defects — orthoplastic lower-limb work, autologous breast reconstruction, and head-and-neck free flaps.',
+  },
+  {
+    value: 'skin-cancer',
+    label: 'Skin cancer surgery',
+    blurb:
+      'Surgical management of melanoma and high-risk non-melanoma skin cancer — diagnostic excision, sentinel lymph node biopsy, and reconstruction.',
+  },
+];
+
+const grouped = CATEGORIES.map((c) => ({
+  ...c,
+  items: procedures.filter((p) => p.category === c.value),
+}));
+
+const totalCount = procedures.length;
+
+const collectionJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'Procedures — Mateusz Gładysz, MD',
+  url: 'https://drgladysz.com/en/procedures',
+  inLanguage: 'en-NZ',
+  hasPart: procedures.map((p) => ({
+    '@type': 'MedicalProcedure',
+    name: p.title,
+    description: p.summary,
+    url: `https://drgladysz.com/en/procedures/${p.slug.current}`,
+  })),
+};
+
+function fmtDate(d?: string) {
+  if (!d) return '';
+  return new Date(d).toLocaleDateString('en-NZ', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+---
+<SiteLayout
+  title="Procedures — Mateusz Gładysz, MD, FEBOPRAS, FEBHS"
+  description="Procedure pages structured to AO Surgery Reference standard — indications, anatomy, key surgical steps, aftercare, complications, and supporting evidence."
+  locale="en"
+  alternateUrl="/pl/zabiegi"
+  jsonLd={collectionJsonLd}
+>
+  <section class="index-masthead-shell">
+    <SectionMasthead
+      label="Procedures"
+      heading="Operative procedures"
+      headingTag="h1"
+      standfirst="Each page follows a consistent AO Surgery Reference structure — indications, contraindications, anatomy, patient positioning, approach, key surgical steps, closure, aftercare, complications, and supporting evidence — so the same architectural rigour applies whether the topic is a routine carpal tunnel release or a free-flap reconstruction."
+    />
+  </section>
+
+  <section class="proc-index">
+    <div class="proc-index-inner">
+      {grouped.map((cat) => (
+        <section
+          class="cat-section"
+          id={cat.value}
+          aria-labelledby={`cat-h-${cat.value}`}
+        >
+          <header class="cat-header">
+            <h2 id={`cat-h-${cat.value}`} class="cat-heading">{cat.label}</h2>
+            <p class="cat-blurb">{cat.blurb}</p>
+          </header>
+
+          {cat.items.length > 0 ? (
+            <ol class="proc-list">
+              {cat.items.map((procedure) => (
+                <li class="proc-card">
+                  <a
+                    href={`/en/procedures/${procedure.slug.current}`}
+                    class="proc-card-link"
+                  >
+                    <h3 class="card-title">{procedure.title}</h3>
+                    <p class="card-summary">{procedure.summary}</p>
+                    <p class="card-meta">
+                      <span>
+                        Last reviewed
+                        <time datetime={procedure.lastUpdated}>
+                          {' '}
+                          {fmtDate(procedure.lastUpdated)}
+                        </time>
+                      </span>
+                    </p>
+                  </a>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p class="empty">In preparation. The first pages in this category are being authored.</p>
+          )}
+        </section>
+      ))}
+
+      {totalCount === 0 && (
+        <p class="all-empty">
+          The first procedure pages are in preparation. Check back shortly.
+        </p>
+      )}
+    </div>
+  </section>
+</SiteLayout>
+
+<style>
+  .index-masthead-shell {
+    padding: clamp(56px, 8vw, 120px) clamp(20px, 5vw, 80px) 0;
+    max-width: 1320px;
+    margin: 0 auto;
+  }
+
+  .proc-index {
+    padding: clamp(40px, 6vw, 80px) 0 120px;
+  }
+
+  .proc-index-inner {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding-inline: clamp(20px, 5vw, 80px);
+  }
+
+  .cat-section {
+    margin-bottom: clamp(56px, 8vw, 96px);
+    padding-top: 32px;
+    border-top: 1px solid var(--rule);
+    scroll-margin-top: 96px;
+  }
+
+  .cat-section:first-of-type {
+    border-top: none;
+    padding-top: 0;
+  }
+
+  .cat-header {
+    max-width: 720px;
+    margin-bottom: 40px;
+  }
+
+  .cat-heading {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(28px, 3vw, 40px);
+    line-height: 1.15;
+    color: var(--ink);
+    margin: 0 0 12px;
+    letter-spacing: -0.018em;
+  }
+
+  .cat-blurb {
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    margin: 0;
+    max-width: 60ch;
+  }
+
+  .empty,
+  .all-empty {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 16px;
+    color: var(--ink-3);
+    max-width: 60ch;
+    margin: 0;
+  }
+
+  .proc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+  }
+
+  .proc-card {
+    border-top: 2px solid var(--accent);
+    padding-top: 20px;
+  }
+
+  .proc-card-link {
+    display: grid;
+    gap: 10px;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .proc-card-link:hover .card-title {
+    color: var(--accent);
+  }
+
+  .proc-card-link:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 6px;
+  }
+
+  .card-title {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 22px;
+    line-height: 1.25;
+    color: var(--ink);
+    margin: 0;
+    letter-spacing: -0.012em;
+    transition: color 0.15s ease;
+  }
+
+  .card-summary {
+    font-family: var(--serif);
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    margin: 0;
+  }
+
+  .card-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--ink-3);
+    margin: 4px 0 0;
+    text-transform: uppercase;
+  }
+</style>

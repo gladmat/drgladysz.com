@@ -1,0 +1,267 @@
+---
+// src/pages/en/publications.astro
+//
+// Full publications archive — listed by year, descending. Currently a small
+// in-page list of two papers; new entries can be added to PUBLICATIONS below.
+// When the publications volume warrants it, this can be migrated to a Sanity
+// `bibReference` query filtered to Mateusz's own papers (a flag like
+// `isOwnPublication: true` on the schema would make that one-line).
+//
+// Author-bolding pattern matches the home page PublicationsTeaser: the author
+// at `authorsBoldIndex` is bolded so the reader can quickly find Mateusz's
+// position in multi-author papers.
+import SiteLayout from '@/layouts/SiteLayout.astro';
+import ContentPage from '@/components/ContentPage.astro';
+
+interface Publication {
+  titleHtml: string;
+  authors: string[];
+  authorsBoldIndex?: number;
+  journal: string;
+  year: number;
+  volume?: string;
+  pages?: string;
+  doi: string;
+  doiUrl: string;
+  pmid?: string;
+  pubType?: 'journal' | 'book-chapter' | 'conference';
+}
+
+// Source of truth for the archive. Editing this list updates both the
+// publications page and (separately) the PublicationsTeaser cards on the
+// home page.
+const PUBLICATIONS: Publication[] = [
+  {
+    titleHtml: 'AI-Assisted Medical Documentation in a Multilingual Swiss Healthcare System',
+    authors: [
+      'Mateusz Gładysz',
+      'Fabrizio Fiumedinisi',
+      'Felice Burn',
+      'Nikki Rommers',
+      'Pietro Giovanoli',
+      'Jan Alexander Plock',
+    ],
+    authorsBoldIndex: 0,
+    journal: 'JMIR AI',
+    year: 2026,
+    doi: '10.2196/77351',
+    doiUrl: 'https://doi.org/10.2196/77351',
+    pubType: 'journal',
+  },
+  {
+    titleHtml:
+      'Limb Salvage with Acellular Dermal Matrix Template in Persistent <em>Pseudomonas aeruginosa</em> Burn Infection',
+    authors: [
+      'Mateusz Gładysz',
+      'Vincent März',
+      'Stefan Ruemke',
+      'Evgenii Rubalskii',
+      'Peter Maria Vogt',
+      'Nicco Krezdorn',
+    ],
+    authorsBoldIndex: 0,
+    journal: 'European Burn Journal',
+    year: 2022,
+    volume: '3',
+    pages: '4',
+    doi: '10.3390/ebj3010004',
+    doiUrl: 'https://doi.org/10.3390/ebj3010004',
+    pubType: 'journal',
+  },
+];
+
+// Group by year, newest first.
+const byYear = PUBLICATIONS.slice()
+  .sort((a, b) => b.year - a.year)
+  .reduce<Record<number, Publication[]>>((acc, p) => {
+    (acc[p.year] ||= []).push(p);
+    return acc;
+  }, {});
+const years = Object.keys(byYear).map(Number).sort((a, b) => b - a);
+
+// JSON-LD: ItemList of ScholarlyArticles. Boosts knowledge-graph clarity
+// for the publications archive specifically (in addition to the per-page
+// MedicalScholarlyArticle JSON-LD on individual articles).
+const publicationsJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'Publications — Mateusz Gładysz, MD',
+  url: 'https://drgladysz.com/en/publications',
+  inLanguage: 'en-NZ',
+  hasPart: PUBLICATIONS.map((p) => ({
+    '@type': 'ScholarlyArticle',
+    headline: p.titleHtml.replace(/<[^>]+>/g, ''),
+    name: p.titleHtml.replace(/<[^>]+>/g, ''),
+    author: p.authors.map((a) => ({ '@type': 'Person', name: a })),
+    datePublished: String(p.year),
+    isPartOf: { '@type': 'Periodical', name: p.journal },
+    sameAs: p.doiUrl,
+    ...(p.pmid
+      ? {
+          identifier: [
+            { '@type': 'PropertyValue', propertyID: 'PMID', value: p.pmid },
+          ],
+        }
+      : {}),
+  })),
+};
+---
+<SiteLayout
+  title="Publications — Mateusz Gładysz, MD"
+  description="Full peer-reviewed publication record across plastic, hand, and reconstructive surgery, including AI-assisted clinical documentation research at the University of Zurich."
+  locale="en"
+  alternateUrl="/pl/publikacje"
+  jsonLd={publicationsJsonLd}
+>
+  <ContentPage
+    label="Research"
+    title="Publications"
+    standfirst="Peer-reviewed publication record. Sub-specialty interests are AI-assisted clinical documentation, complex burn reconstruction, and hand surgery."
+  >
+    {years.map((year) => (
+      <section class="year-section" aria-labelledby={`year-${year}`}>
+        <h2 id={`year-${year}`} class="year-heading">{year}</h2>
+        <ol class="pub-list">
+          {byYear[year].map((pub) => (
+            <li class="pub-entry">
+              <h3 class="pub-title" set:html={pub.titleHtml} />
+              <p class="pub-authors">
+                {pub.authors.map((author, i) => (
+                  <>
+                    {i > 0 && ', '}
+                    {i === pub.authorsBoldIndex ? <strong>{author}</strong> : author}
+                  </>
+                ))}
+              </p>
+              <p class="pub-meta">
+                <strong>{pub.journal}</strong>
+                {pub.volume && <span> · vol. {pub.volume}</span>}
+                {pub.pages && <span> · {pub.pages}</span>}
+                <span> · {pub.year}</span>
+              </p>
+              <p class="pub-actions">
+                <a
+                  href={pub.doiUrl}
+                  rel="noopener"
+                  target="_blank"
+                  class="pub-action"
+                >
+                  DOI: {pub.doi}
+                </a>
+                {pub.pmid && (
+                  <a
+                    href={`https://pubmed.ncbi.nlm.nih.gov/${pub.pmid}/`}
+                    rel="noopener"
+                    target="_blank"
+                    class="pub-action"
+                  >
+                    PubMed
+                  </a>
+                )}
+              </p>
+            </li>
+          ))}
+        </ol>
+      </section>
+    ))}
+  </ContentPage>
+</SiteLayout>
+
+<style>
+  .year-section {
+    margin-bottom: 64px;
+  }
+
+  .year-section:last-child {
+    margin-bottom: 0;
+  }
+
+  .year-heading {
+    font-family: var(--mono);
+    font-weight: 500;
+    font-size: 14px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 28px;
+    border-top: 2px solid var(--accent);
+    padding-top: 12px;
+    width: max-content;
+  }
+
+  .pub-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 36px;
+  }
+
+  .pub-entry {
+    max-width: 760px;
+  }
+
+  .pub-title {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(20px, 2vw, 24px);
+    line-height: 1.3;
+    color: var(--ink);
+    letter-spacing: -0.012em;
+    margin: 0 0 12px;
+  }
+
+  .pub-title :global(em) {
+    font-style: italic;
+  }
+
+  .pub-authors {
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    margin: 0 0 10px;
+    max-width: none;
+  }
+
+  .pub-authors strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .pub-meta {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-3);
+    letter-spacing: 0.02em;
+    margin: 0 0 14px;
+    max-width: none;
+  }
+
+  .pub-meta strong {
+    color: var(--ink-2);
+    font-weight: 500;
+  }
+
+  .pub-actions {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin: 0;
+    max-width: none;
+  }
+
+  .pub-action {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid var(--accent);
+    padding-bottom: 1px;
+  }
+
+  .pub-action:hover {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+</style>
