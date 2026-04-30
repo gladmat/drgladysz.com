@@ -1,0 +1,288 @@
+/* src/components/interactive/calculator.css
+ *
+ * Shared styles for all calculator islands (QuickDASH, PRWE, Boston CTS,
+ * MHQ, Mayo Wrist). Loaded once per page via the per-component `import` —
+ * Vite dedupes so the bundle ships once even if multiple calculators end
+ * up on the same page (not currently a use case, but safe).
+ *
+ * All values come from the locked brand tokens in globals.css. No hardcoded
+ * colours, no font definitions outside var(--serif|sans|mono).
+ */
+
+.calculator-widget {
+  font-family: var(--sans);
+  color: var(--ink);
+  background: var(--bg-card);
+  border: 1px solid var(--rule);
+  padding: clamp(20px, 3vw, 32px);
+  margin: 0 0 clamp(40px, 6vw, 64px);
+  /* Reserve a min-height before hydration so the page doesn't shift
+     when the Preact island mounts. */
+  min-height: 480px;
+}
+
+.calculator-locale-note {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: 0 0 24px;
+  padding: 12px 16px;
+  border-left: 2px solid var(--accent);
+  background: var(--bg);
+  text-transform: none;
+  letter-spacing: 0;
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ---- Form layout ----------------------------------------------------- */
+
+.calculator-form {
+  margin: 0;
+}
+
+.calculator-fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.calculator-legend {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(15px, 1.4vw, 17px);
+  line-height: 1.5;
+  color: var(--ink-2);
+  margin: 0 0 24px;
+  padding: 0;
+  max-width: 60ch;
+}
+
+.calculator-questions {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 24px;
+}
+
+.calculator-question {
+  padding: 20px 0;
+  border-top: 1px solid var(--rule);
+}
+
+.calculator-question:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.calculator-question-prompt {
+  font-family: var(--serif);
+  font-size: clamp(15px, 1.4vw, 17px);
+  line-height: 1.55;
+  color: var(--ink);
+  margin: 0 0 16px;
+  display: flex;
+  gap: 10px;
+  max-width: 70ch;
+}
+
+.calculator-question-num {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--accent);
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+  padding-top: 3px;
+  min-width: 1.6em;
+}
+
+/* ---- Response options ------------------------------------------------- */
+
+.calculator-options {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 600px) {
+  .calculator-options {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
+}
+
+.calculator-option {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--rule);
+  background: var(--bg);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+@media (min-width: 600px) {
+  .calculator-option {
+    flex-direction: column;
+    text-align: center;
+    gap: 6px;
+    padding: 12px 8px;
+    min-height: 88px;
+  }
+}
+
+.calculator-option:hover {
+  border-color: var(--accent);
+}
+
+.calculator-option:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--ink-on-dark);
+}
+
+.calculator-option:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.calculator-option input[type='radio'] {
+  /* Visually hide the native radio — the label IS the click target.
+     Keep it focusable for keyboard users. */
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.calculator-option-num {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.calculator-option:has(input:checked) .calculator-option-num {
+  color: var(--ink-on-dark);
+}
+
+.calculator-option-label {
+  font-size: 13px;
+  line-height: 1.3;
+  color: var(--ink-2);
+}
+
+.calculator-option:has(input:checked) .calculator-option-label {
+  color: var(--ink-on-dark);
+}
+
+/* ---- Result panel ----------------------------------------------------- */
+
+.calculator-result {
+  margin-top: 32px;
+  padding: 24px;
+  background: var(--bg);
+  border: 1px solid var(--rule-strong);
+  text-align: center;
+  position: relative;
+}
+
+.calculator-result-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 12px;
+}
+
+.calculator-result-score {
+  font-family: var(--serif);
+  margin: 0 0 8px;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+}
+
+.calculator-result-number {
+  font-weight: 500;
+  font-size: clamp(48px, 8vw, 72px);
+  line-height: 1;
+  color: var(--ink);
+  letter-spacing: -0.03em;
+}
+
+.calculator-result-range {
+  font-size: clamp(20px, 3vw, 28px);
+  color: var(--ink-3);
+}
+
+.calculator-result-interpretation {
+  font-family: var(--serif);
+  font-size: clamp(17px, 1.6vw, 20px);
+  line-height: 1.4;
+  color: var(--ink);
+  margin: 0 0 12px;
+}
+
+.calculator-result-note {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  max-width: 60ch;
+  margin: 0 auto;
+}
+
+.calculator-result-progress {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--ink-2);
+  margin: 0;
+  letter-spacing: 0.04em;
+}
+
+.calculator-result-hint {
+  color: var(--ink-3);
+}
+
+.calculator-reset {
+  margin-top: 16px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--accent);
+  padding: 4px 2px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.calculator-reset:hover,
+.calculator-reset:focus-visible {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}
+
+.calculator-reset:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 1px;
+}

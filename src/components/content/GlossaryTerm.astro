@@ -6,10 +6,9 @@
 // popover; the Popover API toggles state declaratively via popovertarget,
 // so zero JavaScript ships.
 //
-// The popover content shows the term, its category (mono caps), and the
-// short definition. The dedicated /en/glossary/[slug] index/detail pages
-// are Tier 2 (post-launch) — the "More about this term →" link from the
-// locked spec is suppressed for now and lights up when those pages ship.
+// The popover content shows the term, its category (mono caps), the short
+// definition, and a "More about this term →" link to the dedicated glossary
+// detail page. URL is locale-aware: /en/glossary/[slug] or /pl/slowniczek/[slug].
 //
 // Per-occurrence uniqueness: the popoverId includes the mark's `_key` so
 // the same term cited multiple times in one article generates distinct
@@ -36,7 +35,7 @@ const displayedTerm =
 
 const popoverId = `glossary-${term._id}-${markKey}`;
 
-const CATEGORY_LABELS: Record<SanityGlossaryTerm['category'], string> = {
+const CATEGORY_LABELS_EN: Record<SanityGlossaryTerm['category'], string> = {
   anatomy: 'Anatomy',
   condition: 'Condition',
   procedure: 'Procedure',
@@ -46,7 +45,27 @@ const CATEGORY_LABELS: Record<SanityGlossaryTerm['category'], string> = {
   structure: 'Anatomical structure',
   other: 'Glossary',
 };
-const categoryLabel = CATEGORY_LABELS[term.category] ?? 'Glossary';
+const CATEGORY_LABELS_PL: Record<SanityGlossaryTerm['category'], string> = {
+  anatomy: 'Anatomia',
+  condition: 'Schorzenie',
+  procedure: 'Zabieg',
+  investigation: 'Badanie',
+  treatment: 'Leczenie',
+  outcome: 'Miara wyniku',
+  structure: 'Struktura anatomiczna',
+  other: 'Słowniczek',
+};
+const categoryLabels = locale === 'pl' ? CATEGORY_LABELS_PL : CATEGORY_LABELS_EN;
+const categoryLabel = categoryLabels[term.category] ?? categoryLabels.other;
+
+// Locale-aware detail-page URL. Polish slug "slowniczek" (diminutive of
+// "słownik" — natural for "small dictionary," matches the popover-friendly
+// tone). Both routes generate one page per glossaryTerm doc.
+const detailUrl =
+  locale === 'pl'
+    ? `/pl/slowniczek/${term.slug.current}`
+    : `/en/glossary/${term.slug.current}`;
+const moreLinkLabel = locale === 'pl' ? 'Więcej o tym haśle' : 'More about this term';
 ---
 <button
   type="button"
@@ -64,6 +83,9 @@ const categoryLabel = CATEGORY_LABELS[term.category] ?? 'Glossary';
   <p class="glossary-popover-cat">{categoryLabel}</p>
   <h4 class="glossary-popover-term" id={`${popoverId}-label`}>{displayedTerm}</h4>
   <p class="glossary-popover-def">{definition}</p>
+  <a class="glossary-popover-more" href={detailUrl}>
+    {moreLinkLabel} <span aria-hidden="true">&rarr;</span>
+  </a>
 </aside>
 
 <style>
@@ -140,7 +162,32 @@ const categoryLabel = CATEGORY_LABELS[term.category] ?? 'Glossary';
     font-size: 14px;
     line-height: 1.55;
     color: var(--ink);
-    margin: 0;
+    margin: 0 0 12px;
+  }
+
+  .glossary-popover-more {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid var(--accent);
+    padding-bottom: 1px;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .glossary-popover-more:hover,
+  .glossary-popover-more:focus-visible {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+
+  .glossary-popover-more:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 1px;
   }
 
   /* ---- Print ----------------------------------------------------------- */

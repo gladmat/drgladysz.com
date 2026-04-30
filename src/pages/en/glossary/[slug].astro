@@ -1,0 +1,548 @@
+---
+// src/pages/en/glossary/[slug].astro
+//
+// Glossary term detail page. Static-generates one page per glossaryTerm doc
+// in Sanity. Renders the English-language fields; falls back to short
+// definition when fullDefinition is absent.
+//
+// Cross-references:
+//   - relatedTerms[] — resolved at GROQ time, rendered as cross-link cards
+//   - articlesUsingTerm[] — articles whose body has a glossaryTerm mark
+//     pointing at this doc (exact GROQ subquery, no over-reporting via
+//     indirect references)
+//
+// Schema.org: DefinedTerm + BreadcrumbList JSON-LD.
+import SiteLayout from '@/layouts/SiteLayout.astro';
+import PortableTextRenderer from '@/components/content/PortableTextRenderer.astro';
+import {
+  getAllGlossaryTermSlugs,
+  getGlossaryTermBySlug,
+  urlForImage,
+  type SanityGlossaryTermFull,
+} from '@/lib/sanity';
+import {
+  generateBreadcrumb,
+  generateDefinedTermSchema,
+} from '@/lib/schema';
+
+export async function getStaticPaths() {
+  const slugs = await getAllGlossaryTermSlugs();
+  return slugs.map((slug) => ({ params: { slug } }));
+}
+
+const { slug } = Astro.params;
+if (!slug) throw new Error('Missing slug param');
+
+const term = await getGlossaryTermBySlug(slug);
+if (!term) {
+  // No matching glossary term — fall back to the index.
+  return Astro.redirect('/en/glossary');
+}
+
+const CATEGORY_LABELS: Record<SanityGlossaryTermFull['category'], string> = {
+  anatomy: 'Anatomy',
+  condition: 'Condition',
+  procedure: 'Procedure',
+  investigation: 'Investigation',
+  treatment: 'Treatment',
+  outcome: 'Outcome measure',
+  structure: 'Anatomical structure',
+  other: 'Glossary',
+};
+
+const ARTICLE_CATEGORY_LABELS: Record<string, string> = {
+  patient: 'Patient information',
+  expert: 'Expert blog',
+  'fessh-prep': 'FESSH preparation',
+  news: 'News & commentary',
+};
+
+const siteUrl = (
+  import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com'
+).replace(/\/$/, '');
+const canonicalUrl = `${siteUrl}/en/glossary/${slug}`;
+const indexUrl = `${siteUrl}/en/glossary`;
+
+const definedTermJsonLd = generateDefinedTermSchema({
+  term,
+  url: canonicalUrl,
+  inSetUrl: indexUrl,
+  inLanguage: 'en-NZ',
+  locale: 'en',
+});
+
+const breadcrumbJsonLd = generateBreadcrumb([
+  { name: 'Home', url: `${siteUrl}/en/` },
+  { name: 'Glossary', url: indexUrl },
+  { name: term.term, url: canonicalUrl },
+]);
+
+const illustrationUrl = term.illustration
+  ? urlForImage(term.illustration).width(1200).fit('max').url()
+  : null;
+
+const hasFullDefinition =
+  Array.isArray(term.fullDefinition) && term.fullDefinition.length > 0;
+
+function fmtDate(d?: string) {
+  if (!d) return '';
+  return new Date(d).toLocaleDateString('en-NZ', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+---
+<SiteLayout
+  title={`${term.term} — Glossary — Mateusz Gładysz, MD`}
+  description={term.shortDefinition}
+  locale="en"
+  alternateUrl={`/pl/slowniczek/${slug}`}
+  canonical={canonicalUrl}
+  jsonLd={[definedTermJsonLd, breadcrumbJsonLd]}
+>
+  <article class="glossary-shell">
+    <header class="glossary-header">
+      <p class="kicker">
+        <a href="/en/glossary">Glossary</a>
+        <span aria-hidden="true">·</span>
+        <span>{CATEGORY_LABELS[term.category]}</span>
+      </p>
+      <h1 class="term-title">{term.term}</h1>
+      {term.termPolish && term.termPolish !== term.term && (
+        <p class="term-polish" lang="pl">
+          <span class="polish-label">Polski:</span>
+          <span class="polish-value">{term.termPolish}</span>
+          <a class="polish-link" href={`/pl/slowniczek/${slug}`} hreflang="pl">
+            Czytaj po polsku &rarr;
+          </a>
+        </p>
+      )}
+      {term.termPolish && term.termPolish === term.term && (
+        <p class="term-polish-link-only">
+          <a class="polish-link" href={`/pl/slowniczek/${slug}`} hreflang="pl">
+            Czytaj po polsku &rarr;
+          </a>
+        </p>
+      )}
+      {term.synonyms && term.synonyms.length > 0 && (
+        <p class="synonyms">
+          <span class="synonyms-label">Also known as</span>
+          <span class="synonyms-list">
+            {term.synonyms.map((s, i) => (
+              <>
+                {i > 0 && <span aria-hidden="true">·</span>}
+                <span>{s}</span>
+              </>
+            ))}
+          </span>
+        </p>
+      )}
+    </header>
+
+    {illustrationUrl && (
+      <figure class="term-illustration">
+        <img
+          src={illustrationUrl}
+          alt={term.illustration?.alt ?? ''}
+          loading="lazy"
+          decoding="async"
+        />
+        {term.illustration?.caption && (
+          <figcaption>{term.illustration.caption}</figcaption>
+        )}
+      </figure>
+    )}
+
+    <div class="glossary-content">
+      {hasFullDefinition ? (
+        <div class="full-definition">
+          <PortableTextRenderer value={term.fullDefinition} />
+        </div>
+      ) : (
+        <p class="lede-definition">{term.shortDefinition}</p>
+      )}
+
+      {term.relatedTerms && term.relatedTerms.length > 0 && (
+        <section class="related-section" aria-labelledby="related-heading">
+          <h2 id="related-heading" class="section-heading">Related terms</h2>
+          <ul class="related-list">
+            {term.relatedTerms.map((rt) => (
+              <li class="related-card">
+                <a
+                  href={`/en/glossary/${rt.slug.current}`}
+                  class="related-card-link"
+                >
+                  <p class="related-meta">
+                    {CATEGORY_LABELS[rt.category]}
+                  </p>
+                  <h3 class="related-term">{rt.term}</h3>
+                  <p class="related-def">{rt.shortDefinition}</p>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {term.articlesUsingTerm && term.articlesUsingTerm.length > 0 && (
+        <section class="articles-section" aria-labelledby="articles-heading">
+          <h2 id="articles-heading" class="section-heading">
+            Articles mentioning this term
+          </h2>
+          <ol class="articles-list">
+            {term.articlesUsingTerm.map((article) => (
+              <li class="article-card">
+                <a
+                  href={`/en/blog/${article.slug.current}`}
+                  class="article-card-link"
+                >
+                  <p class="article-meta">
+                    <span class="article-cat">
+                      {ARTICLE_CATEGORY_LABELS[article.category] ??
+                        article.category}
+                    </span>
+                    <span aria-hidden="true">·</span>
+                    <time datetime={article.publishedDate}>
+                      {fmtDate(article.publishedDate)}
+                    </time>
+                  </p>
+                  <h3 class="article-title">{article.title}</h3>
+                  <p class="article-excerpt">{article.excerpt}</p>
+                </a>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
+
+      <p class="back-link">
+        <a href="/en/glossary">&larr; Back to glossary</a>
+      </p>
+    </div>
+  </article>
+</SiteLayout>
+
+<style>
+  .glossary-shell {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: clamp(40px, 7vw, 96px) clamp(20px, 5vw, 80px) 120px;
+  }
+
+  .glossary-header {
+    margin-bottom: clamp(32px, 5vw, 56px);
+    max-width: 760px;
+  }
+
+  .kicker {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 0 0 24px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .kicker a {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid var(--accent);
+    padding-bottom: 1px;
+  }
+
+  .kicker a:hover {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+
+  .term-title {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(34px, 5vw, 56px);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin: 0 0 16px;
+  }
+
+  .term-polish {
+    font-family: var(--serif);
+    font-size: clamp(17px, 1.6vw, 20px);
+    line-height: 1.5;
+    color: var(--ink-2);
+    margin: 0 0 24px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    align-items: baseline;
+  }
+
+  .polish-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  .polish-value {
+    font-style: italic;
+  }
+
+  .polish-link {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid var(--accent);
+    padding-bottom: 1px;
+  }
+
+  .polish-link:hover {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+
+  .term-polish-link-only {
+    margin: 0 0 24px;
+  }
+
+  .synonyms {
+    font-family: var(--serif);
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--ink-2);
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    align-items: baseline;
+  }
+
+  .synonyms-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  .synonyms-list {
+    font-style: italic;
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .term-illustration {
+    margin: 0 0 clamp(32px, 5vw, 56px);
+    max-width: 720px;
+  }
+
+  .term-illustration img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .term-illustration figcaption {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--ink-2);
+    margin-top: 12px;
+    max-width: 60ch;
+  }
+
+  .glossary-content {
+    max-width: 720px;
+    margin: 0;
+  }
+
+  .lede-definition {
+    font-family: var(--serif);
+    font-size: clamp(18px, 1.8vw, 22px);
+    line-height: 1.55;
+    color: var(--ink);
+    margin: 0 0 48px;
+    max-width: 60ch;
+  }
+
+  .full-definition {
+    margin-bottom: clamp(48px, 7vw, 72px);
+  }
+
+  .section-heading {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 24px;
+    padding-top: 32px;
+    border-top: 1px solid var(--rule);
+    font-weight: 500;
+  }
+
+  .related-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 clamp(48px, 7vw, 72px);
+    display: grid;
+    gap: 24px;
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 700px) {
+    .related-list {
+      grid-template-columns: 1fr 1fr;
+      column-gap: 32px;
+    }
+  }
+
+  .related-card {
+    border-top: 1px solid var(--rule);
+    padding-top: 16px;
+  }
+
+  .related-card-link {
+    display: grid;
+    gap: 6px;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .related-card-link:hover .related-term {
+    color: var(--accent);
+  }
+
+  .related-card-link:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 6px;
+  }
+
+  .related-meta {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0;
+  }
+
+  .related-term {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 19px;
+    line-height: 1.2;
+    color: var(--ink);
+    margin: 0;
+    transition: color 0.15s ease;
+  }
+
+  .related-def {
+    font-family: var(--serif);
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--ink-2);
+    margin: 0;
+  }
+
+  .articles-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 clamp(48px, 7vw, 72px);
+    display: grid;
+    gap: 28px;
+  }
+
+  .article-card {
+    border-top: 1px solid var(--rule);
+    padding-top: 20px;
+  }
+
+  .article-card-link {
+    display: grid;
+    gap: 8px;
+    text-decoration: none;
+    color: inherit;
+    max-width: 720px;
+  }
+
+  .article-card-link:hover .article-title {
+    color: var(--accent);
+  }
+
+  .article-card-link:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 6px;
+  }
+
+  .article-meta {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: var(--ink-3);
+    margin: 0;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: baseline;
+  }
+
+  .article-cat {
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  .article-title {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(20px, 2vw, 24px);
+    line-height: 1.2;
+    color: var(--ink);
+    margin: 0;
+    letter-spacing: -0.012em;
+    transition: color 0.15s ease;
+  }
+
+  .article-excerpt {
+    font-family: var(--serif);
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    margin: 0;
+    max-width: 60ch;
+  }
+
+  .back-link {
+    margin: 0;
+    padding-top: 32px;
+    border-top: 1px solid var(--rule);
+  }
+
+  .back-link a {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid var(--accent);
+    padding-bottom: 1px;
+  }
+
+  .back-link a:hover {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+</style>

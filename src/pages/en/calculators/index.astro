@@ -1,0 +1,188 @@
+---
+// src/pages/en/calculators/index.astro
+//
+// Calculator suite index. Lists all calculators in the en locale, sorted by
+// name. Cards link to /en/calculators/[slug]. The Sanity `calculator` schema
+// is locale-scoped (separate doc per locale), so EN and PL indexes pull
+// different doc sets.
+import SiteLayout from '@/layouts/SiteLayout.astro';
+import SectionMasthead from '@/components/SectionMasthead.astro';
+import { getAllCalculatorSummaries } from '@/lib/sanity';
+
+const calculators = await getAllCalculatorSummaries('en');
+
+const totalCount = calculators.length;
+
+const siteUrl = (
+  import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com'
+).replace(/\/$/, '');
+const canonicalUrl = `${siteUrl}/en/calculators`;
+
+const collectionJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'Hand-surgery calculators — Mateusz Gładysz, MD',
+  url: canonicalUrl,
+  inLanguage: 'en-NZ',
+  description:
+    'Native, validated patient-reported outcome calculators for hand and upper-extremity surgery: QuickDASH, PRWE, Boston CTS, MHQ, and Mayo Wrist.',
+  hasPart: calculators.map((c) => ({
+    '@type': 'WebApplication',
+    name: c.name,
+    alternateName: c.fullName,
+    url: `${siteUrl}/en/calculators/${c.slug.current}`,
+    description: c.shortDescription,
+    applicationCategory: 'MedicalApplication',
+  })),
+};
+---
+<SiteLayout
+  title="Calculators — Mateusz Gładysz, MD"
+  description="Validated outcome calculators for hand surgery: QuickDASH, PRWE, Boston CTS, MHQ, and Mayo Wrist Score."
+  locale="en"
+  alternateUrl="/pl/kalkulatory"
+  canonical={canonicalUrl}
+  jsonLd={collectionJsonLd}
+>
+  <section class="index-masthead-shell">
+    <SectionMasthead
+      label="Calculators"
+      heading="Outcome and severity calculators"
+      headingTag="h1"
+      standfirst="Native implementations of validated patient-reported outcome measures and clinical severity scores used in hand and upper-extremity surgery. Each calculator includes the scoring formula, when to use it, and the supporting evidence."
+    />
+  </section>
+
+  <section class="calculator-index">
+    <div class="calculator-index-inner">
+      {totalCount === 0 ? (
+        <div class="empty">
+          <p>The first calculators are in preparation. Check back shortly.</p>
+        </div>
+      ) : (
+        <ol class="calculator-list">
+          {calculators.map((c) => (
+            <li class="calculator-card">
+              <a
+                href={`/en/calculators/${c.slug.current}`}
+                class="calculator-card-link"
+              >
+                <p class="card-meta">
+                  <span class="card-tag">Calculator</span>
+                </p>
+                <h2 class="card-name">{c.name}</h2>
+                <p class="card-fullname">{c.fullName}</p>
+                <p class="card-desc">{c.shortDescription}</p>
+              </a>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  </section>
+</SiteLayout>
+
+<style>
+  .index-masthead-shell {
+    padding: clamp(56px, 8vw, 120px) clamp(20px, 5vw, 80px) 0;
+    max-width: 1320px;
+    margin: 0 auto;
+  }
+
+  .calculator-index {
+    padding: clamp(40px, 6vw, 80px) 0 120px;
+  }
+
+  .calculator-index-inner {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding-inline: clamp(20px, 5vw, 80px);
+  }
+
+  .empty {
+    max-width: 60ch;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 18px;
+    color: var(--ink-2);
+  }
+
+  .calculator-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 32px;
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 700px) {
+    .calculator-list {
+      grid-template-columns: 1fr 1fr;
+      column-gap: 48px;
+    }
+  }
+
+  .calculator-card {
+    border-top: 1px solid var(--rule);
+    padding-top: 28px;
+  }
+
+  .calculator-card-link {
+    display: grid;
+    gap: 10px;
+    text-decoration: none;
+    color: inherit;
+    max-width: 540px;
+  }
+
+  .calculator-card-link:hover .card-name {
+    color: var(--accent);
+  }
+
+  .calculator-card-link:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 6px;
+  }
+
+  .card-meta {
+    margin: 0;
+  }
+
+  .card-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .card-name {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(24px, 2.4vw, 32px);
+    line-height: 1.15;
+    color: var(--ink);
+    margin: 0;
+    letter-spacing: -0.018em;
+    transition: color 0.15s ease;
+  }
+
+  .card-fullname {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 15px;
+    line-height: 1.4;
+    color: var(--ink-2);
+    margin: 0;
+  }
+
+  .card-desc {
+    font-family: var(--serif);
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    margin: 0;
+    max-width: 60ch;
+  }
+</style>

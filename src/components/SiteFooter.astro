@@ -29,6 +29,9 @@ const t = locale === 'pl'
       navAbout: 'O mnie',
       navProcedures: 'Zabiegi',
       navPublications: 'Publikacje',
+      navCalculators: 'Kalkulatory',
+      navGlossary: 'Słowniczek',
+      navLearn: 'Przygotowanie do FEBHS (po angielsku)',
       navContact: 'Kontakt',
       navCredentials: 'Uprawnienia',
       navImprint: 'Nota prawna',
@@ -54,6 +57,9 @@ const t = locale === 'pl'
       navAbout: 'About',
       navProcedures: 'Procedures',
       navPublications: 'Publications',
+      navCalculators: 'Calculators',
+      navGlossary: 'Glossary',
+      navLearn: 'FEBHS prep',
       navContact: 'Contact',
       navCredentials: 'Credentials',
       navImprint: 'Imprint',
@@ -64,23 +70,37 @@ const t = locale === 'pl'
 
 const localePrefix = locale === 'pl' ? '/pl' : '/en';
 
-const navLinks = locale === 'pl'
-  ? [
-      { href: '/pl/', label: t.navHome },
-      { href: '/pl/o-mnie', label: t.navAbout },
-      { href: '/pl/zabiegi', label: t.navProcedures },
-      { href: '/pl/publikacje', label: t.navPublications },
-      { href: '/pl/kontakt', label: t.navContact },
-      { href: '/pl/uprawnienia', label: t.navCredentials },
-    ]
-  : [
-      { href: '/en/', label: t.navHome },
-      { href: '/en/about', label: t.navAbout },
-      { href: '/en/procedures', label: t.navProcedures },
-      { href: '/en/publications', label: t.navPublications },
-      { href: '/en/contact', label: t.navContact },
-      { href: '/en/credentials', label: t.navCredentials },
-    ];
+// Footer "Site" column links. The FEBHS-prep entry points at the
+// learn.drgladysz.com sub-application (separate Astro project per brand
+// spec v1.8 Decision #29/30 — quiz/exam-prep platform lives on its own
+// subdomain, not on the main domain). It's rendered with target="_blank"
+// + rel="noopener" so the browser handles the cross-subdomain hop, and
+// `external: true` marks it for the small ↗ visual cue. The PL footer
+// labels the link "(po angielsku)" because FESSH MCQ content is English-only.
+const navLinks: { href: string; label: string; external?: boolean }[] =
+  locale === 'pl'
+    ? [
+        { href: '/pl/', label: t.navHome },
+        { href: '/pl/o-mnie', label: t.navAbout },
+        { href: '/pl/zabiegi', label: t.navProcedures },
+        { href: '/pl/publikacje', label: t.navPublications },
+        { href: '/pl/kalkulatory', label: t.navCalculators },
+        { href: '/pl/slowniczek', label: t.navGlossary },
+        { href: 'https://learn.drgladysz.com', label: t.navLearn, external: true },
+        { href: '/pl/kontakt', label: t.navContact },
+        { href: '/pl/uprawnienia', label: t.navCredentials },
+      ]
+    : [
+        { href: '/en/', label: t.navHome },
+        { href: '/en/about', label: t.navAbout },
+        { href: '/en/procedures', label: t.navProcedures },
+        { href: '/en/publications', label: t.navPublications },
+        { href: '/en/calculators', label: t.navCalculators },
+        { href: '/en/glossary', label: t.navGlossary },
+        { href: 'https://learn.drgladysz.com', label: t.navLearn, external: true },
+        { href: '/en/contact', label: t.navContact },
+        { href: '/en/credentials', label: t.navCredentials },
+      ];
 
 // Locked link order from footer-config.json: Imprint → Privacy → Disclaimer
 // → Consent → Credentials. Credentials appears here even though it's also
@@ -178,7 +198,15 @@ const year = new Date().getFullYear();
         <div class="col-content">
           <ul>
             {navLinks.map((link) => (
-              <li><a href={link.href}>{link.label}</a></li>
+              <li>
+                {link.external ? (
+                  <a href={link.href} target="_blank" rel="noopener">
+                    {link.label} <span aria-hidden="true" class="ext">↗</span>
+                  </a>
+                ) : (
+                  <a href={link.href}>{link.label}</a>
+                )}
+              </li>
             ))}
           </ul>
           <ul class="legal-list">
@@ -279,6 +307,14 @@ const year = new Date().getFullYear();
   }
 
   .legal-list { margin-top: 16px; }
+
+  /* External-link arrow on the FEBHS-prep subdomain link. */
+  .ext {
+    display: inline-block;
+    font-size: 0.85em;
+    margin-left: 2px;
+    color: rgba(250, 247, 242, 0.55);
+  }
 
   .disclaimer {
     border-top: 1px solid rgba(250, 247, 242, 0.1);

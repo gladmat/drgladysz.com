@@ -1,0 +1,363 @@
+---
+// src/pages/en/calculators/[slug].astro
+//
+// Calculator detail page. The Sanity doc holds the editorial wrap (6 sections
+// of Portable Text) plus a `componentName` that picks the interactive Preact
+// island from src/components/interactive/registry.ts.
+//
+// Page structure follows the locked spec at _handoff/features/03-calculator-suite.md
+//   1. Header (kicker, full name, short name as H1, short description)
+//   2. The Calculator (interactive island, client:load — primary content)
+//   3. When to use (Portable Text)
+//   4. Pearls and pitfalls
+//   5. Why use it
+//   6. Next steps based on score
+//   7. Evidence
+//   8. (optional) Creator insights
+//   9. Bibliography
+//
+// Citations + glossary marks across all six tab block arrays are extracted in
+// document order and resolved once, then handed to PortableTextRenderer so
+// every section uses the same per-page numbering.
+import SiteLayout from '@/layouts/SiteLayout.astro';
+import PortableTextRenderer from '@/components/content/PortableTextRenderer.astro';
+import Bibliography from '@/components/content/Bibliography.astro';
+import { calculatorRegistry } from '@/components/interactive/registry';
+import {
+  getAllCalculatorSlugsForLocale,
+  getCalculatorBySlug,
+  getReferencesByIds,
+  getGlossaryTermsByIds,
+  extractCitationOrderFromBlocks,
+  extractGlossaryOrderFromBlocks,
+} from '@/lib/sanity';
+import { generateBreadcrumb } from '@/lib/schema';
+
+export async function getStaticPaths() {
+  const slugs = await getAllCalculatorSlugsForLocale('en');
+  return slugs.map((slug) => ({ params: { slug } }));
+}
+
+const { slug } = Astro.params;
+if (!slug) throw new Error('Missing slug param');
+
+const calc = await getCalculatorBySlug(slug, 'en');
+if (!calc) {
+  return Astro.redirect('/en/calculators');
+}
+
+const allBlocks = [
+  calc.whenToUse,
+  calc.pearlsPitfalls,
+  calc.whyUse,
+  calc.nextSteps,
+  calc.evidence,
+  calc.creatorInsights,
+];
+
+const citationOrder = extractCitationOrderFromBlocks(allBlocks);
+const referencesUnsorted = await getReferencesByIds(citationOrder);
+const references = citationOrder
+  .map((id) => referencesUnsorted.find((r) => r._id === id))
+  .filter((r): r is NonNullable<typeof r> => Boolean(r));
+
+const glossaryOrder = extractGlossaryOrderFromBlocks(allBlocks);
+const glossaryTerms = await getGlossaryTermsByIds(glossaryOrder);
+
+const Component = calculatorRegistry[calc.componentName];
+
+const siteUrl = (
+  import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com'
+).replace(/\/$/, '');
+const canonicalUrl = `${siteUrl}/en/calculators/${slug}`;
+
+// WebApplication / MedicalApplication shape — schema.org doesn't have a
+// formal MedicalCalculator type, so WebApplication with applicationCategory:
+// 'MedicalApplication' is the safe fit. Surfaces the calculator as a
+// discoverable native tool in structured data.
+const calculatorJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  name: calc.name,
+  alternateName: calc.fullName,
+  url: canonicalUrl,
+  description: calc.shortDescription,
+  applicationCategory: 'MedicalApplication',
+  operatingSystem: 'Any (web)',
+  inLanguage: 'en-NZ',
+  ...(references.length > 0
+    ? {
+        citation: references.map((r) => ({
+          '@type': 'ScholarlyArticle',
+          name: r.title,
+          author: r.authors.map((a) => ({ '@type': 'Person', name: a })),
+          datePublished: String(r.year),
+          isPartOf: r.journal
+            ? { '@type': 'Periodical', name: r.journal }
+            : undefined,
+          ...(r.doi ? { sameAs: `https://doi.org/${r.doi}` } : {}),
+        })),
+      }
+    : {}),
+};
+
+const breadcrumbJsonLd = generateBreadcrumb([
+  { name: 'Home', url: `${siteUrl}/en/` },
+  { name: 'Calculators', url: `${siteUrl}/en/calculators` },
+  { name: calc.name, url: canonicalUrl },
+]);
+
+const pageTitle = calc.seoTitle || `${calc.name} — Calculator — Mateusz Gładysz, MD`;
+const pageDescription = calc.seoDescription || calc.shortDescription;
+---
+<SiteLayout
+  title={pageTitle}
+  description={pageDescription}
+  locale="en"
+  alternateUrl={`/pl/kalkulatory/${slug}`}
+  canonical={canonicalUrl}
+  jsonLd={[calculatorJsonLd, breadcrumbJsonLd]}
+>
+  <article class="calc-shell">
+    <header class="calc-header">
+      <p class="calc-kicker">
+        <a href="/en/calculators">Calculators</a>
+        <span aria-hidden="true">·</span>
+        <span>{calc.componentName}</span>
+      </p>
+      <p class="calc-fullname">{calc.fullName}</p>
+      <h1 class="calc-name">{calc.name}</h1>
+      <p class="calc-description">{calc.shortDescription}</p>
+    </header>
+
+    <section class="calc-widget-section" aria-labelledby="widget-heading">
+      <h2 id="widget-heading" class="calc-section-heading">The calculator</h2>
+      {Component ? (
+        <Component client:load locale="en" />
+      ) : (
+        <div class="calc-placeholder">
+          <p class="calc-placeholder-label">Calculator in preparation</p>
+          <p class="calc-placeholder-body">
+            The interactive widget for this calculator is being built. Editorial
+            context is available below.
+          </p>
+        </div>
+      )}
+    </section>
+
+    <div class="calc-content">
+      <section class="calc-section" aria-labelledby="when-heading">
+        <h2 id="when-heading" class="calc-section-heading">When to use</h2>
+        <PortableTextRenderer
+          value={calc.whenToUse}
+          references={references}
+          glossaryTerms={glossaryTerms}
+        />
+      </section>
+
+      {calc.pearlsPitfalls && calc.pearlsPitfalls.length > 0 && (
+        <section class="calc-section" aria-labelledby="pearls-heading">
+          <h2 id="pearls-heading" class="calc-section-heading">
+            Pearls and pitfalls
+          </h2>
+          <PortableTextRenderer
+            value={calc.pearlsPitfalls}
+            references={references}
+            glossaryTerms={glossaryTerms}
+          />
+        </section>
+      )}
+
+      <section class="calc-section" aria-labelledby="why-heading">
+        <h2 id="why-heading" class="calc-section-heading">Why use it</h2>
+        <PortableTextRenderer
+          value={calc.whyUse}
+          references={references}
+          glossaryTerms={glossaryTerms}
+        />
+      </section>
+
+      {calc.nextSteps && calc.nextSteps.length > 0 && (
+        <section class="calc-section" aria-labelledby="next-heading">
+          <h2 id="next-heading" class="calc-section-heading">
+            Next steps based on score
+          </h2>
+          <PortableTextRenderer
+            value={calc.nextSteps}
+            references={references}
+            glossaryTerms={glossaryTerms}
+          />
+        </section>
+      )}
+
+      <section class="calc-section" aria-labelledby="evidence-heading">
+        <h2 id="evidence-heading" class="calc-section-heading">Evidence</h2>
+        <PortableTextRenderer
+          value={calc.evidence}
+          references={references}
+          glossaryTerms={glossaryTerms}
+        />
+      </section>
+
+      {calc.creatorInsights && calc.creatorInsights.length > 0 && (
+        <section class="calc-section" aria-labelledby="insights-heading">
+          <h2 id="insights-heading" class="calc-section-heading">
+            Creator insights
+          </h2>
+          <PortableTextRenderer
+            value={calc.creatorInsights}
+            references={references}
+            glossaryTerms={glossaryTerms}
+          />
+        </section>
+      )}
+
+      <Bibliography references={references} />
+    </div>
+  </article>
+</SiteLayout>
+
+<style>
+  .calc-shell {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: clamp(40px, 7vw, 96px) clamp(20px, 5vw, 80px) 120px;
+  }
+
+  .calc-header {
+    margin-bottom: clamp(40px, 6vw, 64px);
+    max-width: 760px;
+  }
+
+  .calc-kicker {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 0 0 24px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .calc-kicker a {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid var(--accent);
+    padding-bottom: 1px;
+  }
+
+  .calc-kicker a:hover {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+
+  .calc-fullname {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(15px, 1.4vw, 18px);
+    line-height: 1.5;
+    color: var(--ink-2);
+    margin: 0 0 8px;
+  }
+
+  .calc-name {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(34px, 5vw, 56px);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin: 0 0 16px;
+  }
+
+  .calc-description {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(18px, 1.6vw, 22px);
+    line-height: 1.55;
+    color: var(--ink-2);
+    margin: 0;
+    max-width: 60ch;
+  }
+
+  .calc-widget-section {
+    margin-bottom: clamp(48px, 7vw, 80px);
+  }
+
+  /* Hide the H2 heading visually on the widget section — the calculator
+     widget itself is its own visual heading. The H2 stays in the DOM for
+     screen-reader / outline integrity. */
+  .calc-widget-section .calc-section-heading {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+    clip: rect(0 0 0 0);
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .calc-section {
+    margin-bottom: clamp(40px, 6vw, 64px);
+    max-width: 720px;
+  }
+
+  .calc-section-heading {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 24px;
+    padding-top: 32px;
+    border-top: 1px solid var(--rule);
+    font-weight: 500;
+  }
+
+  .calc-content {
+    max-width: 1320px;
+    margin: 0 auto;
+    /* Reserve right-gutter for citation sidenotes on desktop, mirroring
+       the article-detail layout (Citation.astro floats into the gutter). */
+    position: relative;
+  }
+
+  @media (min-width: 1024px) {
+    .calc-content {
+      padding-right: 320px;
+      max-width: 1040px;
+    }
+  }
+
+  .calc-placeholder {
+    background: var(--bg-card);
+    border: 1px solid var(--rule);
+    padding: 32px;
+    text-align: center;
+  }
+
+  .calc-placeholder-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 12px;
+  }
+
+  .calc-placeholder-body {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    margin: 0;
+    max-width: 60ch;
+    margin-inline: auto;
+  }
+</style>

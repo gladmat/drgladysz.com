@@ -1,0 +1,628 @@
+---
+// src/pages/pl/slowniczek/[slug].astro
+//
+// Polish counterpart of /en/glossary/[slug]. Same data source — every
+// glossaryTerm doc holds both EN and PL fields side by side.
+//
+// Locale fallback: when termPolish / shortDefinitionPolish / fullDefinitionPolish
+// are absent, the page renders the English equivalents marked with lang="en"
+// and shows a small notice explaining the Polish translation is in preparation.
+// This keeps the link from a Polish article's glossary popover usable even
+// when the term hasn't been translated yet.
+//
+// Polish chrome (kicker, headings, "Articles mentioning" label) is a working
+// draft — flag for revision in the Polish composition session before launch.
+import SiteLayout from '@/layouts/SiteLayout.astro';
+import PortableTextRenderer from '@/components/content/PortableTextRenderer.astro';
+import {
+  getAllGlossaryTermSlugs,
+  getGlossaryTermBySlug,
+  urlForImage,
+  type SanityGlossaryTermFull,
+} from '@/lib/sanity';
+import {
+  generateBreadcrumb,
+  generateDefinedTermSchema,
+} from '@/lib/schema';
+
+export async function getStaticPaths() {
+  const slugs = await getAllGlossaryTermSlugs();
+  return slugs.map((slug) => ({ params: { slug } }));
+}
+
+const { slug } = Astro.params;
+if (!slug) throw new Error('Missing slug param');
+
+const term = await getGlossaryTermBySlug(slug);
+if (!term) {
+  return Astro.redirect('/pl/slowniczek');
+}
+
+const CATEGORY_LABELS_PL: Record<SanityGlossaryTermFull['category'], string> = {
+  anatomy: 'Anatomia',
+  condition: 'Schorzenie',
+  procedure: 'Zabieg',
+  investigation: 'Badanie',
+  treatment: 'Leczenie',
+  outcome: 'Miara wyniku',
+  structure: 'Struktura anatomiczna',
+  other: 'Słowniczek',
+};
+
+// Polish article-category labels — used in "Articles mentioning" list. The
+// articles themselves are currently English-only; the Polish list links to
+// /en/blog while the article-side localization is composed.
+const ARTICLE_CATEGORY_LABELS_PL: Record<string, string> = {
+  patient: 'Informacje dla pacjenta',
+  expert: 'Blog ekspercki',
+  'fessh-prep': 'Przygotowanie do FESSH',
+  news: 'Aktualności i komentarz',
+};
+
+// Resolve display values with Polish-first fallback.
+const usingPolishTerm = Boolean(term.termPolish?.trim());
+const usingPolishShortDef = Boolean(term.shortDefinitionPolish?.trim());
+const hasFullPl =
+  Array.isArray(term.fullDefinitionPolish) &&
+  term.fullDefinitionPolish.length > 0;
+const hasFullEn =
+  Array.isArray(term.fullDefinition) && term.fullDefinition.length > 0;
+
+const displayTerm = usingPolishTerm ? term.termPolish! : term.term;
+const displayShortDef = usingPolishShortDef
+  ? term.shortDefinitionPolish!
+  : term.shortDefinition;
+
+// Show a top-of-page notice when most fields fall back to English.
+const polishIncomplete = !usingPolishTerm && !usingPolishShortDef && !hasFullPl;
+
+const siteUrl = (
+  import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com'
+).replace(/\/$/, '');
+const canonicalUrl = `${siteUrl}/pl/slowniczek/${slug}`;
+const indexUrl = `${siteUrl}/pl/slowniczek`;
+
+const definedTermJsonLd = generateDefinedTermSchema({
+  term,
+  url: canonicalUrl,
+  inSetUrl: indexUrl,
+  inLanguage: 'pl-PL',
+  locale: 'pl',
+});
+
+const breadcrumbJsonLd = generateBreadcrumb([
+  { name: 'Strona główna', url: `${siteUrl}/pl/` },
+  { name: 'Słowniczek', url: indexUrl },
+  { name: displayTerm, url: canonicalUrl },
+]);
+
+const illustrationUrl = term.illustration
+  ? urlForImage(term.illustration).width(1200).fit('max').url()
+  : null;
+
+function fmtDate(d?: string) {
+  if (!d) return '';
+  return new Date(d).toLocaleDateString('pl-PL', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+---
+<SiteLayout
+  title={`${displayTerm} — Słowniczek — Mateusz Gładysz, MD`}
+  description={displayShortDef}
+  locale="pl"
+  alternateUrl={`/en/glossary/${slug}`}
+  canonical={canonicalUrl}
+  jsonLd={[definedTermJsonLd, breadcrumbJsonLd]}
+>
+  <article class="glossary-shell">
+    <header class="glossary-header">
+      <p class="kicker">
+        <a href="/pl/slowniczek">Słowniczek</a>
+        <span aria-hidden="true">·</span>
+        <span>{CATEGORY_LABELS_PL[term.category]}</span>
+      </p>
+      <h1
+        class="term-title"
+        lang={usingPolishTerm ? 'pl' : 'en'}
+      >
+        {displayTerm}
+      </h1>
+      {usingPolishTerm && term.term && term.termPolish !== term.term && (
+        <p class="term-other-lang" lang="en">
+          <span class="other-lang-label">English:</span>
+          <span class="other-lang-value">{term.term}</span>
+        </p>
+      )}
+      {!usingPolishTerm && (
+        <p class="term-other-lang">
+          <span class="other-lang-label">Polski:</span>
+          <span class="other-lang-value other-lang-pending">
+            (tłumaczenie w przygotowaniu)
+          </span>
+        </p>
+      )}
+      {term.synonyms && term.synonyms.length > 0 && (
+        <p class="synonyms">
+          <span class="synonyms-label">Inne nazwy</span>
+          <span class="synonyms-list" lang="en">
+            {term.synonyms.map((s, i) => (
+              <>
+                {i > 0 && <span aria-hidden="true">·</span>}
+                <span>{s}</span>
+              </>
+            ))}
+          </span>
+        </p>
+      )}
+    </header>
+
+    {polishIncomplete && (
+      <aside
+        class="polish-pending-notice"
+        role="note"
+        aria-label="Polska wersja w przygotowaniu"
+      >
+        <p>
+          <strong>Polska wersja w przygotowaniu.</strong> Poniżej znajduje się
+          treść w języku angielskim — pełne tłumaczenie zostanie dodane przed
+          uruchomieniem wersji polskiej.
+        </p>
+      </aside>
+    )}
+
+    {illustrationUrl && (
+      <figure class="term-illustration">
+        <img
+          src={illustrationUrl}
+          alt={term.illustration?.alt ?? ''}
+          loading="lazy"
+          decoding="async"
+        />
+        {term.illustration?.caption && (
+          <figcaption>{term.illustration.caption}</figcaption>
+        )}
+      </figure>
+    )}
+
+    <div class="glossary-content">
+      {hasFullPl ? (
+        <div class="full-definition" lang="pl">
+          <PortableTextRenderer value={term.fullDefinitionPolish} />
+        </div>
+      ) : hasFullEn ? (
+        <div class="full-definition" lang="en">
+          <PortableTextRenderer value={term.fullDefinition} />
+        </div>
+      ) : (
+        <p
+          class="lede-definition"
+          lang={usingPolishShortDef ? 'pl' : 'en'}
+        >
+          {displayShortDef}
+        </p>
+      )}
+
+      {term.relatedTerms && term.relatedTerms.length > 0 && (
+        <section class="related-section" aria-labelledby="related-heading">
+          <h2 id="related-heading" class="section-heading">
+            Pokrewne hasła
+          </h2>
+          <ul class="related-list">
+            {term.relatedTerms.map((rt) => {
+              const rtTerm = rt.termPolish?.trim() ? rt.termPolish : rt.term;
+              const rtDef = rt.shortDefinitionPolish?.trim()
+                ? rt.shortDefinitionPolish
+                : rt.shortDefinition;
+              const rtUsingPl = Boolean(rt.termPolish?.trim());
+              return (
+                <li class="related-card">
+                  <a
+                    href={`/pl/slowniczek/${rt.slug.current}`}
+                    class="related-card-link"
+                  >
+                    <p class="related-meta">
+                      {CATEGORY_LABELS_PL[rt.category]}
+                    </p>
+                    <h3
+                      class="related-term"
+                      lang={rtUsingPl ? 'pl' : 'en'}
+                    >
+                      {rtTerm}
+                    </h3>
+                    <p
+                      class="related-def"
+                      lang={rt.shortDefinitionPolish?.trim() ? 'pl' : 'en'}
+                    >
+                      {rtDef}
+                    </p>
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
+      {term.articlesUsingTerm && term.articlesUsingTerm.length > 0 && (
+        <section class="articles-section" aria-labelledby="articles-heading">
+          <h2 id="articles-heading" class="section-heading">
+            Artykuły wspominające to hasło
+          </h2>
+          <ol class="articles-list">
+            {term.articlesUsingTerm.map((article) => (
+              <li class="article-card">
+                <a
+                  href={`/en/blog/${article.slug.current}`}
+                  class="article-card-link"
+                  hreflang="en"
+                >
+                  <p class="article-meta">
+                    <span class="article-cat">
+                      {ARTICLE_CATEGORY_LABELS_PL[article.category] ??
+                        article.category}
+                    </span>
+                    <span aria-hidden="true">·</span>
+                    <time datetime={article.publishedDate}>
+                      {fmtDate(article.publishedDate)}
+                    </time>
+                    <span aria-hidden="true">·</span>
+                    <span class="article-lang" lang="en">EN</span>
+                  </p>
+                  <h3 class="article-title" lang="en">
+                    {article.title}
+                  </h3>
+                  <p class="article-excerpt" lang="en">
+                    {article.excerpt}
+                  </p>
+                </a>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
+
+      <p class="back-link">
+        <a href="/pl/slowniczek">&larr; Wróć do słowniczka</a>
+      </p>
+    </div>
+  </article>
+</SiteLayout>
+
+<style>
+  .glossary-shell {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: clamp(40px, 7vw, 96px) clamp(20px, 5vw, 80px) 120px;
+  }
+
+  .glossary-header {
+    margin-bottom: clamp(32px, 5vw, 56px);
+    max-width: 760px;
+  }
+
+  .kicker {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 0 0 24px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .kicker a {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid var(--accent);
+    padding-bottom: 1px;
+  }
+
+  .kicker a:hover {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+
+  .term-title {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(34px, 5vw, 56px);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin: 0 0 16px;
+  }
+
+  .term-other-lang {
+    font-family: var(--serif);
+    font-size: clamp(17px, 1.6vw, 20px);
+    line-height: 1.5;
+    color: var(--ink-2);
+    margin: 0 0 24px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    align-items: baseline;
+  }
+
+  .other-lang-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  .other-lang-value {
+    font-style: italic;
+  }
+
+  .other-lang-pending {
+    color: var(--ink-3);
+    font-style: italic;
+  }
+
+  .synonyms {
+    font-family: var(--serif);
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--ink-2);
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    align-items: baseline;
+  }
+
+  .synonyms-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  .synonyms-list {
+    font-style: italic;
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .polish-pending-notice {
+    background: var(--bg-card);
+    border-left: 2px solid var(--accent);
+    padding: 16px 24px;
+    margin: 0 0 clamp(32px, 5vw, 56px);
+    max-width: 760px;
+  }
+
+  .polish-pending-notice p {
+    font-family: var(--serif);
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--ink);
+    margin: 0;
+  }
+
+  .term-illustration {
+    margin: 0 0 clamp(32px, 5vw, 56px);
+    max-width: 720px;
+  }
+
+  .term-illustration img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .term-illustration figcaption {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--ink-2);
+    margin-top: 12px;
+    max-width: 60ch;
+  }
+
+  .glossary-content {
+    max-width: 720px;
+    margin: 0;
+  }
+
+  .lede-definition {
+    font-family: var(--serif);
+    font-size: clamp(18px, 1.8vw, 22px);
+    line-height: 1.55;
+    color: var(--ink);
+    margin: 0 0 48px;
+    max-width: 60ch;
+  }
+
+  .full-definition {
+    margin-bottom: clamp(48px, 7vw, 72px);
+  }
+
+  .section-heading {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 24px;
+    padding-top: 32px;
+    border-top: 1px solid var(--rule);
+    font-weight: 500;
+  }
+
+  .related-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 clamp(48px, 7vw, 72px);
+    display: grid;
+    gap: 24px;
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 700px) {
+    .related-list {
+      grid-template-columns: 1fr 1fr;
+      column-gap: 32px;
+    }
+  }
+
+  .related-card {
+    border-top: 1px solid var(--rule);
+    padding-top: 16px;
+  }
+
+  .related-card-link {
+    display: grid;
+    gap: 6px;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .related-card-link:hover .related-term {
+    color: var(--accent);
+  }
+
+  .related-card-link:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 6px;
+  }
+
+  .related-meta {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0;
+  }
+
+  .related-term {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 19px;
+    line-height: 1.2;
+    color: var(--ink);
+    margin: 0;
+    transition: color 0.15s ease;
+  }
+
+  .related-def {
+    font-family: var(--serif);
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--ink-2);
+    margin: 0;
+  }
+
+  .articles-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 clamp(48px, 7vw, 72px);
+    display: grid;
+    gap: 28px;
+  }
+
+  .article-card {
+    border-top: 1px solid var(--rule);
+    padding-top: 20px;
+  }
+
+  .article-card-link {
+    display: grid;
+    gap: 8px;
+    text-decoration: none;
+    color: inherit;
+    max-width: 720px;
+  }
+
+  .article-card-link:hover .article-title {
+    color: var(--accent);
+  }
+
+  .article-card-link:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 6px;
+  }
+
+  .article-meta {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: var(--ink-3);
+    margin: 0;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: baseline;
+  }
+
+  .article-cat {
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  .article-lang {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    border: 1px solid var(--rule-strong);
+    padding: 1px 5px;
+    border-radius: 2px;
+  }
+
+  .article-title {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(20px, 2vw, 24px);
+    line-height: 1.2;
+    color: var(--ink);
+    margin: 0;
+    letter-spacing: -0.012em;
+    transition: color 0.15s ease;
+  }
+
+  .article-excerpt {
+    font-family: var(--serif);
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    margin: 0;
+    max-width: 60ch;
+  }
+
+  .back-link {
+    margin: 0;
+    padding-top: 32px;
+    border-top: 1px solid var(--rule);
+  }
+
+  .back-link a {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid var(--accent);
+    padding-bottom: 1px;
+  }
+
+  .back-link a:hover {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+</style>

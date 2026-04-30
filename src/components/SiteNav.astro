@@ -2,9 +2,14 @@
 interface Props {
   locale?: 'en' | 'pl';
   currentPath?: string;
+  // Page-supplied URL of the same content in the alternate locale. When set,
+  // overrides the generic prefix-swap fallback below — needed for routes
+  // whose slugs are translated (e.g. /en/about → /pl/o-mnie, /en/glossary →
+  // /pl/slowniczek). Pages pass this via SiteLayout's `alternateUrl` prop.
+  alternateUrl?: string;
 }
 
-const { locale = 'en', currentPath = '' } = Astro.props;
+const { locale = 'en', currentPath = '', alternateUrl } = Astro.props;
 
 // Mirror nav items per locale. Polish slugs come from brand spec §11.
 const navItems = locale === 'pl'
@@ -25,10 +30,15 @@ const navItems = locale === 'pl'
 
 const wordmarkHref = locale === 'pl' ? '/pl/' : '/en/';
 
-// Strip /en or /pl prefix to compute the alternate-locale URL for the language switcher.
-const pathWithoutLocale = currentPath.replace(/^\/(en|pl)/, '') || '/';
+// Compute the alternate-locale URL for the language switcher. If the page
+// supplied `alternateUrl` (recommended for any route with a translated slug),
+// honour it. Otherwise fall back to a generic /en/* ↔ /pl/* prefix swap —
+// only correct when the slug is identical across locales.
 const altLocale = locale === 'pl' ? 'en' : 'pl';
-const altHref = `/${altLocale}${pathWithoutLocale === '/' ? '/' : pathWithoutLocale}`;
+const pathWithoutLocale = currentPath.replace(/^\/(en|pl)/, '') || '/';
+const altHref =
+  alternateUrl ??
+  `/${altLocale}${pathWithoutLocale === '/' ? '/' : pathWithoutLocale}`;
 
 function isActive(href: string): boolean {
   if (href === wordmarkHref) return currentPath === wordmarkHref || currentPath === wordmarkHref.replace(/\/$/, '');

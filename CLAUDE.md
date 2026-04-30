@@ -94,8 +94,8 @@ These are non-obvious things prior sessions tripped on. Do not redo:
 | `bibReference` | ✅ full (Phase 5 — Vancouver/AMA fields, was `reference`) |
 | `callout` | ✅ shared object type (info / warning / pearl) |
 | `glossaryTerm` | ✅ full (Phase 6 — Tier 2 schema pulled forward when scaphoid article shipped; rendering side ships alongside) |
-| `mcqQuestion` | 🟡 stub — flesh out post-launch (Tier 2, Feature 4) |
-| `calculator` | 🟡 stub — flesh out post-launch (Tier 2, Feature 3) |
+| `calculator` | ✅ full (Tier 2 infrastructure built 2026-04-29 — schema, page shells, QuickDASH widget. PRWE/Boston/MHQ/Mayo deferred until validation paper review per calculator) |
+| **FESSH MCQ schemas** | ✅ moved to `learn/` sub-app (2026-04-29 evening). The earlier `mcqQuestion` schema was removed entirely — FESSH MCQ uses a different format (5 T/F statements per question, not single-answer multiple-choice). New schemas: `fesshReference`, `fesshMcq`, `fesshStatement`, `fesshMcqMetadata`, `fesshMockExam` — all live here in `studio/schemas/` but consumed by the `learn/` Astro project. See `learn/CLAUDE.md` and `01-brand-system/decisions-v1.10.md`. |
 
 - **Schema rename:** `reference` → `bibReference` because `reference` is reserved by Sanity (collides with the built-in document-reference type). All GROQ queries, schema files, and Studio config use `bibReference`. The user-facing Studio label is still "Reference (citation source)".
 - **`useCdn: false`** on the Sanity client (`src/lib/sanity.ts`). Sanity's CDN can serve stale results for a few minutes after a publish, which during builds means a freshly published doc may be invisible to `getStaticPaths` even though it's queryable elsewhere. Build-time freshness > CDN read perf.
@@ -306,6 +306,39 @@ The 2026-04-29 session published the first long-form expert article (`/en/blog/s
 - Citation popover-id duplication (open item #10) is now materially active — the scaphoid article cites multiple refs many times each. Same fix path (thread `_key` into `popoverId`).
 - Schema deploy still pending (open item #9). The extended `glossaryTerm` lives only in local files until a logged-in `npx sanity@latest schema deploy` happens.
 - Write token rotation (open item #1) — the Phase 6 seed used a temporary write token; revoke at sanity.io/manage → API → Tokens after each seed session.
+
+## Tier 2 — what shipped 2026-04-29
+
+Tier 2 features (Glossary, Calculators, FEBHS MCQ) were planned and largely built this session per the plan at `~/.claude/plans/continue-working-on-my-vectorized-finch.md`. Brand-spec amendment recorded in `01-brand-system/decisions-v1.9.md` (glossary moved forward to pre-launch).
+
+**Glossary (pre-launch, Feature 5 closeout):**
+- Index pages: `/en/glossary/` and `/pl/slowniczek/` (A-Z grouped, locale-aware sort, sticky letter nav, `DefinedTermSet` JSON-LD).
+- Detail pages: `/en/glossary/[slug]` and `/pl/slowniczek/[slug]` (full definition via existing `PortableTextRenderer`, related terms, "Articles mentioning this term" via exact GROQ subquery `^._id in body[].markDefs[_type == "glossaryTerm"].term._ref`, `DefinedTerm` + `BreadcrumbList` JSON-LD).
+- "More about this term →" link in `GlossaryTerm.astro` popover now goes live, locale-aware.
+- All 16 seeded scaphoid terms have working detail pages. Build adds 34 pages (16 × 2 locales + 2 indexes).
+
+**Calculators (Feature 3 — infrastructure + QuickDASH):**
+- Schema expanded to full 6-tab Portable Text shape with `locale` field (separate-doc-per-locale convention) and `componentName` enum picking the Preact island.
+- Page shells at `/en/calculators` + `/[slug]` + PL mirrors at `/pl/kalkulatory/...`. WebApplication JSON-LD with `applicationCategory: 'MedicalApplication'`. Citation + glossary marks supported in all 6 tabs.
+- QuickDASH built end-to-end at `src/components/interactive/QuickDASH.tsx` (Beaton 2005 — formula `(sum/n - 1) × 25`, allow 1 missing of 11). Validated English question wording; PL still uses English questions with a notice (Polish-validated translation pending).
+- Calculator registry at `src/components/interactive/registry.ts` — static-import map (NOT `import.meta.glob`, per the same lesson as image-registry). Returns `undefined` for unbuilt calculators; page renders a placeholder. Adding PRWE/Boston/MHQ/Mayo: build the .tsx + import to registry, no other wiring.
+- **Clinical verification trail required per calculator before flipping it live.** See `_handoff/features/03-calculator-suite.md` and the plan's verification section.
+
+**FEBHS MCQ — moved to `learn.drgladysz.com` sub-app (2026-04-29 evening):**
+- Initial Tier 2 build placed MCQ at `/en/learn/` and `/pl/nauka/` on the main domain. This violated brand spec v1.8 Decision #29/30 (LMS / quiz platform on its own subdomain). The format was also wrong — built as "stem + 4–5 options pick one" when the FESSH format is "stem + 5 T/F statements".
+- Reverted: deleted `/en/learn/`, `/pl/nauka/`, all `MCQ*` islands, `mcq-progress.ts`, `mcq-question.css`, `mcq-progress.css`, `mcq-topics.ts`, `portable-text.ts`, and the `mcqQuestion` schema. Footer "FEBHS prep" entry replaced with an external link to `learn.drgladysz.com`.
+- Replaced with: a separate Astro project at `learn/` (sibling to `site/`); new schemas (`fesshReference`, `fesshMcq`, `fesshStatement`, `fesshMcqMetadata`, `fesshMockExam`) here in `site/studio/schemas/`; full FesshQuestion + MockExam (practice/exam modes) + Progress islands in `learn/src/components/`; 4 verified peer-reviewed questions and 18 references awaiting Mateusz's seed run via `learn/scripts/seed-fessh-package.ts`. See `learn/CLAUDE.md` for the sub-app's own docs and `01-brand-system/decisions-v1.10.md` for the brand-spec amendment.
+- 301 redirects added to `astro.config.mjs`: `/en/learn` and `/pl/nauka` → `https://learn.drgladysz.com`.
+
+**Cross-cutting infrastructure (kept):**
+- `SiteNav` accepts `alternateUrl` prop forwarded from `SiteLayout` so language switcher resolves translated slugs (e.g. `/en/glossary/scaphoid` → `/pl/slowniczek/scaphoid`).
+- Bilingual decision: glossary stays single-doc-bilingual (term + termPolish on the same doc); calculator is separate-doc-per-locale (matches `article` and `procedurePage` convention). FESSH MCQ on the sub-app is English-only.
+- Main-site build now produces 55 pages: glossary 34 + calculator indexes 2 + supporting / articles / procedures 19. Calculator detail pages materialise as Mateusz authors calculator docs in Sanity.
+
+**Outstanding for Tier 2 / sub-app:**
+- Calculators: PRWE, Boston CTS, MHQ, Mayo Wrist islands (3-6h each, gated by validation-paper review per calculator); per-calculator audit-trail markdown at `_handoff/verification/{slug}.md`; clinical content authoring in Sanity (6 tabs each).
+- learn.drgladysz.com: deploy Sanity schemas (`sanity schema deploy`); seed 4 questions + 18 references via `learn/scripts/seed-fessh-package.ts`; provision Vercel project + DNS at Zenbox (Phase L11 in the subdomain plan); curate first `fesshMockExam` doc once question count nears 60+.
+- Polish chrome polish: glossary + calculator index page copy is functional draft — the dedicated Polish composition session should refine.
 
 ## Phase 9 starting context (next session)
 

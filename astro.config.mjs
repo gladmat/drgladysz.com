@@ -43,7 +43,9 @@ export default defineConfig({
     domains: ['cdn.sanity.io'], // Allow Sanity-hosted images
   },
 
-  // Locked 301 redirects from existing WordPress site
+  // Locked 301 redirects from existing WordPress site, plus subdomain
+  // redirects for the FEBHS MCQ sub-application (per brand spec v1.8
+  // Decision #29/30 — MCQ lives on learn.drgladysz.com, not the main domain).
   redirects: {
     // English content
     '/about/': '/en/about',
@@ -56,6 +58,15 @@ export default defineConfig({
 
     // Polish content (one existing post)
     '/zespol-ciesni-nadgarstka/': '/pl/blog/zespol-ciesni-nadgarstka',
+
+    // FEBHS MCQ → subdomain. Per brand spec v1.8 Decision #29/30 the
+    // quiz/exam-prep platform lives on learn.drgladysz.com, not on the
+    // main domain. Wildcard `/en/learn/[...slug]` redirects can be added
+    // here later, but Astro's static-redirect handling treats wildcards
+    // as dynamic routes requiring a real Astro page; for now the bare
+    // paths cover everything that was ever surfaced.
+    '/en/learn': { status: 301, destination: 'https://learn.drgladysz.com' },
+    '/pl/nauka': { status: 301, destination: 'https://learn.drgladysz.com' },
 
     // Common WordPress paths
     '/wp-content/': '/en/',

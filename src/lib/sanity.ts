@@ -105,6 +105,117 @@ export type SanityGlossaryTerm = {
   illustration?: SanityImage;
 };
 
+// Lightweight projection for the glossary index page — no fullDefinition,
+// no illustration, no relatedTerms. The index renders a card per term with
+// the short definition only.
+export type GlossarySummary = {
+  _id: string;
+  term: string;
+  termPolish?: string;
+  slug: { current: string };
+  category: SanityGlossaryTerm['category'];
+  shortDefinition: string;
+  shortDefinitionPolish?: string;
+};
+
+// Full projection for the glossary detail page. Adds resolved relatedTerms
+// and back-referenced articles whose Portable Text body uses the term via
+// a glossaryTerm mark (computed via GROQ subquery; see GLOSSARY_DETAIL_PROJECTION).
+export type SanityGlossaryTermFull = SanityGlossaryTerm & {
+  relatedTerms?: GlossarySummary[];
+  articlesUsingTerm?: ArticleSummary[];
+};
+
+// ---------------------------------------------------------------------------
+// Calculator (Tier 2, Feature 3)
+// ---------------------------------------------------------------------------
+
+export type CalculatorComponentName =
+  | 'quickdash'
+  | 'prwe'
+  | 'boston-cts'
+  | 'mhq'
+  | 'mayo-wrist';
+
+export type Locale = 'en' | 'pl';
+
+export type SanityCalculator = {
+  _id: string;
+  _type: 'calculator';
+  name: string;
+  fullName: string;
+  slug: { current: string };
+  locale: Locale;
+  componentName: CalculatorComponentName;
+  shortDescription: string;
+  whenToUse: PortableTextBlock[];
+  pearlsPitfalls?: PortableTextBlock[];
+  whyUse: PortableTextBlock[];
+  nextSteps?: PortableTextBlock[];
+  evidence: PortableTextBlock[];
+  creatorInsights?: PortableTextBlock[];
+  seoTitle?: string;
+  seoDescription?: string;
+};
+
+// Lightweight projection for the index page — no Portable Text bodies, just
+// what cards need to render.
+export type CalculatorSummary = {
+  _id: string;
+  name: string;
+  fullName: string;
+  slug: { current: string };
+  locale: Locale;
+  componentName: CalculatorComponentName;
+  shortDescription: string;
+};
+
+// ---------------------------------------------------------------------------
+// MCQ (Tier 2, Feature 4)
+// ---------------------------------------------------------------------------
+
+export type MCQTopic =
+  | 'anatomy'
+  | 'trauma'
+  | 'tendon'
+  | 'nerve-compression'
+  | 'nerve-injury'
+  | 'joint'
+  | 'bone'
+  | 'microsurgery'
+  | 'congenital'
+  | 'tumours'
+  | 'imaging'
+  | 'examination';
+
+export type MCQReviewStatus = 'draft' | 'in-review' | 'published' | 'errata';
+
+export type MCQOption = {
+  _key: string;
+  text: string;
+  isCorrect: boolean;
+  explanationDetail?: string;
+};
+
+export type SanityMCQQuestion = {
+  _id: string;
+  _type: 'mcqQuestion';
+  topic: MCQTopic;
+  difficulty: 1 | 2 | 3 | 4 | 5;
+  locale: Locale;
+  tags?: string[];
+  sourceArticle?:
+    | { _type: 'article'; title: string; slug: { current: string } }
+    | { _type: 'procedurePage'; title: string; slug: { current: string } }
+    | null;
+  stem: PortableTextBlock[];
+  options: MCQOption[];
+  explanation: PortableTextBlock[];
+  reviewStatus: MCQReviewStatus;
+  reviewedBy?: string;
+  reviewDate?: string;
+};
+
 export type ArticleAuthor = {
   name: string;
   credentials?: string;
@@ -200,6 +311,43 @@ const GLOSSARY_PROJECTION = /* groq */ `{
   fullDefinition, fullDefinitionPolish,
   synonyms,
   illustration
+}`;
+
+const GLOSSARY_SUMMARY_PROJECTION = /* groq */ `{
+  _id, term, termPolish, slug, category,
+  shortDefinition, shortDefinitionPolish
+}`;
+
+// Detail-page projection. Resolves relatedTerms references and pulls the list
+// of articles whose body has a glossaryTerm mark targeting this doc.
+//
+// The subquery `^._id in body[].markDefs[_type == "glossaryTerm"].term._ref`
+// is exact: it counts only articles whose Portable Text body has a markDef
+// pointing at THIS glossary term. This is more precise than `references(^._id)`,
+// which over-reports by including indirect references via `relatedTerms`
+// (a related term cited in an article would otherwise pull that article into
+// every related term's "articles using" list).
+//
+// `^` inside a subquery references the parent context — here, the glossaryTerm
+// doc returned at the top level.
+const GLOSSARY_DETAIL_PROJECTION = /* groq */ `{
+  _id, _type, term, termPolish, slug, category,
+  shortDefinition, shortDefinitionPolish,
+  fullDefinition, fullDefinitionPolish,
+  synonyms,
+  illustration,
+  "relatedTerms": relatedTerms[]->{
+    _id, term, termPolish, slug, category,
+    shortDefinition, shortDefinitionPolish
+  },
+  "articlesUsingTerm": *[
+    _type == "article"
+    && defined(slug.current)
+    && ^._id in body[].markDefs[_type == "glossaryTerm"].term._ref
+  ] | order(publishedDate desc) {
+    _id, title, slug, category, audience,
+    publishedDate, lastUpdated, excerpt, heroImage
+  }
 }`;
 
 const PROCEDURE_PROJECTION = /* groq */ `{
@@ -303,6 +451,136 @@ export async function getGlossaryTermsByIds(
     /* groq */ `*[_type == "glossaryTerm" && _id in $ids]${GLOSSARY_PROJECTION}`,
     { ids },
   );
+}
+
+// All glossary terms for the index page. Sort happens in JS rather than in
+// GROQ because the index groups by display term in the active locale (term
+// for /en/, termPolish for /pl/) and Polish ordering rules differ — fixing
+// the sort in JS keeps the GROQ stable and the locale-specific ordering
+// where it belongs.
+export async function getAllGlossaryTerms(): Promise<GlossarySummary[]> {
+  return sanityClient.fetch<GlossarySummary[]>(
+    /* groq */ `*[_type == "glossaryTerm" && defined(slug.current)]${GLOSSARY_SUMMARY_PROJECTION}`,
+  );
+}
+
+// Slugs only — for getStaticPaths. One slug per doc; the page generator
+// emits both /en/ and /pl/ pages from the same slug list.
+export async function getAllGlossaryTermSlugs(): Promise<string[]> {
+  return sanityClient.fetch<string[]>(
+    /* groq */ `*[_type == "glossaryTerm" && defined(slug.current)].slug.current`,
+  );
+}
+
+export async function getGlossaryTermBySlug(
+  slug: string,
+): Promise<SanityGlossaryTermFull | null> {
+  return sanityClient.fetch<SanityGlossaryTermFull | null>(
+    /* groq */ `*[_type == "glossaryTerm" && slug.current == $slug][0]${GLOSSARY_DETAIL_PROJECTION}`,
+    { slug },
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Calculator queries
+// ---------------------------------------------------------------------------
+
+const CALCULATOR_PROJECTION = /* groq */ `{
+  _id, _type, name, fullName, slug, locale, componentName,
+  shortDescription,
+  whenToUse, pearlsPitfalls, whyUse, nextSteps, evidence, creatorInsights,
+  seoTitle, seoDescription
+}`;
+
+const CALCULATOR_SUMMARY_PROJECTION = /* groq */ `{
+  _id, name, fullName, slug, locale, componentName, shortDescription
+}`;
+
+export async function getAllCalculatorSummaries(
+  locale: Locale,
+): Promise<CalculatorSummary[]> {
+  return sanityClient.fetch<CalculatorSummary[]>(
+    /* groq */ `*[_type == "calculator" && locale == $locale && defined(slug.current)] | order(name asc)${CALCULATOR_SUMMARY_PROJECTION}`,
+    { locale },
+  );
+}
+
+// Slug list for getStaticPaths. Returns one entry per locale, so the same
+// underlying calculator (identified by `componentName`) generates one EN page
+// and one PL page from two separate Sanity docs.
+export async function getAllCalculatorSlugsForLocale(
+  locale: Locale,
+): Promise<string[]> {
+  return sanityClient.fetch<string[]>(
+    /* groq */ `*[_type == "calculator" && locale == $locale && defined(slug.current)].slug.current`,
+    { locale },
+  );
+}
+
+export async function getCalculatorBySlug(
+  slug: string,
+  locale: Locale,
+): Promise<SanityCalculator | null> {
+  return sanityClient.fetch<SanityCalculator | null>(
+    /* groq */ `*[_type == "calculator" && locale == $locale && slug.current == $slug][0]${CALCULATOR_PROJECTION}`,
+    { slug, locale },
+  );
+}
+
+// ---------------------------------------------------------------------------
+// MCQ queries
+//
+// All MCQ queries filter on `reviewStatus == "published"` so draft and
+// in-review content never reaches the rendered HTML. This is enforced at the
+// query level rather than the page level — defence in depth, since a missing
+// page-level filter would silently surface unreviewed clinical content.
+// ---------------------------------------------------------------------------
+
+const MCQ_PROJECTION = /* groq */ `{
+  _id, _type, topic, difficulty, locale, tags,
+  "sourceArticle": sourceArticle->{_type, title, slug},
+  stem,
+  options,
+  explanation,
+  reviewStatus, reviewedBy, reviewDate
+}`;
+
+export async function getPublishedMCQQuestionsByTopic(
+  topic: MCQTopic,
+  locale: Locale,
+): Promise<SanityMCQQuestion[]> {
+  return sanityClient.fetch<SanityMCQQuestion[]>(
+    /* groq */ `*[
+      _type == "mcqQuestion"
+      && locale == $locale
+      && topic == $topic
+      && reviewStatus == "published"
+    ] | order(difficulty asc, _createdAt asc)${MCQ_PROJECTION}`,
+    { topic, locale },
+  );
+}
+
+// Topics that have at least one published question in the given locale.
+// Used to decide which topic landing pages to surface in the /learn index.
+export async function getMCQTopicsWithPublishedQuestions(
+  locale: Locale,
+): Promise<{ topic: MCQTopic; count: number }[]> {
+  const all = await sanityClient.fetch<{ topic: MCQTopic }[]>(
+    /* groq */ `*[
+      _type == "mcqQuestion"
+      && locale == $locale
+      && reviewStatus == "published"
+    ]{ topic }`,
+    { locale },
+  );
+  const counts = new Map<MCQTopic, number>();
+  for (const q of all) {
+    counts.set(q.topic, (counts.get(q.topic) ?? 0) + 1);
+  }
+  return Array.from(counts.entries()).map(([topic, count]) => ({
+    topic,
+    count,
+  }));
 }
 
 // ---------------------------------------------------------------------------

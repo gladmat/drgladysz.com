@@ -15,6 +15,8 @@ import type {
   SanityProcedurePage,
   SanityRefDoc,
   PortableTextBlock,
+  GlossarySummary,
+  SanityGlossaryTermFull,
 } from './sanity';
 
 const SITE_URL = (
@@ -232,5 +234,85 @@ export function generateBreadcrumb(
       name: item.name,
       item: item.url,
     })),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Glossary JSON-LD (DefinedTerm + DefinedTermSet)
+// ---------------------------------------------------------------------------
+
+interface DefinedTermSetInput {
+  url: string; // canonical URL of the index page (also used as @id)
+  name: string;
+  description: string;
+  inLanguage: 'en-NZ' | 'pl-PL';
+  terms: GlossarySummary[];
+  termUrlPrefix: string; // e.g. "https://drgladysz.com/en/glossary/"
+  locale: 'en' | 'pl';
+}
+
+export function generateDefinedTermSetSchema({
+  url,
+  name,
+  description,
+  inLanguage,
+  terms,
+  termUrlPrefix,
+  locale,
+}: DefinedTermSetInput) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'DefinedTermSet',
+    '@id': url,
+    name,
+    description,
+    url,
+    inLanguage,
+    hasDefinedTerm: terms.map((t) => ({
+      '@type': 'DefinedTerm',
+      name: locale === 'pl' && t.termPolish ? t.termPolish : t.term,
+      description:
+        locale === 'pl' && t.shortDefinitionPolish
+          ? t.shortDefinitionPolish
+          : t.shortDefinition,
+      url: `${termUrlPrefix}${t.slug.current}`,
+    })),
+  };
+}
+
+interface DefinedTermInput {
+  term: SanityGlossaryTermFull;
+  url: string;
+  inSetUrl: string; // @id of the parent DefinedTermSet
+  inLanguage: 'en-NZ' | 'pl-PL';
+  locale: 'en' | 'pl';
+}
+
+export function generateDefinedTermSchema({
+  term,
+  url,
+  inSetUrl,
+  inLanguage,
+  locale,
+}: DefinedTermInput) {
+  const displayName =
+    locale === 'pl' && term.termPolish ? term.termPolish : term.term;
+  const description =
+    locale === 'pl' && term.shortDefinitionPolish
+      ? term.shortDefinitionPolish
+      : term.shortDefinition;
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'DefinedTerm',
+    name: displayName,
+    description,
+    url,
+    inLanguage,
+    inDefinedTermSet: inSetUrl,
+    ...(term.synonyms && term.synonyms.length > 0
+      ? { alternateName: term.synonyms }
+      : {}),
+    termCode: term.slug.current,
   };
 }
