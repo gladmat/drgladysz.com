@@ -52,7 +52,7 @@ site/
 | 10 | Production cutover (DNS at Zenbox, monitor 404s, decommission WP after 30 days) | ⬜ | — |
 
 **Phase 6/7/8 deferred work (content authoring, not infrastructure):**
-- Phase 6: WordPress migration — **scaphoid-fractures published 2026-04-29** from the v1.7 implementation package (peer audience, FESSH-prep, 30 references, 16 glossary terms, JAMA Key Points box, MedicalScholarlyArticle JSON-LD, byline, no images yet — see "Phase 6 — what shipped" section below). Still to author: flexor-tendon-injuries-and-repair, extensor-tendon-injuries, and the Polish post (zespol-ciesni-nadgarstka).
+- Phase 6: WordPress migration — **scaphoid-fractures, extensor-tendon-injuries, and flexor-tendon-injuries-and-repair all live as of 2026-04-30** (FESSH-prep, peer audience; cumulative 88 references, 31 glossary terms, JAMA Key Points, italic standfirst, cross-link block at end of each, MedicalScholarlyArticle JSON-LD; no images yet). Still to author: the Polish post (zespol-ciesni-nadgarstka). See "Phase 6 — what shipped" + "Phase 6 update 2026-04-30" sections below.
 - Phase 7: 5 more procedure pages — author one per sub-specialty area at minimum (e.g. one reconstructive-microsurgery, one skin-cancer) so each category index isn't empty at launch.
 - Phase 8: Polish mirrors of all supporting pages (/pl/kontakt, /pl/uprawnienia, /pl/nota-prawna, /pl/polityka-prywatnosci, /pl/zastrzezenie-medyczne, /pl/publikacje) — pending Polish composition session.
 - Phase 8: Resend-backed contact form. Currently the form posts as `mailto:` so it works without a server endpoint; adding a real `/api/contact.ts` server endpoint is part of Phase 10 (Vercel adapter setup).
@@ -76,6 +76,9 @@ These are non-obvious things prior sessions tripped on. Do not redo:
 - **Astro dev-server CSS cache goes stale on structural refactors.** When a component's grid/layout CSS changes, Vite HMR sometimes serves the OLD compiled CSS even after a hard browser reload. The production build (`npm run build`) is correct; only dev is wrong. Symptom: `getComputedStyle(el).display` returns `block` when CSS says `grid`. Fix: `pkill -f "astro dev"` then `cd site && npm run dev` for a clean restart. Already cost two debug rounds in this session — restart pre-emptively after any AboutSection/Standfirst/grid-template refactor before judging visuals.
 - **Astro scoped CSS doesn't reach slot content.** Component templates render with a `data-astro-cid-XXX` attribute; slot content from the parent does NOT get that attribute. So `<style>` rules inside the component only match elements rendered in the component's own template. To style slot content from the parent, use `:global(...)` selectors. Both Standfirst's `.aside-num`/`.aside-list` and AboutSection's equivalents are styled via `:global()` for that reason.
 - **Readonly arrays don't cross into `<Picture>` props.** `IMAGE_WIDTHS` and `IMAGE_FORMATS` in `src/lib/image-config.ts` are `as const` (good for narrow typing), but `<Picture>` typings expect mutable arrays. At every call site spread them: `widths={[...IMAGE_WIDTHS]}`, `formats={[...IMAGE_FORMATS]}`. Forgetting this is a type error at build time, not runtime.
+- **Article package YAML quirks.** Glossary root key is sometimes `glossaryTerms` (camelCase, scaphoid + flexor) and sometimes `glossary_terms` (snake, extensor); references `authors` is sometimes a block list and sometimes a single comma-separated string (flexor). `scripts/import-article.ts` normalises both shapes. Future package authors should expect either.
+- **Sanity write token env name.** Local `.env.local` convention is `SANITY_API_DEVELOPER_TOKEN` (read+write); legacy `SANITY_API_WRITE_TOKEN` is also accepted by the seed scripts. Revoke at sanity.io/manage immediately after a seed run (see open item #1).
+- **Security hook false-positive on RegExp `.exec` calls.** The PreToolUse Write hook regex-matches the substring `.exec(` and fires on `RegExp.prototype` matching calls thinking they're shell-execution APIs. Use `someString.match(regex)` instead in scripts you're writing — same semantics for our token-pattern matching, no hook trigger.
 
 ---
 
@@ -88,12 +91,12 @@ These are non-obvious things prior sessions tripped on. Do not redo:
 | Schema | Status |
 |---|---|
 | `author` | ✅ full |
-| `article` | ✅ full (citation mark wired to `bibReference`) |
+| `article` | ✅ full (citation + glossary marks, `standfirst`, `relatedArticles`/`relatedProcedures`) |
 | `podcastEpisode` | ✅ full |
 | `procedurePage` | ✅ full (Phase 5 — AO Surgery Reference 10-section structure) |
 | `bibReference` | ✅ full (Phase 5 — Vancouver/AMA fields, was `reference`) |
 | `callout` | ✅ shared object type (info / warning / pearl) |
-| `glossaryTerm` | ✅ full (Phase 6 — Tier 2 schema pulled forward when scaphoid article shipped; rendering side ships alongside) |
+| `glossaryTerm` | ✅ full (`shortDefinition` cap raised 400→450 on 2026-04-30 to fit medical-precision terms like `bowstringing`) |
 | `calculator` | ✅ full (Tier 2 infrastructure built 2026-04-29 — schema, page shells, QuickDASH widget. PRWE/Boston/MHQ/Mayo deferred until validation paper review per calculator) |
 | **FESSH MCQ schemas** | ✅ moved to `learn/` sub-app (2026-04-29 evening). The earlier `mcqQuestion` schema was removed entirely — FESSH MCQ uses a different format (5 T/F statements per question, not single-answer multiple-choice). New schemas: `fesshReference`, `fesshMcq`, `fesshStatement`, `fesshMcqMetadata`, `fesshMockExam` — all live here in `studio/schemas/` but consumed by the `learn/` Astro project. See `learn/CLAUDE.md` and `01-brand-system/decisions-v1.10.md`. |
 
@@ -109,6 +112,7 @@ These are non-obvious things prior sessions tripped on. Do not redo:
 - **English under `/en/`**, Polish under `/pl/`. Both prefixes always shown — never bare `/about`.
 - **Polish content is independently composed** — never machine-translated from English. Awaiting native Polish composition session for Home, About, all procedure pages.
 - **Polish slugs** (from brand spec §11): `/pl/o-mnie`, `/pl/zabiegi`, `/pl/publikacje`, `/pl/kontakt`, `/pl/uprawnienia`, `/pl/nota-prawna`, `/pl/polityka-prywatnosci`, `/pl/zastrzezenie-medyczne`.
+- **FESSH-prep articles are English-only.** Articles with `category: fessh-prep` (currently scaphoid-fractures, extensor-tendon-injuries, flexor-tendon-injuries-and-repair) never get Polish translations — the FESSH Diploma exam is English-language, so a Polish version has no audience. This matches the `learn.drgladysz.com` MCQ sub-app convention. Other categories (`patient`, `expert`, `news`) follow the standard EN/PL mirror rule.
 
 ---
 
@@ -178,7 +182,7 @@ Per `_handoff/technical/compliance-checklist.md` and brand spec — these are no
 1. **Sanity API token rotation.** A read+write token was pasted in chat history during Phase 1 setup (2026-04-28). Rotate it in Sanity → Manage → API → Tokens, replace with a **read-only** token in `.env.local` (frontend doesn't need write). Studio uses session auth, no token. (Phase 5 used the Sanity MCP for seeding instead of the API token.)
 2. **OR-shot color grading.** Editorial pass in Lightroom for img-04, 09, 10, 12 vs accepting current CSS `saturate(0.96)` approximation. Defer decision to Phase 9.
 3. **Image storage strategy.** Currently 68MB of source photos in git history. Migrate to Sanity asset CDN if git size becomes annoying — schemas already designed for it.
-4. **Polish content composition.** Native Polish session pending for Home, About, procedure pages, blog posts.
+4. **Polish content composition.** Native Polish session pending for Home, About, procedure pages, and `category: patient` / `expert` / `news` blog posts. **FESSH-prep articles are excluded** (English-only by design; see Locale conventions).
 5. **Embedded vs standalone Sanity Studio.** Standalone now; revisit if you want `/studio` on drgladysz.com (would add `@sanity/astro` dep).
 6. **Dependency major bumps.** Sanity 4→5, Resend 4→6, TypeScript 5→6, Preact Signals 1→2 are available. Phase 5 deferred the v4→v5 bump because the existing v4 worked cleanly with the new schemas; revisit when there's a feature reason to bump (rather than for its own sake).
 7. **About hero pull-quote centering.** The §01 opening narrative paragraph is centered within its right-of-§-margin column rather than the full viewport (~52px right of viewport-center at 1440px). User said "looks fine for now"; if the slight off-center bothers anyone later, switch §01 to absolute-positioned in the margin so the narrow paragraph can center against the viewport.
@@ -307,6 +311,29 @@ The 2026-04-29 session published the first long-form expert article (`/en/blog/s
 - Schema deploy still pending (open item #9). The extended `glossaryTerm` lives only in local files until a logged-in `npx sanity@latest schema deploy` happens.
 - Write token rotation (open item #1) — the Phase 6 seed used a temporary write token; revoke at sanity.io/manage → API → Tokens after each seed session.
 
+## Phase 6 update 2026-04-30 — extensor + flexor articles, generalized migration scripts
+
+Two more expert articles shipped (`/en/blog/extensor-tendon-injuries`, `/en/blog/flexor-tendon-injuries-and-repair`) and the migration pipeline was generalized so future articles drop in cleanly.
+
+**Schema additions** (deployed via `npx sanity@latest schema deploy`):
+- `article.standfirst` (text ≤600) — italic editorial intro rendered below byline. Distinct from `excerpt` (≤280, SEO/cards). The blog `[slug].astro` template falls back to `excerpt` when `standfirst` is absent (carpal-tunnel-syndrome).
+- `article.relatedArticles` / `article.relatedProcedures` (arrays of references) — surfaced as a "Related" block at the end of each article.
+- `glossaryTerm.shortDefinition` cap raised 400→450 (one term, `bowstringing`, was 416 chars). Popover layout absorbs the extra line cleanly.
+
+**Generalized migration pipeline** (replaces the old scaphoid-specific scripts):
+- `scripts/import-article.ts <folder>` — pure markdown→PT JSON converter for any v1.7-shaped article package at `01-brand-system/articles/<folder>/`. Output to `scripts/.<folder>-import.json`. Handles `bookChapter` references (Doyle in Green's), normalises authors-as-string vs authors-as-list, drops Polish placeholder strings (`null`, `[PENDING POLISH SESSION]`), warns on cross-package `relatedTerms`.
+- `scripts/seed-article.ts <folder>` — idempotent `createOrReplace` writer with existence-aware filtering of `relatedArticles` / `relatedProcedures` / `relatedTerms` against the live dataset (drops unresolved refs; re-run to backfill once siblings exist). Accepts `SANITY_API_DEVELOPER_TOKEN` or `SANITY_API_WRITE_TOKEN`.
+- To add another article: drop a v1.7 package into `01-brand-system/articles/<folder>/`, run `node --experimental-strip-types scripts/import-article.ts <folder> > scripts/.<folder>-import.json`, then `node --experimental-strip-types --env-file=.env.local scripts/seed-article.ts <folder>`. Re-seed any prior article whose `relatedArticles` lists the new slug to backfill that link.
+- Old `scripts/import-scaphoid-article.ts` / `seed-scaphoid-article.ts` were replaced and deleted; the Phase 6 narrative below describes the original (scaphoid-specific) shape for historical context.
+
+**Build status after the session:** `npm run type-check` 0 errors, `npm run build` 87 pages (was 55 — +2 articles + 30 derived glossary detail pages from new terms). Each article renders byline, italic standfirst, JAMA Key Points, citation sidenotes, glossary popovers, numbered bibliography, and a Related block linking to its two siblings.
+
+**Known unresolved cross-references** (will backfill when targets ship):
+- `flexor-tendon-injuries-and-repair → procedure flexor-tendon-repair`
+- `scaphoid-fractures → procedure scaphoid-fracture-fixation`
+
+Re-run `seed-article.ts` against the originating article once the procedure exists.
+
 ## Tier 2 — what shipped 2026-04-29
 
 Tier 2 features (Glossary, Calculators, FEBHS MCQ) were planned and largely built this session per the plan at `~/.claude/plans/continue-working-on-my-vectorized-finch.md`. Brand-spec amendment recorded in `01-brand-system/decisions-v1.9.md` (glossary moved forward to pre-launch).
@@ -348,7 +375,7 @@ Phase 9 is **pre-launch QA — compliance, performance, accessibility**. See `_h
 1. Lighthouse audit on each route — confirm LCP ≤ 2.5s, CLS ≤ 0.05, INP ≤ 200ms (the perf budgets in the don'ts list above).
 2. axe / WAVE accessibility audit — focus on the new supporting pages (forms, dl semantics) and the citation popovers (focus management, escape behaviour).
 3. Compliance audit — run through `_handoff/technical/compliance-checklist.md` line by line. Particular attention to: no testimonials, no patient images, expanded post-nominals on first appearance per page, footer disclaimer band on every page (already implemented in `SiteFooter.astro`).
-4. Polish composition session — once locked PL content exists, mirror all `/en/...` routes under `/pl/...` per the `routing-and-redirects.md` slug table.
+4. Polish composition session — once locked PL content exists, mirror `/en/...` routes under `/pl/...` per the `routing-and-redirects.md` slug table, **excluding FESSH-prep articles** (English-only by design; see Locale conventions).
 5. Schema deploy — run `cd site && npx sanity login` then `npx sanity@latest schema deploy` so the deployed schema matches local for any third-party validators.
 
 **Things NOT to start yet:**

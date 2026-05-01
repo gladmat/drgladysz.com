@@ -87,9 +87,15 @@ const citationData = citationAnnotations
     const idx = referenceIndex.get(refId);
     const ref = references.find((r) => r._id === refId);
     if (!idx || !ref) return null;
-    return { ref, index: idx };
+    // markKey is unique per occurrence (Portable Text mark _key); index is
+    // the bibliography number (same across re-citations). Citation needs
+    // both — markKey for popover element ID uniqueness, index for display.
+    return { ref, index: idx, markKey: annot._key };
   })
-  .filter((d): d is { ref: SanityRefDoc; index: number } => d !== null);
+  .filter(
+    (d): d is { ref: SanityRefDoc; index: number; markKey: string } =>
+      d !== null,
+  );
 
 const glossaryData = glossaryAnnotation
   ? (() => {
@@ -128,6 +134,6 @@ if (linkAnnotation && linkAnnotation.href && !glossaryData) {
 ) : (
   <Fragment set:html={inner} />
 )}
-{citationData.map(({ ref, index }) => (
-  <Citation reference={ref} index={index} />
+{citationData.map(({ ref, index, markKey }) => (
+  <Citation reference={ref} index={index} markKey={markKey} />
 ))}

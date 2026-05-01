@@ -167,7 +167,16 @@ function imageSrcSet(img: SanityImage) {
   if (style === 'blockquote') {
     return <blockquote class="pt-blockquote">{renderedChildren}</blockquote>;
   }
-  return <p class="pt-p">{renderedChildren}</p>;
+  // Rendered as <div role="paragraph"> instead of <p> because Citation and
+  // GlossaryTerm components emit an <aside> as part of their inline output
+  // (the popover / sidenote element). HTML's <p> content model is phrasing
+  // content only — <aside> is flow content, not allowed inside <p>. When
+  // the browser encounters <aside> inside <p> it silently auto-closes the
+  // <p>, splitting the paragraph at the citation/glossary point and orphaning
+  // the text after it (visually broken paragraph + lost .pt-p font styling).
+  // <div> accepts flow content, so the paragraph stays intact. role="paragraph"
+  // preserves the AT semantic. CSS targets the class, so visuals are unchanged.
+  return <div class="pt-p" role="paragraph">{renderedChildren}</div>;
 })}
 
 <style>

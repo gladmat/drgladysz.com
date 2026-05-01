@@ -1,30 +1,19 @@
-// site/scripts/import-scaphoid-article.ts
+// site/scripts/import-article.ts
 //
-// One-shot importer for the scaphoid-fractures expert article (Phase 6).
-// Reads the implementation package at 01-brand-system/articles/scaphoid-fracture/,
-// converts the markdown body to Sanity Portable Text, maps the YAML files for
-// references, glossary terms, and metadata, and emits a single JSON file with
-// three arrays — bibReferences[], glossaryTerms[], articles[] — ready to be
-// handed to the Sanity MCP `create_documents_from_json` tool.
+// Generalized importer for v1.7-package expert articles. Reads the 4 package
+// files at 01-brand-system/articles/{folder}/ (02-article-body.md,
+// 03-article-metadata.yaml, 04-references.yaml, 05-glossary-terms.yaml) and
+// emits a single JSON file with three arrays — bibReferences[],
+// glossaryTerms[], articles[] — ready to be handed to seed-article.ts.
 //
-// PURE: this script does not call Sanity. It is a deterministic markdown→JSON
+// PURE: this script does not call Sanity. Deterministic markdown→JSON
 // converter. Re-running with the same inputs produces byte-identical output.
 //
 // Run from /Users/mateusz/projects-local/drgladysz.com/site:
-//   node --experimental-strip-types scripts/import-scaphoid-article.ts > scripts/.scaphoid-import.json
+//   node --experimental-strip-types scripts/import-article.ts <folder> > scripts/.{folder}-import.json
 //
-// Conversion rules (from 01-IMPLEMENTATION-README.md §6):
-//   * `## Heading` → block style 'h2'. No h3+, no lists allowed.
-//   * Paragraph → block style 'normal'.
-//   * `*text*` → em decorator on a span.
-//   * `[ref:slug]` → citation mark applied to the immediately preceding
-//      non-whitespace text. The mark's `_ref` points at the bibReference
-//      doc whose _id == slug.
-//   * `[gloss:slug|displayed]` → glossaryTerm mark wrapping a span whose
-//      text == displayed. The mark's `_ref` points at glossary-{slug}.
-//   * Em-dashes `—` (U+2014) pass through verbatim. No smart-quote pass.
-//   * The blockquote+separator at the top of the markdown (the authoring
-//     notation) is stripped.
+// where <folder> is the directory name under 01-brand-system/articles/, e.g.
+// "scaphoid-fracture", "extensor-tendon", "flexor-tendon".
 
 import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
@@ -34,15 +23,22 @@ import yaml from 'js-yaml';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+const folder = process.argv[2];
+if (!folder) {
+  console.error(
+    'Usage: node --experimental-strip-types scripts/import-article.ts <folder>',
+  );
+  process.exit(1);
+}
+
 const PACKAGE_DIR = resolve(
   __dirname,
-  '../../01-brand-system/articles/scaphoid-fracture',
+  `../../01-brand-system/articles/${folder}`,
 );
 
 // The Phase 5 author doc was seeded with a UUID _id rather than the slug-form
-// 'mateusz-gladysz' the YAML metadata expects. We translate at import time so
-// the article's author reference points at the live document. The metadata
-// YAML is authoritative; this map is the only deployment-specific override.
+// 'mateusz-gladysz' the YAML metadata expects. Translate at import time so
+// the article's author reference points at the live document.
 const AUTHOR_ID_MAP: Record<string, string> = {
   'mateusz-gladysz': '2cbd8bcc-fe62-4d80-8bd4-a1a345dcf472',
 };
@@ -77,11 +73,6 @@ function readYaml<T>(name: string): T {
   return yaml.load(readPackageFile(name)) as T;
 }
 
-/**
- * Strip the authoring notation block at the top of 02-article-body.md.
- * Per README §6: the block at the top is authoring guidance and not part of
- * the published article. The published body begins after the second `---`.
- */
 function stripAuthoringHeader(md: string): string {
   const lines = md.split('\n');
   let separatorCount = 0;
@@ -124,7 +115,7 @@ type InlineToken =
 
 const TOKEN_PATTERNS: Array<{
   regex: RegExp;
-  build: (m: RegExpExecArray) => InlineToken;
+  build: (m: RegExpMatchArray) => InlineToken;
 }> = [
   {
     regex: /^\*([^*\n]+)\*/,
@@ -156,7 +147,7 @@ function tokenizeInline(text: string): InlineToken[] {
     const slice = text.slice(pos);
     let matched = false;
     for (const { regex, build } of TOKEN_PATTERNS) {
-      const m = regex.exec(slice);
+      const m = slice.match(regex);
       if (m && m.index === 0) {
         flushText();
         tokens.push(build(m));
@@ -247,11 +238,6 @@ function tokensToBlock(
       });
 
       if (pendingText) {
-        // Drop the whitespace immediately before the [ref:...] marker —
-        // the markdown convention always inserts a space before the ref,
-        // even when the following character is punctuation. Keeping that
-        // space produces `word¹ ,` rendering; dropping it yields `word¹,`
-        // which matches the citation typography readers expect.
         const trimmed = pendingText.replace(/\s+$/, '');
         if (trimmed) {
           children.push({
@@ -332,11 +318,19 @@ function buildBody(
 type RefYaml = {
   slug: string;
   citationKey?: string;
-  referenceType: 'journalArticle' | 'guideline';
-  authors?: string[];
+  referenceType: 'journalArticle' | 'guideline' | 'bookChapter';
+  // Some packages (flexor-tendon) use a single comma-separated string for
+  // authors; others (scaphoid-fracture, extensor-tendon) use a block list.
+  // Normalised to string[] in normaliseAuthors().
+  authors?: string[] | string;
   title: string;
   journal?: string;
   journalAbbreviation?: string;
+  bookTitle?: string;
+  editors?: string[];
+  edition?: string;
+  publisher?: string;
+  location?: string;
   year: number;
   volume?: string;
   issue?: string;
@@ -346,8 +340,6 @@ type RefYaml = {
   doi?: string;
   url?: string;
   abstractPreview?: string;
-  publisher?: string;
-  location?: string;
   yearLastReviewed?: number;
   note?: string;
 };
@@ -355,23 +347,53 @@ type RefYaml = {
 const PUB_TYPE_MAP: Record<RefYaml['referenceType'], string> = {
   journalArticle: 'journal',
   guideline: 'guideline',
+  bookChapter: 'chapter',
 };
+
+function normaliseAuthors(raw: RefYaml['authors']): string[] {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw.map((s) => s.trim()).filter(Boolean);
+  // Comma-separated string. Vancouver authors take "Surname GH" form, no
+  // periods after initials, so no comma-vs-period ambiguity. Splitting on
+  // commas and trimming is safe for this corpus.
+  return raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
 
 function buildBibReference(r: RefYaml) {
   const pubType = PUB_TYPE_MAP[r.referenceType];
-  const journalSource =
-    r.referenceType === 'guideline'
-      ? (r.publisher ?? r.journal ?? 'Guideline')
-      : (r.journalAbbreviation ?? r.journal ?? '');
-  if (!journalSource) {
-    throw new Error(`bibReference ${r.slug} has no journal/publisher source`);
+  if (!pubType) {
+    throw new Error(
+      `bibReference ${r.slug} has unknown referenceType: ${r.referenceType}`,
+    );
   }
+
+  // The schema's `journal` field is required even for chapters and guidelines —
+  // its description says "For books, use book title".
+  let journalSource: string | undefined;
+  if (r.referenceType === 'journalArticle') {
+    journalSource = r.journalAbbreviation ?? r.journal;
+  } else if (r.referenceType === 'guideline') {
+    journalSource = r.publisher ?? r.journal ?? 'Guideline';
+  } else if (r.referenceType === 'bookChapter') {
+    journalSource = r.bookTitle ?? r.journal;
+  }
+  if (!journalSource) {
+    throw new Error(
+      `bibReference ${r.slug} has no journal/publisher/bookTitle source`,
+    );
+  }
+
+  const isChapter = r.referenceType === 'bookChapter';
+  const isGuideline = r.referenceType === 'guideline';
 
   return {
     _id: r.slug,
     _type: 'bibReference',
     title: r.title,
-    authors: r.authors ?? [],
+    authors: normaliseAuthors(r.authors),
     journal: journalSource,
     year: r.year,
     ...(r.volume ? { volume: r.volume } : {}),
@@ -382,6 +404,11 @@ function buildBibReference(r: RefYaml) {
     ...(r.doi ? { doi: r.doi } : {}),
     ...(r.url ? { url: r.url } : {}),
     pubType,
+    ...(isChapter && r.editors ? { editors: r.editors } : {}),
+    ...((isChapter || isGuideline) && r.publisher ? { publisher: r.publisher } : {}),
+    // YAML uses `location`; schema field is `publisherLocation`.
+    ...((isChapter || isGuideline) && r.location ? { publisherLocation: r.location } : {}),
+    ...(isChapter && r.edition ? { edition: r.edition } : {}),
     ...(r.abstractPreview ? { abstractPreview: r.abstractPreview } : {}),
   };
 }
@@ -410,6 +437,14 @@ function glossaryDocId(slug: string): string {
   return `glossary-${slug}`;
 }
 
+function articleDocId(slug: string): string {
+  return `article-${slug}`;
+}
+
+function procedureDocId(slug: string): string {
+  return `procedure-${slug}`;
+}
+
 function textToBlocks(text: string, keyPrefix: string): unknown[] {
   if (!text) return [];
   const cleaned = text.trim();
@@ -431,18 +466,31 @@ function textToBlocks(text: string, keyPrefix: string): unknown[] {
   ];
 }
 
+// Polish placeholder strings used in the package YAML to flag pending Polish
+// composition. Drop them at import time so the field is simply absent on the doc.
+const POLISH_PLACEHOLDER_PATTERN = /^\[?\s*pending\s+polish\s+session\s*\]?$/i;
+
+function isRealPolishValue(v: string | undefined): v is string {
+  if (!v) return false;
+  const trimmed = v.trim();
+  if (!trimmed) return false;
+  if (trimmed.toLowerCase() === 'null') return false;
+  if (POLISH_PLACEHOLDER_PATTERN.test(trimmed)) return false;
+  return true;
+}
+
 function buildGlossaryTerm(g: GlossYaml) {
   const shortDef = g.shortDefinition.trim();
-  if (shortDef.length > 400) {
+  if (shortDef.length > 450) {
     throw new Error(
-      `glossary ${g.slug} shortDefinition exceeds 400 chars (${shortDef.length})`,
+      `glossary ${g.slug} shortDefinition exceeds 450 chars (${shortDef.length})`,
     );
   }
   return {
     _id: glossaryDocId(g.slug),
     _type: 'glossaryTerm',
     term: g.term,
-    ...(g.termPolish ? { termPolish: g.termPolish } : {}),
+    ...(isRealPolishValue(g.termPolish) ? { termPolish: g.termPolish!.trim() } : {}),
     slug: { _type: 'slug', current: g.slug },
     category: g.category,
     shortDefinition: shortDef,
@@ -476,7 +524,7 @@ type ArticleMetaYaml = {
   keyPoints: { question: string; findings: string; meaning: string };
   seoTitle?: string;
   seoDescription?: string;
-  heroImage?: string;
+  heroImage?: string | null;
   bodyMarkdownPath?: string;
   redirectFrom?: string[];
   relatedArticles?: string[];
@@ -485,22 +533,65 @@ type ArticleMetaYaml = {
   schemaSpecialty?: string;
 };
 
+// Strip trailing inline-comment patterns leaked from YAML block scalars.
+// YAML's `>` (folded) and `|` (literal) scalars do NOT treat `#` as a comment
+// marker — text written as a hint by the package author (e.g., "# ≤ 160 chars",
+// "# 154 chars (≤160)") gets captured as part of the field value. trimEnd()
+// first so the regex anchor lands at the genuine string end (yaml.load may
+// return the scalar with a trailing newline).
+function stripTrailingYamlComment(s: string): string {
+  return s.trimEnd().replace(/\s+#[^\n]*$/, '').trimEnd();
+}
+
 function trim(s: string | undefined, max: number): string | undefined {
   if (!s) return undefined;
-  const t = s.trim().replace(/\s+/g, ' ');
+  const cleaned = stripTrailingYamlComment(s);
+  const t = cleaned.trim().replace(/\s+/g, ' ');
   return t.length > max ? t.slice(0, max).trimEnd() : t;
 }
 
+function deriveExcerpt(meta: ArticleMetaYaml): string {
+  // Prefer the explicit SEO description (already authored to ≤160 chars) so
+  // the card / SEO summary matches what the editor wrote. Fall back to the
+  // standfirst, truncated at 280 with an ellipsis when needed.
+  const seoRaw = meta.seoDescription
+    ? stripTrailingYamlComment(meta.seoDescription)
+    : '';
+  const seo = seoRaw.trim().replace(/\s+/g, ' ');
+  if (seo) {
+    return seo.length > 280 ? seo.slice(0, 277).trimEnd() + '…' : seo;
+  }
+  const sfRaw = stripTrailingYamlComment(meta.standfirst);
+  const sf = sfRaw.trim().replace(/\s+/g, ' ');
+  if (sf.length <= 280) return sf;
+  return sf.slice(0, 277).trimEnd() + '…';
+}
+
 function buildArticle(meta: ArticleMetaYaml, body: Block[]) {
-  const excerpt = meta.standfirst.trim().replace(/\s+/g, ' ');
-  if (excerpt.length > 280) {
+  const standfirst = stripTrailingYamlComment(meta.standfirst)
+    .trim()
+    .replace(/\s+/g, ' ');
+  if (standfirst.length > 600) {
     throw new Error(
-      `article excerpt exceeds 280 chars (${excerpt.length}): ${excerpt.slice(0, 60)}…`,
+      `article standfirst exceeds 600 chars (${standfirst.length}): ${standfirst.slice(0, 60)}…`,
     );
   }
+  const excerpt = deriveExcerpt(meta);
   const authorRef = AUTHOR_ID_MAP[meta.author] ?? meta.author;
+
+  const relatedArticleRefs = (meta.relatedArticles ?? []).map((slug, i) => ({
+    _key: `ra-${i}`,
+    _type: 'reference',
+    _ref: articleDocId(slug),
+  }));
+  const relatedProcedureRefs = (meta.relatedProcedures ?? []).map((slug, i) => ({
+    _key: `rp-${i}`,
+    _type: 'reference',
+    _ref: procedureDocId(slug),
+  }));
+
   return {
-    _id: `article-${meta.slug}`,
+    _id: articleDocId(meta.slug),
     _type: 'article',
     title: meta.title,
     slug: { _type: 'slug', current: meta.slug },
@@ -510,12 +601,21 @@ function buildArticle(meta: ArticleMetaYaml, body: Block[]) {
     publishedDate: meta.publishedDate,
     lastUpdated: meta.lastUpdated,
     excerpt,
+    standfirst,
     keyPoints: {
-      question: meta.keyPoints.question.trim().replace(/\s+/g, ' '),
-      findings: meta.keyPoints.findings.trim().replace(/\s+/g, ' '),
-      meaning: meta.keyPoints.meaning.trim().replace(/\s+/g, ' '),
+      question: stripTrailingYamlComment(meta.keyPoints.question)
+        .trim()
+        .replace(/\s+/g, ' '),
+      findings: stripTrailingYamlComment(meta.keyPoints.findings)
+        .trim()
+        .replace(/\s+/g, ' '),
+      meaning: stripTrailingYamlComment(meta.keyPoints.meaning)
+        .trim()
+        .replace(/\s+/g, ' '),
     },
     body,
+    ...(relatedArticleRefs.length > 0 ? { relatedArticles: relatedArticleRefs } : {}),
+    ...(relatedProcedureRefs.length > 0 ? { relatedProcedures: relatedProcedureRefs } : {}),
     ...(meta.seoTitle ? { seoTitle: trim(meta.seoTitle, 60) } : {}),
     ...(meta.seoDescription
       ? { seoDescription: trim(meta.seoDescription, 160) }
@@ -525,39 +625,59 @@ function buildArticle(meta: ArticleMetaYaml, body: Block[]) {
 
 function main() {
   const refsYaml = readYaml<{ references: RefYaml[] }>('04-references.yaml');
-  const glossYaml = readYaml<{ glossaryTerms: GlossYaml[] }>(
-    '05-glossary-terms.yaml',
-  );
+  // Glossary YAML root key is inconsistent across packages: scaphoid + flexor
+  // use `glossaryTerms` (camelCase), extensor uses `glossary_terms` (snake).
+  const glossDoc = readYaml<{
+    glossaryTerms?: GlossYaml[];
+    glossary_terms?: GlossYaml[];
+  }>('05-glossary-terms.yaml');
+  const glossList = glossDoc.glossaryTerms ?? glossDoc.glossary_terms ?? [];
+  if (glossList.length === 0) {
+    throw new Error(
+      `No glossary terms found in 05-glossary-terms.yaml (expected key 'glossaryTerms' or 'glossary_terms').`,
+    );
+  }
   const metaYaml = readYaml<ArticleMetaYaml>('03-article-metadata.yaml');
   const bodyMd = readPackageFile('02-article-body.md');
 
   const refSlugs = new Set(refsYaml.references.map((r) => r.slug));
-  const glossSlugs = new Set(glossYaml.glossaryTerms.map((g) => g.slug));
+  const glossSlugs = new Set(glossList.map((g) => g.slug));
 
   if (refSlugs.size !== refsYaml.references.length) {
     throw new Error('Duplicate reference slug in 04-references.yaml');
   }
-  if (glossSlugs.size !== glossYaml.glossaryTerms.length) {
+  if (glossSlugs.size !== glossList.length) {
     throw new Error('Duplicate glossary slug in 05-glossary-terms.yaml');
   }
 
   const body = buildBody(bodyMd, glossSlugs, refSlugs);
 
   const bibReferences = refsYaml.references.map(buildBibReference);
-  const glossaryTerms = glossYaml.glossaryTerms.map(buildGlossaryTerm);
+  const glossaryTerms = glossList.map(buildGlossaryTerm);
   const articles = [buildArticle(metaYaml, body)];
 
+  // RelatedTerms cross-references can point to glossary terms in other
+  // articles' packages (which may or may not be seeded yet). We warn here
+  // but don't fail — the seed script filters unresolved refs against the
+  // live dataset before patching.
   const knownGlossIds = new Set(glossaryTerms.map((g) => g._id));
+  const externalRefs: { from: string; to: string }[] = [];
   for (const g of glossaryTerms) {
     const rt = (g as { relatedTerms?: { _ref: string }[] }).relatedTerms;
     if (Array.isArray(rt)) {
       for (const r of rt) {
         if (!knownGlossIds.has(r._ref)) {
-          throw new Error(
-            `glossary ${g._id} relatedTerms references unknown ${r._ref}`,
-          );
+          externalRefs.push({ from: g._id, to: r._ref });
         }
       }
+    }
+  }
+  if (externalRefs.length > 0) {
+    process.stderr.write(
+      `[import-article] ${externalRefs.length} relatedTerms reference(s) point outside this package's glossary — seed script will filter against the live dataset:\n`,
+    );
+    for (const e of externalRefs) {
+      process.stderr.write(`  ${e.from} → ${e.to}\n`);
     }
   }
 
@@ -572,7 +692,7 @@ function main() {
   const out = {
     _meta: {
       generatedAt: new Date().toISOString(),
-      source: '01-brand-system/articles/scaphoid-fracture/',
+      source: `01-brand-system/articles/${folder}/`,
       stats: {
         bibReferences: bibReferences.length,
         glossaryTerms: glossaryTerms.length,

@@ -73,12 +73,14 @@ const moreLinkLabel = locale === 'pl' ? 'Więcej o tym haśle' : 'More about thi
   popovertarget={popoverId}
   aria-label={`Definition of ${displayText}`}
   aria-describedby={popoverId}
+  style={`anchor-name: --${popoverId}`}
 >{displayText}</button><aside
   id={popoverId}
   popover="auto"
   class="glossary-popover"
   role="note"
   aria-labelledby={`${popoverId}-label`}
+  style={`position-anchor: --${popoverId}`}
 >
   <p class="glossary-popover-cat">{categoryLabel}</p>
   <h4 class="glossary-popover-term" id={`${popoverId}-label`}>{displayedTerm}</h4>
@@ -120,19 +122,48 @@ const moreLinkLabel = locale === 'pl' ? 'Więcej o tym haśle' : 'More about thi
   }
 
   /* ---- Popover --------------------------------------------------------- */
-  /* The Popover API UA stylesheet sets `display: none` until the popover is
-     :open, then places it in the top layer with position: fixed near the
-     trigger. We refine the look but otherwise let UA defaults handle layout. */
+  /* Two-tier positioning:
+     1) Baseline (all browsers): explicit center-of-viewport via fixed +
+        inset: 0 + margin: auto. Reliable fallback when anchor positioning
+        isn't supported.
+     2) Modern browsers (CSS Anchor Positioning, Chrome 125+, Safari 17.4+,
+        Firefox 130+): position-anchor (set per-instance via inline style
+        using the popoverId) + position-area places the popover directly
+        below the trigger, aligned to its right span.
+     position-try-fallbacks lets the browser flip to top/left/right edges
+     if the default placement would clip the viewport.
+
+     Each trigger button + popover pair gets a unique anchor name via the
+     inline `anchor-name` / `position-anchor` style attributes. The CSS
+     here doesn't name the anchor — it consumes whatever the inline
+     `position-anchor: --foo` declares. */
   .glossary-popover {
+    position: fixed;
+    inset: 0;
+    width: fit-content;
+    height: fit-content;
+    margin: auto;
     border: 1px solid var(--rule-strong);
     background: var(--bg-card, var(--cream, #f5f0e6));
     color: var(--ink);
     padding: 16px 20px;
-    margin: 0;
     max-width: min(360px, calc(100vw - 32px));
     border-radius: 0;
     box-shadow: 0 8px 24px rgba(20, 23, 26, 0.08);
-    inset: auto;
+  }
+
+  @supports (position-area: bottom) {
+    .glossary-popover {
+      inset: auto;
+      margin: 0;
+      position-area: bottom span-right;
+      margin-block-start: 8px;
+      margin-inline-start: -2px;
+      position-try-fallbacks:
+        flip-block,
+        flip-inline,
+        flip-block flip-inline;
+    }
   }
 
   .glossary-popover::backdrop {

@@ -83,7 +83,19 @@ export const article = defineType({
       type: 'text',
       rows: 3,
       group: 'meta',
+      description:
+        'Short summary used in card listings, JSON-LD description, and meta description. Distinct from `standfirst` (which renders as the italic editorial intro).',
       validation: (Rule) => Rule.required().max(280),
+    }),
+    defineField({
+      name: 'standfirst',
+      title: 'Standfirst (italic editorial intro)',
+      type: 'text',
+      rows: 4,
+      group: 'meta',
+      description:
+        'Italic editorial intro paragraph rendered below the byline and above the Key Points box. Optional — the [slug] template falls back to `excerpt` when absent. Target length 30-90 words.',
+      validation: (Rule) => Rule.max(600),
     }),
     defineField({
       name: 'heroImage',
@@ -160,6 +172,24 @@ export const article = defineType({
         },
         { type: 'callout' },
       ],
+    }),
+    defineField({
+      name: 'relatedArticles',
+      title: 'Related articles',
+      type: 'array',
+      group: 'content',
+      of: [{ type: 'reference', to: [{ type: 'article' }] }],
+      description:
+        'Sibling articles surfaced in the "Related" block at the end of the page. Skipped when empty.',
+    }),
+    defineField({
+      name: 'relatedProcedures',
+      title: 'Related procedures',
+      type: 'array',
+      group: 'content',
+      of: [{ type: 'reference', to: [{ type: 'procedurePage' }] }],
+      description:
+        'Procedure pages surfaced in the "Related" block at the end of the page. Skipped when empty.',
     }),
     defineField({
       name: 'seoTitle',

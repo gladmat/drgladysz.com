@@ -119,6 +119,32 @@ const authorPostNominals = article.author
 const authorByline = article.author
   ? [article.author.name, ...authorPostNominals].join(' · ')
   : null;
+
+// Standfirst falls back to excerpt for articles authored before the schema
+// gained a dedicated standfirst field (carpal-tunnel-syndrome).
+const standfirstText = article.standfirst?.trim() || article.excerpt;
+
+// Drop unresolved related references (target document deleted). The GROQ
+// projection returns null for unresolved refs in the array.
+const relatedArticles = (article.relatedArticles ?? []).filter(
+  (a): a is NonNullable<typeof a> => Boolean(a),
+);
+const relatedProcedures = (article.relatedProcedures ?? []).filter(
+  (p): p is NonNullable<typeof p> => Boolean(p),
+);
+const hasRelated = relatedArticles.length > 0 || relatedProcedures.length > 0;
+
+const articleCategoryLabel: Record<string, string> = {
+  patient: 'Patient information',
+  expert: 'Expert blog',
+  'fessh-prep': 'FESSH preparation',
+  news: 'News & commentary',
+};
+const procedureCategoryLabel: Record<string, string> = {
+  'hand-surgery': 'Hand surgery',
+  'reconstructive-microsurgery': 'Reconstructive & microsurgery',
+  'skin-cancer': 'Skin cancer surgery',
+};
 ---
 <SiteLayout
   title={article.seoTitle || `${article.title} — Mateusz Gładysz, MD`}
@@ -136,7 +162,7 @@ const authorByline = article.author
       </p>
       <h1 class="article-title">{article.title}</h1>
       {authorByline && <p class="article-byline">{authorByline}</p>}
-      {article.excerpt && <p class="article-excerpt">{article.excerpt}</p>}
+      {standfirstText && <p class="article-standfirst">{standfirstText}</p>}
       <p class="article-meta">
         <span>
           Published <time datetime={article.publishedDate}>{publishedDateLabel}</time>
@@ -181,6 +207,42 @@ const authorByline = article.author
       </div>
 
       <Bibliography references={references} />
+
+      {hasRelated && (
+        <aside class="article-related" aria-labelledby="related-heading">
+          <h2 id="related-heading" class="related-heading">Related</h2>
+          {relatedArticles.length > 0 && (
+            <section class="related-section">
+              <p class="related-kicker">Articles</p>
+              <ul class="related-list">
+                {relatedArticles.map((a) => (
+                  <li>
+                    <a href={`/en/blog/${a.slug.current}`}>
+                      <span class="related-title">{a.title}</span>
+                      <span class="related-meta">{articleCategoryLabel[a.category] ?? a.category}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+          {relatedProcedures.length > 0 && (
+            <section class="related-section">
+              <p class="related-kicker">Procedures</p>
+              <ul class="related-list">
+                {relatedProcedures.map((p) => (
+                  <li>
+                    <a href={`/en/procedures/${p.slug.current}`}>
+                      <span class="related-title">{p.title}</span>
+                      <span class="related-meta">{procedureCategoryLabel[p.category] ?? p.category}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </aside>
+      )}
     </div>
   </article>
 </SiteLayout>
@@ -240,7 +302,7 @@ const authorByline = article.author
     margin: 0 0 24px;
   }
 
-  .article-excerpt {
+  .article-standfirst {
     font-family: var(--serif);
     font-style: italic;
     font-size: clamp(18px, 1.6vw, 22px);
@@ -298,5 +360,83 @@ const authorByline = article.author
     content: '';
     display: block;
     clear: both;
+  }
+
+  /* Related — sibling articles + procedures surfaced after Bibliography. */
+  .article-related {
+    margin-top: clamp(48px, 6vw, 80px);
+    padding-top: 32px;
+    border-top: 1px solid var(--ink-3);
+  }
+
+  .related-heading {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 0 0 24px;
+  }
+
+  .related-section {
+    margin-bottom: 24px;
+  }
+
+  .related-section:last-child {
+    margin-bottom: 0;
+  }
+
+  .related-kicker {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 12px;
+  }
+
+  .related-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .related-list li {
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid color-mix(in oklab, var(--ink-3) 30%, transparent);
+  }
+
+  .related-list li:last-child {
+    border-bottom: 1px solid color-mix(in oklab, var(--ink-3) 30%, transparent);
+  }
+
+  .related-list a {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    padding: 14px 0;
+    text-decoration: none;
+    color: var(--ink);
+  }
+
+  .related-list a:hover .related-title {
+    color: var(--accent);
+  }
+
+  .related-title {
+    font-family: var(--serif);
+    font-size: 18px;
+    line-height: 1.35;
+  }
+
+  .related-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    flex-shrink: 0;
   }
 </style>

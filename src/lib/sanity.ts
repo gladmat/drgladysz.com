@@ -227,6 +227,22 @@ export type ArticleAuthor = {
   role?: string;
 };
 
+// Resolved sibling article shown in the "Related" block at the end of an
+// article. Lighter than ArticleSummary — only what the link block needs.
+export type RelatedArticleRef = {
+  _id: string;
+  title: string;
+  slug: { current: string };
+  category: 'patient' | 'expert' | 'fessh-prep' | 'news';
+};
+
+export type RelatedProcedureRef = {
+  _id: string;
+  title: string;
+  slug: { current: string };
+  category: 'hand-surgery' | 'reconstructive-microsurgery' | 'skin-cancer';
+};
+
 export type SanityArticle = {
   _id: string;
   _type: 'article';
@@ -241,9 +257,18 @@ export type SanityArticle = {
   publishedDate: string;
   lastUpdated?: string;
   excerpt: string;
+  // Italic editorial intro rendered below the byline. Optional — the [slug]
+  // template falls back to `excerpt` when null/missing so the carpal-tunnel
+  // article (no standfirst) keeps its current rendering.
+  standfirst?: string | null;
   heroImage?: SanityImage;
   keyPoints?: { question?: string; findings?: string; meaning?: string };
   body: PortableTextBlock[];
+  // Sibling content surfaced at the bottom of the article. Skipped when both
+  // arrays are empty. Unresolved references (target deleted) come back null
+  // from GROQ; we filter those out at render time.
+  relatedArticles?: (RelatedArticleRef | null)[];
+  relatedProcedures?: (RelatedProcedureRef | null)[];
   seoTitle?: string;
   seoDescription?: string;
 };
@@ -298,10 +323,12 @@ const REFERENCE_PROJECTION = /* groq */ `{
 const ARTICLE_PROJECTION = /* groq */ `{
   _id, _type, title, slug, category, audience,
   "author": author->{name, credentials, title, role},
-  publishedDate, lastUpdated, excerpt,
+  publishedDate, lastUpdated, excerpt, standfirst,
   heroImage,
   keyPoints,
   body,
+  "relatedArticles": relatedArticles[]->{ _id, title, slug, category },
+  "relatedProcedures": relatedProcedures[]->{ _id, title, slug, category },
   seoTitle, seoDescription
 }`;
 

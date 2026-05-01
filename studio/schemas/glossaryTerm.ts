@@ -60,16 +60,16 @@ export const glossaryTerm = defineType({
       title: 'Short definition (for tooltip)',
       type: 'text',
       rows: 4,
-      validation: (Rule) => Rule.required().max(400),
+      validation: (Rule) => Rule.required().max(450),
       description:
-        'Brief patient-friendly definition. Max ~400 characters. Shown in popover.',
+        'Brief definition shown inside the popover. Target 400 chars; hard cap 450 to accommodate medical-precision authoring of complex terms (e.g., "bowstringing").',
     }),
     defineField({
       name: 'shortDefinitionPolish',
       title: 'Short definition (Polish)',
       type: 'text',
       rows: 4,
-      validation: (Rule) => Rule.max(400),
+      validation: (Rule) => Rule.max(450),
     }),
     defineField({
       name: 'fullDefinition',

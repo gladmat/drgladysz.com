@@ -25,18 +25,26 @@ import type { SanityRefDoc } from '@/lib/sanity';
 
 interface Props {
   reference: SanityRefDoc;
-  index: number; // 1-based bibliography index
+  index: number; // 1-based bibliography index (displayed)
+  // Per-occurrence markDef _key (unique even when same ref cited multiple
+  // times). Used to disambiguate popover IDs so each citation occurrence
+  // has a unique target. Resolves CLAUDE.md open item #10.
+  markKey: string;
 }
 
-const { reference, index } = Astro.props;
-const popoverId = `cite-${reference._id}-${index}`;
+const { reference, index, markKey } = Astro.props;
+const popoverId = `cite-${reference._id}-${markKey}`;
 
 const shortHtml = formatShortRef(reference);
 const pubmed = pubmedUrl(reference.pmid);
 const doi = doiUrl(reference.doi);
 const pmc = pmcUrl(reference.pmcid);
 ---
-<sup class="cite-marker"><button
+<sup class="cite-marker"><a
+    class="cite-anchor"
+    href={`#ref-${index}`}
+    aria-label={`Citation ${index}: jump to reference list`}
+  >{index}</a><button
     type="button"
     class="cite-button"
     popovertarget={popoverId}
@@ -88,6 +96,31 @@ const pmc = pmcUrl(reference.pmcid);
     font-size: 0.72em;
     line-height: 1;
     vertical-align: super;
+  }
+
+  /* Two markers per citation, one shown per breakpoint:
+       - .cite-anchor: <a href="#ref-N"> for desktop ≥1024px (jumps to
+         the corresponding bibliography entry).
+       - .cite-button: <button popovertarget> for mobile <1024px (opens
+         the native popover with the reference card).
+     Default state hides the desktop anchor and shows the mobile button;
+     the @media block at the bottom inverts this. */
+  .cite-anchor {
+    display: none;
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--accent);
+    padding: 0 2px;
+  }
+
+  .cite-anchor:hover {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+
+  .cite-anchor:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
   }
 
   .cite-button {
@@ -226,6 +259,18 @@ const pmc = pmcUrl(reference.pmcid);
 
     .cite-sidenote-num {
       margin-top: 0;
+    }
+
+    /* Desktop: sidenote is already visible in the gutter, so we don't
+       need the popover toggle. Show the <a href="#ref-N"> anchor (jumps
+       to the bibliography entry) and hide the popover button. The mobile
+       button stays out of layout, so clicks can't trigger :popover-open
+       and break the gutter float. */
+    .cite-anchor {
+      display: inline;
+    }
+    .cite-button {
+      display: none;
     }
   }
 
