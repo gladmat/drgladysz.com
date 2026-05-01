@@ -19,6 +19,7 @@
     "@astrojs/mdx": "^5.0.0",
     "@astrojs/preact": "^5.0.0",
     "@astrojs/sitemap": "^3.7.0",
+    "@astrojs/vercel": "^10.0.6",
     "@citation-js/plugin-bibtex": "^0.7.16",
     "@citation-js/plugin-csl": "^0.7.16",
     "@preact/signals": "^1.3.0",

@@ -1,12 +1,11 @@
 ---
 // src/pages/en/contact.astro
 //
-// Static contact page. The Resend-backed POST endpoint at /api/contact.ts is
-// deferred to Phase 10 (Vercel cutover) — the site currently builds as
-// `output: 'static'` and adding a server endpoint requires the Vercel adapter
-// + adapter config. Until then the page lists email contact and practice
-// context; the form fields are rendered for visual continuity but the action
-// is `mailto:` so submissions go directly to the inbox without a server hop.
+// Form submits to /api/contact (Resend-backed POST endpoint at
+// src/pages/api/contact.ts; opt-in to SSR via prerender=false). The
+// progressive-enhancement script intercepts submit, fetches /api/contact,
+// and renders status in the form's aria-live region. Without JS the form
+// posts natively and the browser shows the JSON response.
 //
 // Per the brand spec / compliance checklist: no live chat widgets, no
 // patient images, no testimonials, no third-party form embeds (Typeform,
@@ -18,7 +17,6 @@ import ContentPage from '@/components/ContentPage.astro';
   title="Contact — Mateusz Gładysz, MD"
   description="How to make contact for clinical referrals, editorial questions about the site, or professional correspondence."
   locale="en"
-  alternateUrl="/pl/kontakt"
 >
   <ContentPage
     label="Contact"
@@ -48,14 +46,24 @@ import ContentPage from '@/components/ContentPage.astro';
 
     <h2>Send a message</h2>
     <p class="form-note">
-      The form below opens your email client with the message pre-filled and addressed to the inbox above. Replace the placeholder text with your message before sending.
+      Submit the form below and the message reaches the inbox above. Nothing is stored on the server — once sent, the message lives only in the recipient mailbox.
     </p>
     <form
-      action="mailto:mateusz@drgladysz.com"
+      action="/api/contact"
       method="post"
-      enctype="text/plain"
       class="contact-form"
+      data-contact-form
     >
+      <div class="hp-field" aria-hidden="true">
+        <label for="contact-website">Website (leave empty)</label>
+        <input
+          id="contact-website"
+          name="website"
+          type="text"
+          tabindex="-1"
+          autocomplete="off"
+        />
+      </div>
       <div class="field">
         <label for="contact-name">Name</label>
         <input
@@ -95,8 +103,52 @@ import ContentPage from '@/components/ContentPage.astro';
           required
         ></textarea>
       </div>
-      <button type="submit" class="contact-submit">Open in mail client</button>
+      <button type="submit" class="contact-submit">Send message</button>
+      <p class="form-status" data-contact-status role="status" aria-live="polite"></p>
     </form>
+    <script is:inline>
+      (() => {
+        const form = document.querySelector('[data-contact-form]');
+        if (!form) return;
+        const status = form.querySelector('[data-contact-status]');
+        const submit = form.querySelector('button[type="submit"]');
+        const ERRORS = {
+          invalid_name: 'Please enter your name.',
+          invalid_email: 'Please enter a valid email address.',
+          invalid_context: 'Please select a context.',
+          invalid_message: 'Please write a message of at least 10 characters.',
+          rate_limited: 'Please wait a minute before sending another message.',
+          send_failed: 'Could not send right now. Please try again or email mateusz@drgladysz.com directly.',
+          server_misconfigured: 'The form is temporarily unavailable. Please email mateusz@drgladysz.com directly.',
+        };
+        form.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          submit.disabled = true;
+          status.textContent = 'Sending…';
+          status.className = 'form-status';
+          try {
+            const response = await fetch('/api/contact', {
+              method: 'POST',
+              body: new FormData(form),
+            });
+            const result = await response.json();
+            if (result.ok) {
+              status.textContent = 'Thank you. Your message has been sent.';
+              status.className = 'form-status is-success';
+              form.reset();
+            } else {
+              status.textContent = ERRORS[result.error] || 'Something went wrong. Please try again or email mateusz@drgladysz.com directly.';
+              status.className = 'form-status is-error';
+            }
+          } catch {
+            status.textContent = 'Network error. Please try again or email mateusz@drgladysz.com directly.';
+            status.className = 'form-status is-error';
+          } finally {
+            submit.disabled = false;
+          }
+        });
+      })();
+    </script>
 
     <h2>What this page is not</h2>
     <p>
@@ -190,4 +242,25 @@ import ContentPage from '@/components/ContentPage.astro';
     margin: 16px 0 0;
     max-width: 60ch;
   }
+
+  /* Honeypot field — visually hidden but accessible to bots that fill
+     every field, and to screen readers that announce the warning label. */
+  .hp-field {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .form-status {
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    margin: 0;
+    min-height: 1.55em;
+  }
+  .form-status.is-success { color: var(--accent); }
+  .form-status.is-error { color: var(--ink); font-weight: 600; }
 </style>

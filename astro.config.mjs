@@ -3,6 +3,7 @@ import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
 import preact from '@astrojs/preact';
 import sitemap from '@astrojs/sitemap';
+import vercel from '@astrojs/vercel';
 import tailwindcss from '@tailwindcss/vite';
 import remarkSectionMasthead from './src/plugins/remark-section-masthead.mjs';
 
@@ -11,7 +12,9 @@ export default defineConfig({
 
   // Astro 6: 'static' is now the unified default (the v5 'hybrid' mode was merged in).
   // Pages opt into server rendering with `export const prerender = false`.
+  // /api/contact is the only on-demand route at launch (Resend dispatch).
   output: 'static',
+  adapter: vercel(),
 
   integrations: [
     mdx(),
@@ -24,7 +27,15 @@ export default defineConfig({
           pl: 'pl-PL',
         },
       },
-      filter: (page) => !page.includes('/studio/'),
+      filter: (page) => {
+        const path = new URL(page).pathname;
+        if (path.startsWith('/studio/')) return false;
+        // The /pl/ holding page is excluded until the full Polish site
+        // ships. Other /pl/* routes (legal, glossary, calculators) stay in
+        // the sitemap because they have real Polish content.
+        if (path === '/pl/' || path === '/pl') return false;
+        return true;
+      },
     }),
   ],
 
@@ -47,6 +58,12 @@ export default defineConfig({
   // redirects for the FEBHS MCQ sub-application (per brand spec v1.8
   // Decision #29/30 — MCQ lives on learn.drgladysz.com, not the main domain).
   redirects: {
+    // Bare apex → English (default locale). With `prefixDefaultLocale: true`,
+    // `/` would otherwise 404. Polish-browser detection isn't done at launch
+    // because the full PL site is still in composition; revisit when /pl/
+    // becomes a real home page.
+    '/': '/en/',
+
     // English content
     '/about/': '/en/about',
     '/blog/': '/en/blog',
