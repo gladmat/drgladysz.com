@@ -1,0 +1,44 @@
+---
+// src/pages/pl/index.astro
+//
+// Holding page for the Polish locale. Lands /pl/ visitors while the native
+// Polish composition session for the full site (home, about, contact,
+// publications, procedures index, blog index) remains pending. Surfaces
+// the routes that ARE live in Polish: 5 legal pages, glossary, calculators.
+//
+// `alternateUrl="/en/"` keeps the language switcher useful in the
+// /pl/ → /en/ direction. Sitemap excludes this page (see astro.config.mjs).
+import SiteLayout from '@/layouts/SiteLayout.astro';
+import ContentPage from '@/components/ContentPage.astro';
+---
+<SiteLayout
+  title="Strona w przygotowaniu — Mateusz Gładysz, MD"
+  description="Polskojęzyczna wersja serwisu jest w trakcie redakcji. W międzyczasie dostępna jest pełna wersja angielska oraz wybrane strony polskie."
+  locale="pl"
+  alternateUrl="/en/"
+>
+  <ContentPage
+    label="Polski"
+    title="Strona w przygotowaniu"
+    standfirst="Polskojęzyczna wersja serwisu jest obecnie w trakcie redakcji. Pełna treść zostanie udostępniona po zakończeniu prac autorskich. Aktualne informacje znajdują się w wersji angielskiej oraz na wymienionych poniżej stronach polskich."
+  >
+    <h2>Wersja angielska</h2>
+    <p>Pełny serwis dostępny jest pod adresem <a href="/en/">drgladysz.com/en</a> — strona główna, biografia zawodowa, opisy procedur, wykaz publikacji oraz dane kontaktowe.</p>
+
+    <h2>Strony dostępne po polsku</h2>
+    <h3>Dokumenty prawne</h3>
+    <ul>
+      <li><a href="/pl/nota-prawna">Nota prawna</a></li>
+      <li><a href="/pl/polityka-prywatnosci">Polityka prywatności</a></li>
+      <li><a href="/pl/zastrzezenie-medyczne">Zastrzeżenie medyczne</a></li>
+      <li><a href="/pl/zgoda">Zgoda</a></li>
+      <li><a href="/pl/uprawnienia">Uprawnienia</a></li>
+    </ul>
+
+    <h3>Zasoby kliniczne</h3>
+    <ul>
+      <li><a href="/pl/slowniczek">Słowniczek pojęć medycznych</a></li>
+      <li><a href="/pl/kalkulatory">Kalkulatory kliniczne</a></li>
+    </ul>
+  </ContentPage>
+</SiteLayout>

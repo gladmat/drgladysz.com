@@ -2,10 +2,10 @@
 interface Props {
   locale?: 'en' | 'pl';
   currentPath?: string;
-  // Page-supplied URL of the same content in the alternate locale. When set,
-  // overrides the generic prefix-swap fallback below — needed for routes
-  // whose slugs are translated (e.g. /en/about → /pl/o-mnie, /en/glossary →
-  // /pl/slowniczek). Pages pass this via SiteLayout's `alternateUrl` prop.
+  // URL of the same content in the alternate locale. When set, the language
+  // switcher chip renders. Pages without a translated counterpart omit this
+  // prop and the chip is suppressed (e.g. EN home/about/contact at MVP launch
+  // while the native Polish composition session is pending).
   alternateUrl?: string;
 }
 
@@ -30,15 +30,12 @@ const navItems = locale === 'pl'
 
 const wordmarkHref = locale === 'pl' ? '/pl/' : '/en/';
 
-// Compute the alternate-locale URL for the language switcher. If the page
-// supplied `alternateUrl` (recommended for any route with a translated slug),
-// honour it. Otherwise fall back to a generic /en/* ↔ /pl/* prefix swap —
-// only correct when the slug is identical across locales.
-const altLocale = locale === 'pl' ? 'en' : 'pl';
-const pathWithoutLocale = currentPath.replace(/^\/(en|pl)/, '') || '/';
-const altHref =
-  alternateUrl ??
-  `/${altLocale}${pathWithoutLocale === '/' ? '/' : pathWithoutLocale}`;
+// Language switcher only renders when the page passes an explicit
+// `alternateUrl` — the slugs are translated across locales (/en/about ↔
+// /pl/o-mnie), so any prefix-swap fallback would link to non-existent pages.
+// Pages without a counterpart (most EN pages at MVP launch, while the native
+// Polish composition session is pending) simply don't pass `alternateUrl`
+// and the switcher chip is suppressed.
 
 function isActive(href: string): boolean {
   if (href === wordmarkHref) return currentPath === wordmarkHref || currentPath === wordmarkHref.replace(/\/$/, '');
@@ -62,21 +59,23 @@ function isActive(href: string): boolean {
           </a>
         </li>
       ))}
-      <li class="lang" aria-label="Language switcher">
-        {locale === 'en' ? (
-          <>
-            <span class="active">EN</span>
-            <span class="sep" aria-hidden="true">|</span>
-            <a href={altHref} hreflang="pl">PL</a>
-          </>
-        ) : (
-          <>
-            <a href={altHref} hreflang="en">EN</a>
-            <span class="sep" aria-hidden="true">|</span>
-            <span class="active">PL</span>
-          </>
-        )}
-      </li>
+      {alternateUrl && (
+        <li class="lang" aria-label="Language switcher">
+          {locale === 'en' ? (
+            <>
+              <span class="active">EN</span>
+              <span class="sep" aria-hidden="true">|</span>
+              <a href={alternateUrl} hreflang="pl">PL</a>
+            </>
+          ) : (
+            <>
+              <a href={alternateUrl} hreflang="en">EN</a>
+              <span class="sep" aria-hidden="true">|</span>
+              <span class="active">PL</span>
+            </>
+          )}
+        </li>
+      )}
     </ul>
   </div>
 </nav>
