@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /studio/
+Disallow: /_astro/
+
+Sitemap: https://drgladysz.com/sitemap-index.xml
