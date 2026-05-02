@@ -170,20 +170,20 @@ const {
   }
   .hero-cta .arrow { font-family: var(--mono); }
 
-  .hero-image {
-    aspect-ratio: 4 / 5;
-    background-color: var(--bg-deep);
-    overflow: hidden;
+  /* No fixed aspect-ratio container — the image renders at its natural
+     proportions so the photographer's composition is preserved. The
+     `align-items: center` on .hero-grid centers the text column against
+     the (taller) image column. The filter: saturate(0.96) treatment is
+     OR-shot specific per _handoff/design/photo-manifest.md and doesn't
+     apply to portrait photography; remove if a future hero swap brings
+     back an OR shot. */
+  .hero-image :global(.hero-picture) {
+    display: block;
+    width: 100%;
   }
-  .hero-image :global(.hero-picture),
   .hero-image :global(.hero-picture img) {
     display: block;
     width: 100%;
-    height: 100%;
-  }
-  .hero-image :global(.hero-picture img) {
-    object-fit: cover;
-    object-position: center 5%;
-    filter: saturate(0.96);
+    height: auto;
   }
 </style>
