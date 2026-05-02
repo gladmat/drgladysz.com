@@ -4,8 +4,8 @@ locale: en
 url: /en/disclaimer
 title: Medical Disclaimer
 description: Terms on which the contents of drgladysz.com are made available — covering information-not-advice, external links, citation use, AI-assisted authorship, calculator and educational content, limitation of liability, and currency of information.
-version: v1.0
-lastUpdated: 2026-04
+version: v1.1
+lastUpdated: 2026-05
 counterpart: /pl/zastrzezenie-medyczne
 related:
   - /en/imprint
@@ -26,7 +26,7 @@ This page sets out the terms on which the contents of *drgladysz.com* (the "site
 
 The site is an informational resource maintained by Mateusz Gładysz, MD, FEBOPRAS, FEBHS — a plastic and hand surgeon registered with the Medical Council of New Zealand (registration 93463) and with the *Naczelna Izba Lekarska* in Poland (PWZ 2985148). Nothing on the site constitutes medical advice, creates a doctor–patient relationship, or substitutes for an in-person consultation with a qualified clinician who has examined you and reviewed your history.
 
-The locked inline qualifier appears throughout the site and applies in full here:
+The following standard caveat appears throughout the site and applies in full here:
 
 > Individual results vary. The information on this page is for general guidance and does not replace a consultation with a qualified medical professional. Surgical outcomes depend on factors specific to each patient and cannot be guaranteed.
 
@@ -129,7 +129,7 @@ This disclaimer is drafted to be read alongside the obligations applicable to th
 
 ## Versioning, contact, related documents
 
-- Version: v1.0 — April 2026
+- Version: v1.1 — May 2026
 - Author: Mateusz Gładysz, MD, FEBOPRAS, FEBHS
 - Corrections and queries: office@drgladysz.com
 - Related documents: [Consent overview](/en/consent) · [Imprint](/en/imprint) · [Privacy Policy](/en/privacy) · [Credentials](/en/credentials)

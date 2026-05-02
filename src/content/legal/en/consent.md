@@ -3,9 +3,9 @@ slug: consent
 locale: en
 url: /en/consent
 title: Consent overview
-description: How consent is obtained, recorded, and respected on drgladysz.com — current MVP scope, forward-looking framework for patient imagery and research, patient rights overview, and mechanisms for exercising or withdrawing consent.
-version: v1.0
-lastUpdated: 2026-04
+description: How consent is obtained, recorded, and respected on drgladysz.com — current scope, forward-looking framework for patient imagery and research, patient rights overview, and mechanisms for exercising or withdrawing consent.
+version: v1.1
+lastUpdated: 2026-05
 counterpart: /pl/zgoda
 related:
   - /en/imprint
@@ -24,13 +24,13 @@ The page is organised in four parts: (1) consent contexts the site touches today
 
 § 02 — Contexts the site touches today
 
-## Part 1 — Consent at MVP
+## Part 1 — Consent today
 
 **Contact-form submissions.** Voluntary submission of the contact form is taken as consent to the processing of the data entered, for the sole purpose of replying to the message. Where the message contains health-related information — for example, a description of symptoms or a question about a procedure — that processing engages Article 9(2)(a) *RODO*/*GDPR* (explicit consent for special-category health data) in the European Union, and the relevant rules of the *Privacy Act 2020* and the *Health Information Privacy Code 2020* (HIPC) in New Zealand. The full processing description sits in the [Privacy Policy](/en/privacy).
 
 **Email correspondence.** Where a reader writes directly to office@drgladysz.com the same framework applies, with the address itself acting as the channel of submission.
 
-**Newsletter subscription.** No newsletter is offered. The site's brand specification rules out newsletters constructed around lead-magnet language, and none is contemplated at this version. If a newsletter is introduced in the future the framework in Part 2 will apply.
+**Newsletter subscription.** No newsletter is currently offered. If one is introduced in the future, the framework in Part 2 will apply.
 
 **Cookies, analytics, and tracking.** The site uses *Plausible Analytics*, which is configured to be cookie-free and to set no persistent identifier on the reader's device. No third-party trackers, advertising pixels, or social-media beacons are deployed. Because no cookies or comparable identifiers are stored on, or read from, the reader's terminal equipment, the consent requirement of Article 5(3) of the *ePrivacy Directive* (2002/58/EC, as amended) is not engaged, and no cookie-consent banner is required. The full position is in the [Privacy Policy](/en/privacy).
 
@@ -38,11 +38,11 @@ The page is organised in four parts: (1) consent contexts the site touches today
 
 ## Part 2 — Forward-looking framework
 
-The site is expected to grow into contexts that engage consent more directly. The following framework is published now so that readers can see the standards the site is committed to before any of these contexts is activated.
+The site is expected to grow into contexts that engage consent more directly. The following framework is published now so that readers can see the standards the site is committed to before any of these contexts is introduced.
 
 ### Patient case galleries and before-and-after imagery
 
-> No patient images are currently published on this website. When patient images are introduced post-MVP, they will be governed by the framework set out below.
+> No patient images are currently published on this website. When patient images are introduced in the future, they will be governed by the framework set out below.
 
 The framework rests on three legal anchors — Article 81 of the Polish *ustawa o prawie autorskim i prawach pokrewnych* (image rights), Rule 11 of the *Health Information Privacy Code 2020* (limits on disclosure of health information) in New Zealand, and Article 9(2)(a) *GDPR* (explicit consent for health data, including images that disclose health information). The operational principles are:
 
@@ -61,7 +61,7 @@ The site does not at present invite participation in research. Should that chang
 
 ### Educational use and progress tracking
 
-The FEBHS MCQ platform, when launched, may use *localStorage* on the learner's device to record progress. *localStorage* sits outside the scope of Article 5(3) of the *ePrivacy Directive* only where strictly necessary for a service explicitly requested by the user; where progress tracking exceeds that threshold, opt-in consent will be sought on first use. No accounts exist at this version of the site, so no current consent issue arises.
+The FEBHS MCQ platform, when launched, may use *localStorage* on the learner's device to record progress. *localStorage* sits outside the scope of Article 5(3) of the *ePrivacy Directive* only where strictly necessary for a service explicitly requested by the user; where progress tracking exceeds that threshold, opt-in consent will be sought on first use. No accounts exist on the site, so no current consent issue arises.
 
 ### Newsletter and direct communications
 
@@ -98,7 +98,7 @@ If a reader wishes to escalate beyond the operator:
 
 ## Versioning, contact, related documents
 
-- Version: v1.0 — April 2026
+- Version: v1.1 — May 2026
 - Author: Mateusz Gładysz, MD, FEBOPRAS, FEBHS
 - Contact: office@drgladysz.com
 - Related documents: [Medical Disclaimer](/en/disclaimer) · [Imprint](/en/imprint) · [Privacy Policy](/en/privacy) · [Credentials](/en/credentials)

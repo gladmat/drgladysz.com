@@ -4,8 +4,8 @@ locale: pl
 url: /pl/zastrzezenie-medyczne
 title: Zastrzeżenie medyczne
 description: Warunki, na jakich udostępniane są treści serwisu drgladysz.com — informacja, nie porada lekarska; linki zewnętrzne; cytowania; ujawnienie wykorzystania AI; kalkulatory i materiały edukacyjne; ograniczenie odpowiedzialności.
-version: v1.0
-lastUpdated: 2026-04
+version: v1.1
+lastUpdated: 2026-05
 counterpart: /en/disclaimer
 related:
   - /pl/nota-prawna
@@ -129,7 +129,7 @@ Niniejszy dokument należy odczytywać łącznie z obowiązkami spoczywającymi 
 
 ## Wersja, kontakt, dokumenty powiązane
 
-- Wersja: v1.0 — kwiecień 2026
+- Wersja: v1.1 — maj 2026
 - Autor: Mateusz Gładysz, MD, FEBOPRAS, FEBHS
 - Korekty i pytania: office@drgladysz.com
 - Dokumenty powiązane: [Zgoda — informacje ogólne](/pl/zgoda) · [Nota prawna](/pl/nota-prawna) · [Polityka prywatności](/pl/polityka-prywatnosci) · [Uprawnienia i kwalifikacje](/pl/uprawnienia)

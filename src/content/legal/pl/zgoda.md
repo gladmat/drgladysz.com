@@ -3,9 +3,9 @@ slug: zgoda
 locale: pl
 url: /pl/zgoda
 title: Zgoda — informacje ogólne
-description: Zasady pozyskiwania, dokumentowania i respektowania zgód w serwisie drgladysz.com — bieżący zakres MVP, ramy dla materiałów wizualnych pacjentów i badań naukowych, przegląd praw pacjenta, mechanizmy realizacji i odwołania zgody.
-version: v1.0
-lastUpdated: 2026-04
+description: Zasady pozyskiwania, dokumentowania i respektowania zgód w serwisie drgladysz.com — bieżący zakres serwisu, ramy dla materiałów wizualnych pacjentów i badań naukowych, przegląd praw pacjenta, mechanizmy realizacji i odwołania zgody.
+version: v1.1
+lastUpdated: 2026-05
 counterpart: /en/consent
 related:
   - /pl/nota-prawna
@@ -24,13 +24,13 @@ Dokument adresowany jest do dwóch grup czytelników — pacjentów, którzy chc
 
 § 02 — Konteksty obecne
 
-## Część 1 — Zgody w obecnej wersji serwisu (MVP)
+## Część 1 — Zgody w bieżącym zakresie serwisu
 
 **Formularz kontaktowy.** Dobrowolne wysłanie formularza traktowane jest jako zgoda na przetwarzanie zawartych w nim danych — wyłącznie w celu udzielenia odpowiedzi. Jeżeli wiadomość zawiera dane dotyczące zdrowia (np. opis objawów, pytanie o procedurę), znajduje zastosowanie art. 9 ust. 2 lit. a *RODO* (wyraźna zgoda na przetwarzanie danych szczególnej kategorii) na obszarze Unii Europejskiej, a w Nowej Zelandii — odpowiednie przepisy *Privacy Act 2020* oraz *Health Information Privacy Code 2020* (*HIPC*). Pełny opis czynności przetwarzania zawiera [Polityka prywatności](/pl/polityka-prywatnosci).
 
 **Korespondencja e-mail.** Wiadomości kierowane bezpośrednio na adres office@drgladysz.com objęte są analogicznymi zasadami, przy czym sam adres pełni funkcję kanału zgłoszenia.
 
-**Newsletter.** Serwis nie prowadzi newslettera. Specyfikacja marki wyklucza newslettery oparte na pozyskiwaniu adresów w zamian za materiały (*lead magnet*); w obecnej wersji żaden newsletter nie jest przewidziany. W razie wprowadzenia takiej formy komunikacji zastosowanie znajdą zasady opisane w części 2.
+**Newsletter.** Serwis nie prowadzi newslettera. W razie wprowadzenia takiej formy komunikacji zastosowanie znajdą zasady opisane w części 2.
 
 **Pliki cookies, analityka, śledzenie.** Serwis korzysta z *Plausible Analytics* w konfiguracji bezcookies, nieosadzającej żadnego trwałego identyfikatora w urządzeniu czytelnika. Nie wdrożono trackerów stron trzecich, pikseli reklamowych ani znaczników portali społecznościowych. Ponieważ w urządzeniu końcowym nie są zapisywane ani z niego odczytywane pliki cookies ani porównywalne identyfikatory, obowiązek zgody określony w art. 5 ust. 3 *dyrektywy o prywatności i łączności elektronicznej* 2002/58/WE (a w prawie krajowym — art. 173 *Prawa telekomunikacyjnego*/odpowiednika w *Prawie komunikacji elektronicznej*) nie aktualizuje się i banner zgody nie jest wymagany. Pełny opis stanu znajduje się w [Polityce prywatności](/pl/polityka-prywatnosci).
 
@@ -42,7 +42,7 @@ Serwis będzie obejmować w przyszłości obszary bardziej bezpośrednio związa
 
 ### Galerie przypadków, dokumentacja fotograficzna typu "przed–po"
 
-> W obecnej wersji serwisu nie są publikowane żadne zdjęcia ani materiały wideo pacjentów. W chwili wprowadzenia takich materiałów obowiązywać będą zasady opisane poniżej.
+> W chwili obecnej w serwisie nie są publikowane żadne zdjęcia ani materiały wideo pacjentów. W chwili wprowadzenia takich materiałów obowiązywać będą zasady opisane poniżej.
 
 Ramy oparte są na trzech filarach prawnych — art. 81 *ustawy o prawie autorskim i prawach pokrewnych* (rozpowszechnianie wizerunku), art. 9 ust. 2 lit. a *RODO* (wyraźna zgoda na przetwarzanie danych szczególnej kategorii, w tym wizerunków ujawniających informacje o stanie zdrowia) oraz, dla pacjentów leczonych w Nowej Zelandii, *HIPC* zasada 11 (granice ujawniania informacji zdrowotnych). Zasady operacyjne:
 
@@ -61,7 +61,7 @@ Obecnie serwis nie zaprasza do udziału w badaniach naukowych. Gdyby to się zmi
 
 ### Wykorzystanie edukacyjne i śledzenie postępów
 
-W odniesieniu do platformy *MCQ FEBHS* (po jej uruchomieniu) możliwe jest wykorzystanie pamięci *localStorage* w urządzeniu uczącego się do zapisu postępu. Pamięć *localStorage* znajduje się poza zakresem art. 5 ust. 3 *dyrektywy o prywatności i łączności elektronicznej* tylko wówczas, gdy jest ściśle niezbędna dla usługi wyraźnie żądanej przez użytkownika; w sytuacjach przekraczających ten próg zgoda *opt-in* będzie pozyskiwana przy pierwszym użyciu. W obecnej wersji serwis nie prowadzi kont użytkowników, więc to zagadnienie pozostaje teoretyczne.
+W odniesieniu do platformy *MCQ FEBHS* (po jej uruchomieniu) możliwe jest wykorzystanie pamięci *localStorage* w urządzeniu uczącego się do zapisu postępu. Pamięć *localStorage* znajduje się poza zakresem art. 5 ust. 3 *dyrektywy o prywatności i łączności elektronicznej* tylko wówczas, gdy jest ściśle niezbędna dla usługi wyraźnie żądanej przez użytkownika; w sytuacjach przekraczających ten próg zgoda *opt-in* będzie pozyskiwana przy pierwszym użyciu. Serwis nie prowadzi kont użytkowników, więc kwestia ta pozostaje bez znaczenia praktycznego.
 
 ### Newsletter i komunikacja okresowa
 
@@ -98,7 +98,7 @@ Eskalacja poza operatora:
 
 ## Wersja, kontakt, dokumenty powiązane
 
-- Wersja: v1.0 — kwiecień 2026
+- Wersja: v1.1 — maj 2026
 - Autor: Mateusz Gładysz, MD, FEBOPRAS, FEBHS
 - Kontakt: office@drgladysz.com
 - Dokumenty powiązane: [Zastrzeżenie medyczne](/pl/zastrzezenie-medyczne) · [Nota prawna](/pl/nota-prawna) · [Polityka prywatności](/pl/polityka-prywatnosci) · [Uprawnienia i kwalifikacje](/pl/uprawnienia)
