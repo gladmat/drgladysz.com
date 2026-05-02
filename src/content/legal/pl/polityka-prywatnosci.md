@@ -24,7 +24,7 @@ Niniejszy dokument określa zasady przetwarzania danych osobowych przekazywanych
 
 ## Kto jest administratorem danych
 
-Administratorem danych jest **lek. Mateusz Gładysz, FEBOPRAS, FEBHS**, kontakt: mateusz@drgladysz.com. Korespondencję pocztową można kierować na adres: ul. Puławska 18, 02-512 Warszawa (do wiadomości adresata, za pośrednictwem Okręgowej Izby Lekarskiej w Warszawie).
+Administratorem danych jest **lek. Mateusz Gładysz, FEBOPRAS, FEBHS**, kontakt: office@drgladysz.com. Korespondencję pocztową można kierować na adres: ul. Puławska 18, 02-512 Warszawa (do wiadomości adresata, za pośrednictwem Okręgowej Izby Lekarskiej w Warszawie).
 
 Inspektor Ochrony Danych (IOD) nie został wyznaczony. Art. 37 ust. 1 lit. c) RODO wymaga wyznaczenia IOD wyłącznie wówczas, gdy główna działalność administratora polega na przetwarzaniu szczególnych kategorii danych na dużą skalę. Działalność prowadzona za pośrednictwem niniejszej strony ogranicza się do nielicznych, okazjonalnych zapytań kierowanych przez zindywidualizowane osoby fizyczne — nie spełnia ona kryterium „dużej skali" w rozumieniu Wytycznych Grupy Roboczej Art. 29 dotyczących inspektorów ochrony danych (WP243 rev.01), przyjętych następnie przez Europejską Radę Ochrony Danych (EROD). Stanowisko to zostanie ponownie ocenione z chwilą uruchomienia praktyki w Polsce.
 
@@ -42,7 +42,7 @@ Administrator ma obecnie miejsce wykonywania zawodu w Nowej Zelandii. Przetwarza
 
 Strona nie wymaga zakładania konta użytkownika. Dane osobowe mogą trafiać do administratora wyłącznie następującymi kanałami:
 
-**Formularz kontaktowy i bezpośrednia korespondencja elektroniczna.** Przesłanie wiadomości za pośrednictwem formularza lub bezpośrednio na adres mateusz@drgladysz.com powoduje przekazanie administratorowi tych informacji, które nadawca samodzielnie zdecyduje się ujawnić — zwykle imienia i nazwiska, adresu poczty elektronicznej oraz treści wiadomości. Jeżeli nadawca opisuje problem zdrowotny, treść taka może obejmować dane szczególnej kategorii w rozumieniu art. 9 RODO oraz HIPC 2020. Nadawca nie jest do tego zobowiązany; w samym interfejsie formularza zalecane jest przekazywanie wyłącznie minimum niezbędnego do wstępnej oceny zapytania.
+**Formularz kontaktowy i bezpośrednia korespondencja elektroniczna.** Przesłanie wiadomości za pośrednictwem formularza lub bezpośrednio na adres office@drgladysz.com powoduje przekazanie administratorowi tych informacji, które nadawca samodzielnie zdecyduje się ujawnić — zwykle imienia i nazwiska, adresu poczty elektronicznej oraz treści wiadomości. Jeżeli nadawca opisuje problem zdrowotny, treść taka może obejmować dane szczególnej kategorii w rozumieniu art. 9 RODO oraz HIPC 2020. Nadawca nie jest do tego zobowiązany; w samym interfejsie formularza zalecane jest przekazywanie wyłącznie minimum niezbędnego do wstępnej oceny zapytania.
 
 **Zbiorczy pomiar ruchu.** Strona korzysta z usługi Plausible Analytics z hostingiem w Niemczech, świadczonej przez Plausible Insights OÜ. Plausible działa bez plików *cookies*, nie używa trwałego identyfikatora, nie wytwarza ani nie przechowuje danych umożliwiających identyfikację pojedynczego użytkownika w rozumieniu art. 4 pkt 1 RODO i generuje wyłącznie zagregowane wskaźniki (odsłony, źródła odwiedzin, kraj na poziomie kraju, przeglądarka, rozdzielczość ekranu). Z uwagi na bezplikową naturę usługi nie jest wymagana zgoda przewidziana w art. 5 ust. 3 dyrektywy 2002/58/WE, wdrożonej do prawa polskiego ustawą — *Prawo telekomunikacyjne* i — z chwilą jej wejścia w życie — *Prawo komunikacji elektronicznej*.
 
@@ -105,7 +105,7 @@ Na gruncie art. 15–22 RODO osobie, której dane dotyczą, przysługują: prawo
 
 Na gruncie *Privacy Act 2020*: IPP 6 daje prawo do potwierdzenia, czy administrator przetwarza dane danej osoby, oraz do dostępu do nich; IPP 7 — prawo żądania sprostowania. Odpowiedniki dla informacji o zdrowiu znajdują się w HIPC Rules 6 i 7.
 
-Wnioski należy kierować na adres mateusz@drgladysz.com. Odpowiedź udzielana jest bez zbędnej zwłoki, najpóźniej w terminie miesiąca (art. 12 ust. 3 RODO) lub dwudziestu dni roboczych (sec. 40 *Privacy Act 2020*) — zależnie od tego, który z tych terminów jest krótszy w danej sprawie.
+Wnioski należy kierować na adres office@drgladysz.com. Odpowiedź udzielana jest bez zbędnej zwłoki, najpóźniej w terminie miesiąca (art. 12 ust. 3 RODO) lub dwudziestu dni roboczych (sec. 40 *Privacy Act 2020*) — zależnie od tego, który z tych terminów jest krótszy w danej sprawie.
 
 § 10 — Pliki cookies
 

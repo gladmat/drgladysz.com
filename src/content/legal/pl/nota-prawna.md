@@ -25,7 +25,7 @@ Niniejszy dokument zawiera informacje wymagane od lekarza prowadzącego profesjo
 **Mateusz Gładysz, lek., FEBOPRAS, FEBHS**
 Specjalista w dziedzinie chirurgii plastycznej; chirurgia ręki
 ORCID: 0009-0009-2380-4056
-Adres elektroniczny: mateusz@drgladysz.com
+Adres elektroniczny: office@drgladysz.com
 
 *FEBOPRAS* — Fellow of the European Board of Plastic, Reconstructive and Aesthetic Surgery (dyplom Europejskiej Rady Chirurgii Plastycznej, Rekonstrukcyjnej i Estetycznej przy Union Européenne des Médecins Spécialistes). *FEBHS* — Fellow of the European Board of Hand Surgery (dyplom Federation of European Societies for Surgery of the Hand).
 

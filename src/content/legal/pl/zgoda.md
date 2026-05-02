@@ -28,7 +28,7 @@ Dokument adresowany jest do dwóch grup czytelników — pacjentów, którzy chc
 
 **Formularz kontaktowy.** Dobrowolne wysłanie formularza traktowane jest jako zgoda na przetwarzanie zawartych w nim danych — wyłącznie w celu udzielenia odpowiedzi. Jeżeli wiadomość zawiera dane dotyczące zdrowia (np. opis objawów, pytanie o procedurę), znajduje zastosowanie art. 9 ust. 2 lit. a *RODO* (wyraźna zgoda na przetwarzanie danych szczególnej kategorii) na obszarze Unii Europejskiej, a w Nowej Zelandii — odpowiednie przepisy *Privacy Act 2020* oraz *Health Information Privacy Code 2020* (*HIPC*). Pełny opis czynności przetwarzania zawiera [Polityka prywatności](/pl/polityka-prywatnosci).
 
-**Korespondencja e-mail.** Wiadomości kierowane bezpośrednio na adres mateusz@drgladysz.com objęte są analogicznymi zasadami, przy czym sam adres pełni funkcję kanału zgłoszenia.
+**Korespondencja e-mail.** Wiadomości kierowane bezpośrednio na adres office@drgladysz.com objęte są analogicznymi zasadami, przy czym sam adres pełni funkcję kanału zgłoszenia.
 
 **Newsletter.** Serwis nie prowadzi newslettera. Specyfikacja marki wyklucza newslettery oparte na pozyskiwaniu adresów w zamian za materiały (*lead magnet*); w obecnej wersji żaden newsletter nie jest przewidziany. W razie wprowadzenia takiej formy komunikacji zastosowanie znajdą zasady opisane w części 2.
 
@@ -84,7 +84,7 @@ Każda decyzja o wyrażeniu zgody zapada w szerszych ramach praw pacjenta. Ninie
 
 Zgoda objęta niniejszym dokumentem może być realizowana, modyfikowana lub odwoływana przez:
 
-- **E-mail.** mateusz@drgladysz.com — preferowany dla wniosków merytorycznych, w tym wniosków o usunięcie materiałów wizualnych zgodnie z częścią 2.
+- **E-mail.** office@drgladysz.com — preferowany dla wniosków merytorycznych, w tym wniosków o usunięcie materiałów wizualnych zgodnie z częścią 2.
 - **Korespondencję pocztową.** Adres podany w [Nocie prawnej](/pl/nota-prawna).
 
 Eskalacja poza operatora:
@@ -100,6 +100,6 @@ Eskalacja poza operatora:
 
 - Wersja: v1.0 — kwiecień 2026
 - Autor: Mateusz Gładysz, MD, FEBOPRAS, FEBHS
-- Kontakt: mateusz@drgladysz.com
+- Kontakt: office@drgladysz.com
 - Dokumenty powiązane: [Zastrzeżenie medyczne](/pl/zastrzezenie-medyczne) · [Nota prawna](/pl/nota-prawna) · [Polityka prywatności](/pl/polityka-prywatnosci) · [Uprawnienia i kwalifikacje](/pl/uprawnienia)
 - Wersja anglojęzyczna: [Consent overview](/en/consent)

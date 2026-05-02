@@ -24,7 +24,7 @@ This policy describes how personal data submitted through drgladysz.com is colle
 
 ## Who we are
 
-The data controller for this website is **Mateusz Gładysz, MD, FEBOPRAS, FEBHS**, contactable at mateusz@drgladysz.com. Postal correspondence may be directed care of the Okręgowa Izba Lekarska w Warszawie, ul. Puławska 18, 02-512 Warszawa, Poland.
+The data controller for this website is **Mateusz Gładysz, MD, FEBOPRAS, FEBHS**, contactable at office@drgladysz.com. Postal correspondence may be directed care of the Okręgowa Izba Lekarska w Warszawie, ul. Puławska 18, 02-512 Warszawa, Poland.
 
 No Data Protection Officer (DPO) has been appointed. Article 37(1)(c) GDPR makes appointment compulsory only where a controller's core activities consist of large-scale processing of special categories of data. The processing carried out through this website is limited to occasional inbound enquiries from a small number of identifiable individuals — it does not meet the "large scale" threshold articulated in Working Party 29 Guidelines on DPOs (WP243 rev.01) and adopted by the European Data Protection Board. The position will be reassessed once Polish clinical practice is operational and patient records are processed in volume.
 
@@ -42,7 +42,7 @@ The controller is currently established in New Zealand. Processing through this 
 
 The website itself does not require user accounts. Personal data may reach the controller through the following routes only.
 
-**Contact form and direct email.** When a message is sent through the form on the contact page or directly to mateusz@drgladysz.com, the controller receives the information you choose to provide — typically a name, an email address, and the content of the message. Where you elect to describe a clinical concern, this content may include health information within the meaning of Article 9 GDPR and the HIPC 2020. You are not asked to do so and are advised, in the contact form interface itself, to share only the minimum information needed to triage your enquiry.
+**Contact form and direct email.** When a message is sent through the form on the contact page or directly to office@drgladysz.com, the controller receives the information you choose to provide — typically a name, an email address, and the content of the message. Where you elect to describe a clinical concern, this content may include health information within the meaning of Article 9 GDPR and the HIPC 2020. You are not asked to do so and are advised, in the contact form interface itself, to share only the minimum information needed to triage your enquiry.
 
 **Aggregate audience measurement.** The site uses Plausible Analytics, hosted in Germany by Plausible Insights OÜ. Plausible is cookie-free, does not use any persistent identifier, does not generate or store any data that constitutes personal data within the meaning of GDPR Article 4(1) on a per-visitor basis, and produces only aggregated counts (page views, referrers, country at country level, browser, screen size). Because the service is cookie-free and produces no personal data, no consent banner is required under Article 5(3) of the *ePrivacy Directive* (2002/58/EC) as implemented by the Polish *Prawo telekomunikacyjne* and successor *Prawo komunikacji elektronicznej*.
 
@@ -105,7 +105,7 @@ Under GDPR Articles 15–22 you have the right to request access to your data, r
 
 Under the New Zealand *Privacy Act 2020*, IPP 6 gives you the right to confirm whether the controller holds personal information about you and to access it; IPP 7 gives you the right to request correction. Equivalent rights for health information are set out in HIPC Rules 6 and 7.
 
-Requests are addressed to mateusz@drgladysz.com and are answered without undue delay and in any event within one month of receipt (GDPR Article 12(3)) or twenty working days (Privacy Act 2020 s. 40), whichever is shorter for the relevant request.
+Requests are addressed to office@drgladysz.com and are answered without undue delay and in any event within one month of receipt (GDPR Article 12(3)) or twenty working days (Privacy Act 2020 s. 40), whichever is shorter for the relevant request.
 
 § 10 — Cookies
 

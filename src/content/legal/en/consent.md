@@ -28,7 +28,7 @@ The page is organised in four parts: (1) consent contexts the site touches today
 
 **Contact-form submissions.** Voluntary submission of the contact form is taken as consent to the processing of the data entered, for the sole purpose of replying to the message. Where the message contains health-related information — for example, a description of symptoms or a question about a procedure — that processing engages Article 9(2)(a) *RODO*/*GDPR* (explicit consent for special-category health data) in the European Union, and the relevant rules of the *Privacy Act 2020* and the *Health Information Privacy Code 2020* (HIPC) in New Zealand. The full processing description sits in the [Privacy Policy](/en/privacy).
 
-**Email correspondence.** Where a reader writes directly to mateusz@drgladysz.com the same framework applies, with the address itself acting as the channel of submission.
+**Email correspondence.** Where a reader writes directly to office@drgladysz.com the same framework applies, with the address itself acting as the channel of submission.
 
 **Newsletter subscription.** No newsletter is offered. The site's brand specification rules out newsletters constructed around lead-magnet language, and none is contemplated at this version. If a newsletter is introduced in the future the framework in Part 2 will apply.
 
@@ -84,7 +84,7 @@ Every consent decision sits inside a wider set of patient rights. The site does 
 
 Consent under this page may be exercised, varied, or withdrawn by:
 
-- **Email.** mateusz@drgladysz.com — preferred for substantive requests, including image-removal requests under Part 2.
+- **Email.** office@drgladysz.com — preferred for substantive requests, including image-removal requests under Part 2.
 - **Postal contact.** As stated in the [Imprint](/en/imprint).
 
 If a reader wishes to escalate beyond the operator:
@@ -100,6 +100,6 @@ If a reader wishes to escalate beyond the operator:
 
 - Version: v1.0 — April 2026
 - Author: Mateusz Gładysz, MD, FEBOPRAS, FEBHS
-- Contact: mateusz@drgladysz.com
+- Contact: office@drgladysz.com
 - Related documents: [Medical Disclaimer](/en/disclaimer) · [Imprint](/en/imprint) · [Privacy Policy](/en/privacy) · [Credentials](/en/credentials)
 - Polish-language counterpart: [*Zgoda — informacje ogólne*](/pl/zgoda)

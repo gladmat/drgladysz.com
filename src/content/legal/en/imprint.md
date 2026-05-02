@@ -25,7 +25,7 @@ This page provides the information required of a regulated medical practitioner 
 **Mateusz Gładysz, MD, FEBOPRAS, FEBHS**
 Plastic, reconstructive and hand surgeon
 ORCID: 0009-0009-2380-4056
-Email: mateusz@drgladysz.com
+Email: office@drgladysz.com
 
 The Polish title *lekarz* corresponds to the English "physician" (medical doctor); the abbreviation *lek.* may appear on Polish-language documents in place of "MD". *FEBOPRAS* is the Fellow of the European Board of Plastic, Reconstructive and Aesthetic Surgery diploma issued by the Union Européenne des Médecins Spécialistes (UEMS); *FEBHS* is the European Board diploma in Hand Surgery issued by the Federation of European Societies for Surgery of the Hand (FESSH).
 

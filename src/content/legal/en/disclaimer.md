@@ -131,6 +131,6 @@ This disclaimer is drafted to be read alongside the obligations applicable to th
 
 - Version: v1.0 — April 2026
 - Author: Mateusz Gładysz, MD, FEBOPRAS, FEBHS
-- Corrections and queries: mateusz@drgladysz.com
+- Corrections and queries: office@drgladysz.com
 - Related documents: [Consent overview](/en/consent) · [Imprint](/en/imprint) · [Privacy Policy](/en/privacy) · [Credentials](/en/credentials)
 - Polish-language counterpart: [*Zastrzeżenie medyczne*](/pl/zastrzezenie-medyczne)

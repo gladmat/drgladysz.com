@@ -131,6 +131,6 @@ Niniejszy dokument należy odczytywać łącznie z obowiązkami spoczywającymi 
 
 - Wersja: v1.0 — kwiecień 2026
 - Autor: Mateusz Gładysz, MD, FEBOPRAS, FEBHS
-- Korekty i pytania: mateusz@drgladysz.com
+- Korekty i pytania: office@drgladysz.com
 - Dokumenty powiązane: [Zgoda — informacje ogólne](/pl/zgoda) · [Nota prawna](/pl/nota-prawna) · [Polityka prywatności](/pl/polityka-prywatnosci) · [Uprawnienia i kwalifikacje](/pl/uprawnienia)
 - Wersja anglojęzyczna: [Medical Disclaimer](/en/disclaimer)
