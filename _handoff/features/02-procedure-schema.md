@@ -5,7 +5,7 @@ ships_with: first-procedure-page
 effort_hours: 8-12
 maintenance: low-after-iteration
 status: locked
-version: 1.7
+version: 1.8
 ---
 
 # Feature 2 — AO Surgery Reference procedure schema
@@ -206,7 +206,7 @@ export const procedurePage = defineType({
               title: 'Pitfall callout (optional)',
               type: 'text',
               rows: 3,
-              description: 'Common error or technical pitfall to avoid at this step',
+              description: 'Common error or technical pitfall to avoid at this step. Per brand spec v1.9 Decision #37, may be written in selective first-person where the warning\'s substance is the surgeon\'s named technical position; third-person directive form remains acceptable. Compact length 2–4 sentences.',
             },
           ],
           preview: {
@@ -654,15 +654,25 @@ export function generateProcedureSchema(procedure: any) {
 
 ---
 
+## Editorial note (v1.9, locked Decision #37) — pitfall callout voice register
+
+Pitfall callouts may be written in selective first-person where the warning's substance is the surgeon's named technical position. Third-person directive form remains acceptable. Both registers are permitted within the same page; the choice is per-callout. Compact length (2–4 sentences) remains the convention. The body narrative across all ten AO sections — Indications, Contraindications, Anatomy, Patient positioning, Approach, Key Steps narrative, Closure, Aftercare, Complications, Evidence — remains third-person clinical throughout; first-person markers do not appear outside pitfall callouts. The Key Points box stays in JAMA third-person format. The optional patient summary block stays in second-person plain-language patient register. See `01-brand-system/drgladysz-brand-spec-amendment-v1_9-pitfall-voice.md` for the full editorial context.
+
+The Sanity schema field is unchanged; the visual treatment of the pitfall aside (oxblood border-left, Plex Mono caps "Pitfall" label, Plex Sans body) is preserved as locked in v1.7.
+
+---
+
 ## Verification before each new procedure ships
 
 - [ ] All required Sanity fields populated (schema enforces this)
 - [ ] At least 2 key steps with images and (where relevant) pitfall callouts
+- [ ] Pitfall callouts compact (2–4 sentences); first-person used only where the surgeon's named technical position is the substance of the warning
+- [ ] Body narrative across all ten AO sections is third-person clinical; first-person does not appear outside pitfall callouts
 - [ ] Evidence section cites at least 3 references
 - [ ] Last-updated date set to within current quarter
-- [ ] Key Points box completed (Question / Findings / Meaning)
+- [ ] Key Points box completed (Question / Findings / Meaning, 75–100 words)
 - [ ] Schema.org `MedicalProcedure` JSON-LD validates at validator.schema.org
-- [ ] Patient summary populated if procedure has high patient-search volume
+- [ ] Patient summary populated if procedure has high patient-search volume; remains in second-person patient register
 
 ---
 
