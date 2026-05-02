@@ -660,6 +660,19 @@ Pitfall callouts may be written in selective first-person where the warning's su
 
 The Sanity schema field is unchanged; the visual treatment of the pitfall aside (oxblood border-left, Plex Mono caps "Pitfall" label, Plex Sans body) is preserved as locked in v1.7.
 
+## Authoring rule (locked 2026-05-03) — always wire citation and glossary marks
+
+Every procedure page must ship with citation and glossaryTerm marks fully wired. No procedure page goes live with bare superscript characters in body text or with `[[term]]` markers stripped to plain prose. Marks-on-first-publish, not marks-as-follow-up. The pipeline:
+
+1. **Sources of the marks lie in the draft.** Drafts at `01-brand-system/procedures/drgladysz-procedure-*-draft-v*.md` use `[[term]]` markers for glossary candidates and unicode superscripts (¹²³⁴⁵…) for bibliography positions. Both are authored at the same time as the prose — they are not optional.
+2. **Glossary terms are created or reused before patching.** Each `[[term]]` resolves to a `glossaryTerm` Sanity doc (id `glossary-{slug}`). Reuse existing terms where the meaning matches; create new ones with `term`, `slug`, `category`, and `shortDefinition` (≤450 chars) when needed. Polish translations (`termPolish`, `shortDefinitionPolish`) and `fullDefinition` Portable Text are optional but improve the term's standalone glossary detail page.
+3. **bibReferences are created or reused before patching.** Each unicode superscript resolves to a position in the bibliography list at the foot of the draft, and each position must point at a `bibReference` doc. Existing refs from earlier articles/procedures are reused on `_id` (slug-form `_id`s like `graham-2006`, `aaos-2024-cts-cpg`). New refs need `authors[]`, `title`, `year`, `journal`, `pubType`, plus `volume`, `issue`, `pages`, and `doi` where the source supplies them.
+4. **Procedure body uses the inline DSL when patching via the seed script.** The script convention — `[g:slug|displayed text]` for glossary, `{n}` or `{n,m,p}` for citation positions — is parsed by a small `richBlock` helper that emits Portable Text spans with the correct `markDefs` attached. See `site/scripts/seed-procedure-octr.ts` for the canonical implementation.
+5. **The Astro detail page passes both `references={references}` and `glossaryTerms={glossaryTerms}` to every `PortableTextRenderer` call.** Both arrays are built via `extractCitationOrderFromBlocks` / `extractGlossaryOrderFromBlocks` over the same union of clinical sections (indications + contraindications + anatomy + positioning + approach + keySteps[].description + closure + aftercare + complications + patientSummary + evidence). This is locked in `src/pages/en/procedures/[slug].astro` from 2026-05-03 onward.
+6. **Bibliography renders below Evidence**, ordered by first-cite-in-document order via the `Bibliography` component. The Evidence section's own numbered list duplicates the same references in the same order — this is intentional, not a redundancy bug; the Evidence numbered list reads as authoritative reference text within the section, while the standalone Bibliography component is the navigable index with PubMed/DOI links.
+
+A new procedure page that ships without wired marks is incomplete and must not be merged until the marks are in place. This is non-negotiable.
+
 ---
 
 ## Verification before each new procedure ships
