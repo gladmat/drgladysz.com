@@ -68,7 +68,11 @@ const { body, bodyMaxWidth = '760px' } = Astro.props;
     min-width: 0;
   }
   .standfirst-body :global(p) {
-    font-family: var(--serif);
+    /* Body large per brand spec v1.8 type scale: Plex Sans 400 / 18 / 1.60.
+       The clamp keeps the 18 px minimum (= spec) and adds a small responsive
+       upper bound for wide viewports, where the lead paragraph reads as the
+       page's emphasis register relative to the 16 px card body. */
+    font-family: var(--sans);
     font-weight: 400;
     font-size: clamp(18px, 1.85vw, 22px);
     line-height: 1.6;
