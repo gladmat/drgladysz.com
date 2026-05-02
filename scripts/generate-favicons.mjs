@@ -19,9 +19,13 @@ import { dirname, resolve } from 'node:path';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = resolve(__dirname, '..', 'public');
 
+// Sized so the "MG" combined advance (~1.78 em in IBM Plex Serif / Georgia)
+// fits comfortably inside the 180-unit viewBox: 1.78 × 100 = 178, minus a
+// small letter-spacing tightening, leaves ~3 units of margin on each side.
+// Matches the proportions of public/favicon.svg.
 const masterSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" width="180" height="180">
   <rect width="180" height="180" fill="#FAF7F2"/>
-  <text x="90" y="125" font-family="'IBM Plex Serif', Georgia, serif" font-size="120" font-weight="500" fill="#5C2E2E" text-anchor="middle" letter-spacing="-2">MG</text>
+  <text x="90" y="123" font-family="'IBM Plex Serif', Georgia, serif" font-size="100" font-weight="500" fill="#5C2E2E" text-anchor="middle" letter-spacing="-3">MG</text>
 </svg>`;
 
 const targets = [
