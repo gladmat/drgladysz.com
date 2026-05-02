@@ -238,6 +238,42 @@ export function generateBreadcrumb(
 }
 
 // ---------------------------------------------------------------------------
+// ContactPage JSON-LD
+//
+// Per locked contact draft v1.0 + brand-spec Decision #22 — no `telephone`
+// or `address` properties at MVP. The `mainEntity` reference assumes the
+// existence of a `Person`/`Physician` block elsewhere on the site (about
+// page) keyed at `${siteUrl}/#person`; same convention as `isPartOf`'s
+// `${siteUrl}/#website` reference. These #ids are forward-references —
+// the schema is still valid if those blocks aren't actually rendered yet,
+// they just don't resolve into a richer entity until they do.
+// ---------------------------------------------------------------------------
+
+interface ContactPageInput {
+  url: string; // canonical URL of the contact page
+  locale: 'en' | 'pl';
+  siteUrl: string; // e.g. 'https://drgladysz.com'
+  name?: string; // override the default 'Contact — Mateusz Gładysz'
+}
+
+export function generateContactPageSchema({
+  url,
+  locale,
+  siteUrl,
+  name,
+}: ContactPageInput) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ContactPage',
+    name: name ?? 'Contact — Mateusz Gładysz',
+    url,
+    inLanguage: locale === 'pl' ? 'pl-PL' : 'en-NZ',
+    isPartOf: { '@id': `${siteUrl}/#website` },
+    mainEntity: { '@id': `${siteUrl}/#person` },
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Glossary JSON-LD (DefinedTerm + DefinedTermSet)
 // ---------------------------------------------------------------------------
 

@@ -1,170 +1,290 @@
 ---
 // src/pages/en/contact.astro
 //
-// Form submits to /api/contact (Resend-backed POST endpoint at
-// src/pages/api/contact.ts; opt-in to SSR via prerender=false). The
-// progressive-enhancement script intercepts submit, fetches /api/contact,
-// and renders status in the form's aria-live region. Without JS the form
-// posts natively and the browser shows the JSON response.
-//
-// Per the brand spec / compliance checklist: no live chat widgets, no
-// patient images, no testimonials, no third-party form embeds (Typeform,
-// Formspree, etc.).
+// Implements the locked Contact page draft v1.0 (see
+// 01-brand-system/drgladysz-locked-content-contact-v1.0.md). Five §-numbered
+// sections — Practice / Referrals / Enquiries / Form / Privacy. The form
+// submits to /api/contact (Resend-backed, server-side validated, honeypot
+// + rate-limited). Compliance posture per draft Section "Compliance
+// considerations": no Waikato Hospital email, no phone, no address;
+// patient flow routes back to GP-referral pathway.
 import SiteLayout from '@/layouts/SiteLayout.astro';
 import ContentPage from '@/components/ContentPage.astro';
+import SectionMasthead from '@/components/SectionMasthead.astro';
+import { generateContactPageSchema } from '@/lib/schema';
+
+const siteUrl = (
+  import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com'
+).replace(/\/$/, '');
+const canonicalUrl = `${siteUrl}/en/contact`;
+
+const contactPageJsonLd = generateContactPageSchema({
+  url: canonicalUrl,
+  locale: 'en',
+  siteUrl,
+});
 ---
 <SiteLayout
   title="Contact — Mateusz Gładysz, MD"
-  description="How to make contact for clinical referrals, editorial questions about the site, or professional correspondence."
+  description="Contact information and referral pathway for patient enquiries, and direct correspondence for professional and academic contact."
   locale="en"
+  canonical={canonicalUrl}
+  alternateUrl="/pl/kontakt"
+  jsonLd={contactPageJsonLd}
 >
   <ContentPage
     label="Contact"
     title="Contact"
-    standfirst="The most reliable way to make contact is by email. Clinical referrals follow standard professional pathways through the relevant hospital or registrar."
+    standfirst="This page sets out how to make contact for patient enquiries, and for professional and academic correspondence. Practice arrangements and referral pathways are described in the sections below."
   >
-    <h2>Email</h2>
-    <p>
-      <a href="mailto:mateusz@drgladysz.com">mateusz@drgladysz.com</a>
-    </p>
-    <p>
-      Editorial corrections, citation requests, and questions about the content of this site are answered as time allows &mdash; usually within a week. Professional correspondence on training, research, and society matters is welcome.
-    </p>
+    <section class="contact-section">
+      <header class="contact-section-header">
+        <div class="section-num">§ 01</div>
+        <SectionMasthead label="Practice" heading="Current practice" />
+      </header>
+      <p>
+        Current clinical practice is at Waikato Hospital, Hamilton, New Zealand. The role covers operative care for the hand and upper extremity, microsurgical reconstruction, and the surgical management of melanoma and complex skin cancer through the Melanoma and High-Risk Skin Cancer MDT.
+      </p>
+      <p>
+        Patient care within the New Zealand public system is referral-based. New patient appointments are arranged through the regional service following GP referral, not directly through this website.
+      </p>
+    </section>
 
-    <h2>Clinical referrals</h2>
-    <p>
-      I am a Senior Medical Officer in the Department of Plastic Surgery at <strong>Waikato Hospital, Hamilton, New Zealand</strong>. Public-system referrals from a general practitioner or specialist follow the usual Waikato pathway. Private and second-opinion referrals are accepted through the standard professional channels; if you are a referring practitioner please make contact via the email above so we can identify the right pathway for the case.
-    </p>
-    <p>
-      Polish-language consultations may be arranged for patients in New Zealand who prefer Polish. Polish practice in Poland itself is being formally activated separately &mdash; details will appear on this page when available.
-    </p>
+    <section class="contact-section">
+      <header class="contact-section-header">
+        <div class="section-num">§ 02</div>
+        <SectionMasthead label="Referrals" heading="For patients in New Zealand" />
+      </header>
+      <p>
+        If you are seeking surgical care for a hand or upper-limb condition, a soft-tissue reconstruction, or a skin-cancer concern, the appropriate first step is to see your general practitioner. The GP can then refer you into the regional hand surgery and plastic surgery service, where referrals are triaged and appointments arranged through the public system.
+      </p>
+      <p>
+        For acute hand injuries &mdash; including suspected scaphoid fractures, tendon injuries, or significant lacerations &mdash; the appropriate pathway is the local emergency department, which arranges hand-team review where indicated. Urgent presentations are not handled through this website. In a medical emergency in New Zealand call <strong>111</strong>; in Poland and the European Union call <strong>112</strong>.
+      </p>
+      <p>
+        Private referrals follow the same first step: discuss the concern with your GP, who can direct the referral as appropriate.
+      </p>
+    </section>
 
-    <h2>Languages</h2>
-    <p>
-      Consultations are conducted in English, Polish, and German.
-    </p>
+    <section class="contact-section">
+      <header class="contact-section-header">
+        <div class="section-num">§ 03</div>
+        <SectionMasthead label="Enquiries" heading="Professional and academic enquiries" />
+      </header>
+      <p>
+        Correspondence from peer clinicians, researchers, journal editors, conference organisers, and academic collaborators is handled through the form below or by email at <a class="contact-email" href="mailto:office@drgladysz.com">office@drgladysz.com</a>.
+      </p>
+      <p>
+        Patient information enquiries from outside New Zealand &mdash; including general questions about a planned consultation or a published article &mdash; can also be sent through the same form. Specific clinical advice is not provided by email; the form is for correspondence and orientation, not consultation.
+      </p>
+    </section>
 
-    <h2>Send a message</h2>
-    <p class="form-note">
-      Submit the form below and the message reaches the inbox above. Nothing is stored on the server — once sent, the message lives only in the recipient mailbox.
-    </p>
-    <form
-      action="/api/contact"
-      method="post"
-      class="contact-form"
-      data-contact-form
-    >
-      <div class="hp-field" aria-hidden="true">
-        <label for="contact-website">Website (leave empty)</label>
-        <input
-          id="contact-website"
-          name="website"
-          type="text"
-          tabindex="-1"
-          autocomplete="off"
-        />
-      </div>
-      <div class="field">
-        <label for="contact-name">Name</label>
-        <input
-          id="contact-name"
-          name="Name"
-          type="text"
-          autocomplete="name"
-          required
-        />
-      </div>
-      <div class="field">
-        <label for="contact-from">Your email</label>
-        <input
-          id="contact-from"
-          name="Email"
-          type="email"
-          autocomplete="email"
-          required
-        />
-      </div>
-      <div class="field">
-        <label for="contact-context">Context</label>
-        <select id="contact-context" name="Context" required>
-          <option value="">Select…</option>
-          <option value="clinical">Clinical referral / second opinion</option>
-          <option value="editorial">Editorial correction / citation request</option>
-          <option value="professional">Professional correspondence (training, research, society)</option>
-          <option value="other">Other</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="contact-message">Message</label>
-        <textarea
-          id="contact-message"
-          name="Message"
-          rows="6"
-          required
-        ></textarea>
-      </div>
-      <button type="submit" class="contact-submit">Send message</button>
-      <p class="form-status" data-contact-status role="status" aria-live="polite"></p>
-    </form>
-    <script is:inline>
-      (() => {
-        const form = document.querySelector('[data-contact-form]');
-        if (!form) return;
-        const status = form.querySelector('[data-contact-status]');
-        const submit = form.querySelector('button[type="submit"]');
-        const ERRORS = {
-          invalid_name: 'Please enter your name.',
-          invalid_email: 'Please enter a valid email address.',
-          invalid_context: 'Please select a context.',
-          invalid_message: 'Please write a message of at least 10 characters.',
-          rate_limited: 'Please wait a minute before sending another message.',
-          send_failed: 'Could not send right now. Please try again or email mateusz@drgladysz.com directly.',
-          server_misconfigured: 'The form is temporarily unavailable. Please email mateusz@drgladysz.com directly.',
-        };
-        form.addEventListener('submit', async (event) => {
-          event.preventDefault();
-          submit.disabled = true;
-          status.textContent = 'Sending…';
-          status.className = 'form-status';
-          try {
-            const response = await fetch('/api/contact', {
-              method: 'POST',
-              body: new FormData(form),
-            });
-            const result = await response.json();
-            if (result.ok) {
-              status.textContent = 'Thank you. Your message has been sent.';
-              status.className = 'form-status is-success';
-              form.reset();
-            } else {
-              status.textContent = ERRORS[result.error] || 'Something went wrong. Please try again or email mateusz@drgladysz.com directly.';
+    <section class="contact-section" id="form">
+      <header class="contact-section-header">
+        <div class="section-num">§ 04</div>
+        <SectionMasthead label="Form" heading="Send enquiry" />
+      </header>
+
+      <form
+        action="/api/contact"
+        method="post"
+        class="contact-form"
+        data-contact-form
+        novalidate
+      >
+        <div class="hp-field" aria-hidden="true">
+          <label for="contact-website">Website (leave empty)</label>
+          <input
+            id="contact-website"
+            name="website"
+            type="text"
+            tabindex="-1"
+            autocomplete="off"
+          />
+        </div>
+        <div class="field">
+          <label for="contact-name">Full name</label>
+          <input
+            id="contact-name"
+            name="Name"
+            type="text"
+            maxlength="120"
+            autocomplete="name"
+            required
+            aria-required="true"
+          />
+        </div>
+        <div class="field">
+          <label for="contact-from">Email address</label>
+          <input
+            id="contact-from"
+            name="Email"
+            type="email"
+            autocomplete="email"
+            required
+            aria-required="true"
+          />
+        </div>
+        <div class="field">
+          <label for="contact-context">Type of enquiry</label>
+          <select id="contact-context" name="Context" required aria-required="true">
+            <option value="">Select…</option>
+            <option value="professional">Professional / academic</option>
+            <option value="clinical">Patient information</option>
+            <option value="editorial">Media or speaking</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="contact-subject">Subject</label>
+          <input
+            id="contact-subject"
+            name="Subject"
+            type="text"
+            maxlength="160"
+            required
+            aria-required="true"
+          />
+        </div>
+        <div class="field">
+          <label for="contact-message">Message</label>
+          <textarea
+            id="contact-message"
+            name="Message"
+            rows="8"
+            maxlength="4000"
+            required
+            aria-required="true"
+          ></textarea>
+        </div>
+        <div class="field field-checkbox">
+          <input
+            id="contact-consent"
+            name="Consent"
+            type="checkbox"
+            required
+            aria-required="true"
+          />
+          <label for="contact-consent">
+            I consent to the processing of the personal data submitted in this form for the purpose of replying to my enquiry. I have read the <a href="/en/privacy">Privacy Policy</a>.
+          </label>
+        </div>
+        <button type="submit" class="contact-submit">
+          Send enquiry <span class="cta-arrow" aria-hidden="true">&rarr;</span>
+        </button>
+        <p class="form-status" data-contact-status role="status" aria-live="polite"></p>
+        <p class="form-note">
+          The form sends correspondence to <a href="mailto:office@drgladysz.com">office@drgladysz.com</a>. Replies are sent from the same address. Specific clinical advice is not provided by email.
+        </p>
+      </form>
+      <script is:inline>
+        (() => {
+          const form = document.querySelector('[data-contact-form]');
+          if (!form) return;
+          const status = form.querySelector('[data-contact-status]');
+          const submit = form.querySelector('button[type="submit"]');
+          const ERRORS = {
+            invalid_name: 'Please enter your full name.',
+            invalid_email: 'Please enter a valid email address.',
+            invalid_context: 'Please select a type of enquiry.',
+            invalid_subject: 'Please enter a subject (up to 160 characters).',
+            invalid_message: 'Please write a message of at least 10 characters.',
+            invalid_consent: 'Please confirm consent to proceed.',
+            rate_limited: 'Too many recent submissions from this address. Please try again in a few minutes.',
+            send_failed: 'The message could not be sent. Please try again, or email office@drgladysz.com directly.',
+            server_misconfigured: 'The form is temporarily unavailable. Please email office@drgladysz.com directly.',
+          };
+          form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            submit.disabled = true;
+            status.textContent = 'Sending…';
+            status.className = 'form-status';
+            try {
+              const response = await fetch('/api/contact', {
+                method: 'POST',
+                body: new FormData(form),
+              });
+              const result = await response.json();
+              if (result.ok) {
+                status.textContent = 'Your message has been sent. A reply will follow by email.';
+                status.className = 'form-status is-success';
+                form.reset();
+              } else {
+                status.textContent = ERRORS[result.error] || 'Something went wrong. Please try again, or email office@drgladysz.com directly.';
+                status.className = 'form-status is-error';
+              }
+            } catch {
+              status.textContent = 'Network error. Please try again, or email office@drgladysz.com directly.';
               status.className = 'form-status is-error';
+            } finally {
+              submit.disabled = false;
             }
-          } catch {
-            status.textContent = 'Network error. Please try again or email mateusz@drgladysz.com directly.';
-            status.className = 'form-status is-error';
-          } finally {
-            submit.disabled = false;
-          }
-        });
-      })();
-    </script>
+          });
+        })();
+      </script>
+    </section>
 
-    <h2>What this page is not</h2>
-    <p>
-      This is not a portal for emergency advice, prescription requests, or remote diagnosis. If you have an urgent medical concern, contact your local emergency services. In New Zealand: 111. In Poland and the European Union: 112.
-    </p>
-    <p>
-      The site does not collect any personal data beyond what you choose to include in an email. See the <a href="/en/privacy">privacy policy</a> for the full data-handling description, and the <a href="/en/disclaimer">medical disclaimer</a> for the scope of educational content here.
-    </p>
+    <section class="contact-section">
+      <header class="contact-section-header">
+        <div class="section-num">§ 05</div>
+        <SectionMasthead label="Privacy" heading="How form data is handled" />
+      </header>
+      <p>
+        Data submitted through the form is processed for the sole purpose of replying to the enquiry. The data controller is Mateusz Gładysz. The processing is based on consent under Article 6(1)(a) of the General Data Protection Regulation (RODO) for visitors in the European Union, and on the legitimate purpose of correspondence under the Privacy Act 2020 for visitors in New Zealand. Submissions are retained for the duration of the correspondence and for a reasonable period afterwards. The full <a href="/en/privacy">Privacy Policy</a> describes data subject rights and how to exercise them.
+      </p>
+    </section>
   </ContentPage>
 </SiteLayout>
 
 <style>
+  /* Section layout — each contact section gets a §-number prefix matching
+     the About-page convention (mono caps, accent color, 2px accent top
+     rule), aligned to the left of the section header. SectionMasthead
+     follows in the flow; body content sits below it. */
+  .contact-section {
+    margin-bottom: clamp(48px, 7vw, 88px);
+  }
+  .contact-section:last-child {
+    margin-bottom: 0;
+  }
+
+  .contact-section-header {
+    margin-bottom: 28px;
+  }
+
+  .section-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.10em;
+    color: var(--accent);
+    padding-top: 10px;
+    border-top: 2px solid var(--accent);
+    margin-bottom: 16px;
+    width: fit-content;
+    min-width: 48px;
+  }
+
+  /* Inline office@ link in §03 — mono caps, oxblood accent, hover→ink. */
+  .contact-email {
+    font-family: var(--mono);
+    font-size: 0.92em;
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid var(--accent);
+    padding-bottom: 1px;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .contact-email:hover,
+  .contact-email:focus-visible {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+
+  /* Form */
   .contact-form {
     display: grid;
     gap: 20px;
-    margin: 32px 0 24px;
+    margin: 0;
     max-width: 560px;
   }
 
@@ -173,7 +293,7 @@ import ContentPage from '@/components/ContentPage.astro';
     gap: 6px;
   }
 
-  .field label {
+  .field > label {
     font-family: var(--mono);
     font-size: 12px;
     letter-spacing: 0.10em;
@@ -181,7 +301,8 @@ import ContentPage from '@/components/ContentPage.astro';
     color: var(--ink-3);
   }
 
-  .field input,
+  .field input[type="text"],
+  .field input[type="email"],
   .field select,
   .field textarea {
     font-family: var(--sans);
@@ -205,28 +326,69 @@ import ContentPage from '@/components/ContentPage.astro';
 
   .field textarea {
     resize: vertical;
-    min-height: 140px;
+    min-height: 160px;
     font-family: var(--serif);
     font-size: 17px;
     line-height: 1.55;
   }
 
-  .contact-submit {
-    justify-self: start;
-    font-family: var(--mono);
-    font-size: 13px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--bg);
-    background: var(--accent);
-    border: 0;
-    padding: 12px 24px;
-    cursor: pointer;
-    border-radius: 0;
+  /* Consent checkbox: inline label, sans body 14px, link styled inline. */
+  .field-checkbox {
+    grid-template-columns: auto 1fr;
+    align-items: start;
+    gap: 12px;
+    margin-top: 4px;
+  }
+  .field-checkbox > input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin: 3px 0 0;
+    accent-color: var(--accent);
+  }
+  .field-checkbox > input[type="checkbox"]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .field-checkbox > label {
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--ink-2);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .field-checkbox > label a {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid var(--accent);
+    padding-bottom: 1px;
+  }
+  .field-checkbox > label a:hover {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
   }
 
-  .contact-submit:hover {
+  .contact-submit {
+    justify-self: start;
+    font-family: var(--sans);
+    font-weight: 500;
+    font-size: 15px;
+    letter-spacing: 0.02em;
+    color: var(--bg);
     background: var(--ink);
+    border: 0;
+    padding: 14px 28px;
+    cursor: pointer;
+    border-radius: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s ease;
+  }
+
+  .contact-submit:hover,
+  .contact-submit:focus-visible {
+    background: var(--accent);
   }
 
   .contact-submit:focus-visible {
@@ -234,17 +396,31 @@ import ContentPage from '@/components/ContentPage.astro';
     outline-offset: 4px;
   }
 
-  .form-note {
-    font-family: var(--serif);
-    font-style: italic;
+  .contact-submit[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .cta-arrow {
+    font-family: var(--mono);
     font-size: 16px;
+  }
+
+  .form-note {
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.55;
     color: var(--ink-3);
-    margin: 16px 0 0;
-    max-width: 60ch;
+    margin: 8px 0 0;
+    max-width: 56ch;
+  }
+  .form-note a {
+    color: inherit;
+    border-bottom: 1px solid var(--rule-strong);
   }
 
   /* Honeypot field — visually hidden but accessible to bots that fill
-     every field, and to screen readers that announce the warning label. */
+     every field. */
   .hp-field {
     position: absolute;
     left: -9999px;
@@ -261,6 +437,6 @@ import ContentPage from '@/components/ContentPage.astro';
     margin: 0;
     min-height: 1.55em;
   }
-  .form-status.is-success { color: var(--accent); }
+  .form-status.is-success { color: var(--accent); font-weight: 500; }
   .form-status.is-error { color: var(--ink); font-weight: 600; }
 </style>
