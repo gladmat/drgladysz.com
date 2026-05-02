@@ -55,7 +55,7 @@ site/
 - Phase 6: WordPress migration — **scaphoid-fractures, extensor-tendon-injuries, and flexor-tendon-injuries-and-repair all live as of 2026-04-30** (FESSH-prep, peer audience; cumulative 88 references, 31 glossary terms, JAMA Key Points, italic standfirst, cross-link block at end of each, MedicalScholarlyArticle JSON-LD; no images yet). Still to author: the Polish post (zespol-ciesni-nadgarstka). See "Phase 6 — what shipped" + "Phase 6 update 2026-04-30" sections below.
 - Phase 7: 5 more procedure pages — author one per sub-specialty area at minimum (e.g. one reconstructive-microsurgery, one skin-cancer) so each category index isn't empty at launch.
 - Phase 8: Polish mirrors of all supporting pages (/pl/kontakt, /pl/uprawnienia, /pl/nota-prawna, /pl/polityka-prywatnosci, /pl/zastrzezenie-medyczne, /pl/publikacje) — pending Polish composition session.
-- Phase 8: Resend-backed contact form. Currently the form posts as `mailto:` so it works without a server endpoint; adding a real `/api/contact.ts` server endpoint is part of Phase 10 (Vercel adapter setup).
+- Phase 8: ~~Resend-backed contact form server endpoint~~ ✅ shipped 2026-05-02 alongside contact-page v1.0 lock. `/api/contact.ts` runs on Vercel SSR (`prerender = false`); rest of the site stays static. Form sends to `office@drgladysz.com` (env `CONTACT_FORM_TO_EMAIL`); rate-limit 5/hour/IP; honeypot; required Subject + Privacy-consent fields. See "Phase 8 update 2026-05-02" below.
 
 Tier 2 features (calculators, MCQ, glossary) ship **post-launch** in months 1-12.
 
@@ -258,7 +258,7 @@ The 2026-04-29 overnight session shipped infrastructure for Phases 6, 7, and 8 �
 **What's still required to launch (Phase 9 QA):**
 - Author 3 more articles (scaphoid-fractures, flexor-tendon-injuries-and-repair, extensor-tendon-injuries) so the home Articles teaser links resolve.
 - Author 1-2 more procedures so each procedure-index category isn't empty.
-- Polish-language `Contact` and `Publications` pages — these are the ONLY supporting pages without Polish mirrors (the legal pages all have PL mirrors via the locked legal-pages-package). Wait for the Polish composition session.
+- Polish-language `Contact` and `Publications` pages — these are the ONLY supporting pages without Polish mirrors (the legal pages all have PL mirrors via the locked legal-pages-package). The English `/en/contact` page is now spec-locked to v1.0 (2026-05-02 — see "Phase 8 update 2026-05-02"); `/pl/kontakt` waits for the Polish composition session. Hreflang `pl-PL` link is already emitted as a forward reference and will resolve once the route lands.
 - Resend-backed contact form server endpoint — Phase 10 (needs Vercel adapter).
 - Formal lawyer review (NZ + PL) of all five legal documents — queued for October 2027 per legal-pages-package `_meta/README.md`.
 - Verification of live registry entries: PWZ 2985148 on rejestr.nil.org.pl, MCNZ 93463 on mcnz.org.nz (per package open items list).
@@ -333,6 +333,34 @@ Two more expert articles shipped (`/en/blog/extensor-tendon-injuries`, `/en/blog
 - `scaphoid-fractures → procedure scaphoid-fracture-fixation`
 
 Re-run `seed-article.ts` against the originating article once the procedure exists.
+
+## Phase 8 update 2026-05-02 — contact page locked to v1.0 + office@ email convention
+
+The contact page was redesigned from a flat-h2 supporting page to a five-§-numbered section structure (Practice / Referrals / Enquiries / Form / Privacy) per the locked content draft now at `01-brand-system/drgladysz-locked-content-contact-v1.0.md`. The Resend-backed `/api/contact.ts` server endpoint shipped alongside (Phase 8 deferred, brought forward when contact-page lock arrived).
+
+**Decision #36 (recorded in `01-brand-system/decisions-v1.10.md`):**
+> Contact page published email is `office@drgladysz.com`. Waikato Hospital email is not published. Patient referral pathway is via GP, not via website.
+
+**`office@drgladysz.com` convention (now site-wide):**
+- Updated literal `mateusz@drgladysz.com` → `office@drgladysz.com` across: `SiteFooter`, `/en/about` Person JSON-LD, `/en/index` Person JSON-LD, the `/api/contact.ts` fallback when `CONTACT_FORM_TO_EMAIL` env var is unset, all 8 site/src/content/legal mirrors (en + pl), and the canonical 10 files in `01-brand-system/legal-pages-package/` + brand-spec v1.9 + locked-content-home-and-about v1.6.3.
+- Intentionally kept on the old address: `01-brand-system/drgladysz-brand-book-v1.7.html` (historical artefact, predates v1.8 spec) and the contact-v1.0 doc's narrative line that documents the env-var change itself.
+- **Production env to set on Vercel before deploy:** `CONTACT_FORM_TO_EMAIL=office@drgladysz.com` (or remove the var; the code fallback applies).
+
+**Form changes:**
+- New required fields: `Subject` (≤160 chars) and `Privacy consent` checkbox tied to RODO Article 6(1)(a).
+- New "Type of enquiry" option labels: `Professional / academic`, `Patient information`, `Media or speaking`, `Other`. Internal enum keys (`professional` / `clinical` / `editorial` / `other`) preserved for API back-compat; only the user-facing labels changed.
+- CTA `Send enquiry` (was `Send message`).
+- Rate-limit bumped from 60s/IP to **5 submissions per IP per sliding hour**.
+- Honeypot + `RESEND_API_KEY` flow unchanged.
+- Email subject line: `Contact form — {name} — {subject}` (subject now the dominant signal in the inbox).
+- Email body records consent timestamp.
+
+**Site infra additions:**
+- `generateContactPageSchema({ url, locale, siteUrl })` in `src/lib/schema.ts`; emits `ContactPage` JSON-LD with no `telephone` / `address` (per Decision #22).
+- `SiteLayout` for `/en/contact` now passes `alternateUrl="/pl/kontakt"` so the en-NZ / pl-PL / x-default hreflang triplet is emitted (the pl-PL target 404s until `/pl/kontakt.astro` lands; this is acceptable forward-reference behaviour).
+- `HomeHero.astro` `ctaHref` default updated to `/en/contact#form` so "Make an appointment" deep-links to §04. The `<section id="form">` anchor lives on the §04 masthead container.
+
+**Build status after the session:** `npm run type-check` 0 errors, `npm run build` builds without errors. Page count unchanged. Browser preview at `/en/contact` shows all five sections, full form with new fields, ContactPage JSON-LD, hreflang triplet, and `office@drgladysz.com` rendered in 10 places (inline mailto in §03 + form note + script error fallbacks + footer). Commits: `d23d8b1` (contact page + email convention) + `23aaf63` (legal-page mirror refresh).
 
 ## Tier 2 — what shipped 2026-04-29
 
