@@ -29,6 +29,8 @@ const masterSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180"
 </svg>`;
 
 const targets = [
+  { name: 'favicon-16.png', size: 16 },
+  { name: 'favicon-32.png', size: 32 },
   { name: 'apple-touch-icon.png', size: 180 },
   { name: 'favicon-192.png', size: 192 },
   { name: 'favicon-512.png', size: 512 },

@@ -94,9 +94,13 @@ if (heroPreload) {
   <meta name="twitter:image" content={`${siteUrl}${ogImage}`} />
   
   <!-- Favicon — MG monogram per brand spec v1.7 §2.
-       SVG is the canonical mark; PNGs cover Android home-screen + iOS Safari
-       add-to-home-screen, which still want raster assets. -->
+       SVG is the canonical mark for modern browsers. The 16/32 PNGs are
+       fallbacks for browsers (especially iPad / iOS Safari) that don't
+       reliably render SVG favicons in tab UI. The 180/192/512 cover iOS
+       add-to-home-screen and Android home-screen / splash. -->
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/favicon-512.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
