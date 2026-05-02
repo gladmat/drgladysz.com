@@ -127,20 +127,20 @@ const { photo, photoAlt, eyebrow = 'About', lead } = Astro.props;
     margin: 0;
   }
 
-  .hero-image {
-    aspect-ratio: 4 / 3;
-    background-color: var(--bg-deep);
-    overflow: hidden;
+  /* No fixed aspect-ratio container — the image renders at its natural
+     proportions so the photographer's composition is preserved. The
+     align-items: center on .hero-grid centers the text column against
+     the image column. The saturate(0.96) filter was OR-shot specific per
+     _handoff/design/photo-manifest.md (img-04/09/10/12); img-14 is an
+     examination-room shot and doesn't get that treatment. Same approach
+     used on HomeHero.astro after img-12 → img-20. */
+  .hero-image :global(.hero-picture) {
+    display: block;
+    width: 100%;
   }
-  .hero-image :global(.hero-picture),
   .hero-image :global(.hero-picture img) {
     display: block;
     width: 100%;
-    height: 100%;
-  }
-  .hero-image :global(.hero-picture img) {
-    object-fit: cover;
-    object-position: center;
-    filter: saturate(0.96);
+    height: auto;
   }
 </style>
