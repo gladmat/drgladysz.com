@@ -395,6 +395,26 @@ Tier 2 features (Glossary, Calculators, FEBHS MCQ) were planned and largely buil
 - learn.drgladysz.com: deploy Sanity schemas (`sanity schema deploy`); seed 4 questions + 18 references via `learn/scripts/seed-fessh-package.ts`; provision Vercel project + DNS at Zenbox (Phase L11 in the subdomain plan); curate first `fesshMockExam` doc once question count nears 60+.
 - Polish chrome polish: glossary + calculator index page copy is functional draft — the dedicated Polish composition session should refine.
 
+## Post-launch sessions 2026-05-02 → 2026-05-03
+
+The site cut over to production on 2026-05-02 (Phase 10 done, ahead of formal Phase 9 QA). Three substantive sessions landed since:
+
+**Session 2026-05-02 (legal + about):**
+- Legal pages cleaned of drafting-process intrusions (consent newsletter line referencing the brand spec; "MVP" / "this version" language; "locked inline qualifier" in disclaimer). Versions bumped v1.0 → v1.1 across consent, zgoda, disclaimer, zastrzezenie-medyczne. Canonical sources at `01-brand-system/legal-pages-package/` re-mirrored to `site/src/content/legal/`. Commit `9d1f5b2`.
+- About page img-19 PhotoBreak switched from `aspect="4/5"` + `maxHeight="90vh"` (tall portrait pillar) to `aspect="16/9"` (full-width landscape, matching img-08).
+
+**Session 2026-05-03 (procedure pages — Decision #37):**
+- Brand spec amendment v1.9 / Decision #37 locked: AO 10-section spine remains third-person clinical; pitfall callouts may use selective first-person where the warning's substance is the surgeon's named technical opinion. Documented in `01-brand-system/drgladysz-brand-spec-amendment-v1_9-pitfall-voice.md` and recorded in `decisions-v1.10.md` § Decision #37.
+- `_handoff/features/02-procedure-schema.md` bumped 1.7 → 1.8: pitfall field description amended; new "Editorial note (v1.9)" section; verification checklist gains pitfall-voice + AO-spine-third-person rules; new "Authoring rule (locked 2026-05-03)" — every procedure page ships with citation + glossaryTerm marks fully wired on first publish (no bare superscripts, no stripped `[[term]]` markers).
+- Open carpal tunnel release procedure rewritten end-to-end via `site/scripts/seed-procedure-octr.ts` (~800 lines): created 29 new glossaryTerm docs + 14 new bibReference docs, rewrote all 10 AO sections with body content using the inline DSL `[g:slug|displayed]` for glossary marks and `{n}` for citation positions. 5 of 6 key steps carry first-person pitfall callouts. Commits `621d0d2`, `02417d2`.
+- `src/pages/en/procedures/[slug].astro` now extracts both `extractCitationOrderFromBlocks` AND `extractGlossaryOrderFromBlocks`, threads `references={references}` AND `glossaryTerms={glossaryTerms}` into all 11 PortableTextRenderer call sites. Live verification: 25 citation popovers + 30 dashed-underline glossary triggers.
+
+**Session 2026-05-03 (FESSH MCQ — Decision #34):**
+- Brand spec amendment v1.8.1 / Decision #34 locked: FESSH MCQ on `learn.drgladysz.com` is single-author authored and literature-checked, NOT peer-reviewed. The terms "peer-reviewed", "peer review", "expert-reviewed", "validated" are forbidden across the subdomain (in copy, JSON-LD, descriptions). Permitted: "single-author", "literature-checked", "primary-literature cited", "community-corrected", "rigorously authored". Documented in `01-brand-system/update/drgladysz-amendment-feature-04-mcq-v1_8_1.md`.
+- `studio/schemas/fesshMcqMetadata.ts` extended with `firstPublishedDate` (date) and `errataLog` (structured array — date / summary / resolution enum / notes); `peerReviewed`/`peerReviewer`/`peerReviewDate` deprecated and hidden in studio. Schema redeployed via `npx sanity@latest schema deploy`. Commit `58165db`.
+- Subdomain copy (home + about + footer) rewritten across two patches — content-patch v1.0 then v1.1 (v1.1 fixed editorial intrusion, including a comparative claim about "many practising hand surgeons" that breached the locked About-page rule). Each published question now renders the `<QuestionMetadata>` audit-trail block (Question ID / First published / Last reviewed / Version) above the existing FesshFeedback errata link. All 11 currently-published questions backfilled with `firstPublishedDate` via `learn/scripts/backfill-fessh-metadata.ts`.
+- Cross-link rule: drgladysz.com expert articles + procedure pages may link to a specific MCQ question only after that question has been live ≥30 days without unresolved errata flags. Authoring rule, not a code check.
+
 ## Phase 9 starting context (next session)
 
 Phase 9 is **pre-launch QA — compliance, performance, accessibility**. See `_handoff/technical/compliance-checklist.md` for the full list.
