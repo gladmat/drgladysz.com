@@ -16,7 +16,7 @@
 import SiteLayout from '@/layouts/SiteLayout.astro';
 import SectionMasthead from '@/components/SectionMasthead.astro';
 import { getAllGlossaryTerms, type GlossarySummary } from '@/lib/sanity';
-import { generateDefinedTermSetSchema } from '@/lib/schema';
+import { generateDefinedTermSetSchema, generateBreadcrumb } from '@/lib/schema';
 
 const terms = await getAllGlossaryTerms();
 
@@ -53,7 +53,7 @@ const totalCount = terms.length;
 const siteUrl = (
   import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com'
 ).replace(/\/$/, '');
-const canonicalUrl = `${siteUrl}/en/glossary`;
+const canonicalUrl = `${siteUrl}/en/glossary/`;
 
 const definedTermSetJsonLd = generateDefinedTermSetSchema({
   url: canonicalUrl,
@@ -65,14 +65,19 @@ const definedTermSetJsonLd = generateDefinedTermSetSchema({
   termUrlPrefix: `${siteUrl}/en/glossary/`,
   locale: 'en',
 });
+
+const breadcrumbJsonLd = generateBreadcrumb([
+  { name: 'Home', url: `${siteUrl}/en/` },
+  { name: 'Glossary', url: canonicalUrl },
+]);
 ---
 <SiteLayout
   title="Glossary — Mateusz Gładysz, MD"
   description="Hand-surgery glossary: anatomical structures, conditions, procedures, investigations, and outcome measures defined in clinical context."
   locale="en"
-  alternateUrl="/pl/slowniczek"
+  alternateUrl="/pl/slowniczek/"
   canonical={canonicalUrl}
-  jsonLd={definedTermSetJsonLd}
+  jsonLd={[definedTermSetJsonLd, breadcrumbJsonLd]}
 >
   <section class="index-masthead-shell">
     <SectionMasthead

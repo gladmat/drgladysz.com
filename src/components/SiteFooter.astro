@@ -74,7 +74,7 @@ const localePrefix = locale === 'pl' ? '/pl' : '/en';
 // learn.drgladysz.com sub-application (separate Astro project per brand
 // spec v1.8 Decision #29/30 — quiz/exam-prep platform lives on its own
 // subdomain, not on the main domain). It's rendered with target="_blank"
-// + rel="noopener" so the browser handles the cross-subdomain hop, and
+// + rel="noopener noreferrer" so the browser handles the cross-subdomain hop, and
 // `external: true` marks it for the small ↗ visual cue. The PL footer
 // labels the link "(po angielsku)" because FESSH MCQ content is English-only.
 const navLinks: { href: string; label: string; external?: boolean }[] =
@@ -132,7 +132,7 @@ const year = new Date().getFullYear();
 
     <div class="columns">
       <div class="col">
-        <h4>{t.identityHeading}</h4>
+        <h2>{t.identityHeading}</h2>
         <div class="col-content">
           <p>
             Mateusz Gładysz<br />
@@ -152,7 +152,7 @@ const year = new Date().getFullYear();
       </div>
 
       <div class="col">
-        <h4>{t.credentialsHeading}</h4>
+        <h2>{t.credentialsHeading}</h2>
         <div class="col-content">
           <p>
             Medical Council of New Zealand<br />
@@ -174,18 +174,18 @@ const year = new Date().getFullYear();
       </div>
 
       <div class="col">
-        <h4>{t.researchHeading}</h4>
+        <h2>{t.researchHeading}</h2>
         <div class="col-content">
           <ul>
             <li>
               <span class="muted">ORCID:</span>{' '}
-              <a href="https://orcid.org/0009-0009-2380-4056" rel="me noopener" target="_blank">
+              <a href="https://orcid.org/0009-0009-2380-4056" rel="me noopener noreferrer" target="_blank">
                 0009-0009-2380-4056
               </a>
             </li>
             <li>
               <span class="muted">LinkedIn:</span>{' '}
-              <a href="https://www.linkedin.com/in/mateuszgladysz" rel="me noopener" target="_blank">
+              <a href="https://www.linkedin.com/in/mateuszgladysz" rel="me noopener noreferrer" target="_blank">
                 linkedin.com/in/mateuszgladysz
               </a>
             </li>
@@ -194,13 +194,13 @@ const year = new Date().getFullYear();
       </div>
 
       <div class="col">
-        <h4>{t.siteHeading}</h4>
+        <h2>{t.siteHeading}</h2>
         <div class="col-content">
           <ul>
             {navLinks.map((link) => (
               <li>
                 {link.external ? (
-                  <a href={link.href} target="_blank" rel="noopener">
+                  <a href={link.href} target="_blank" rel="noopener noreferrer">
                     {link.label} <span aria-hidden="true" class="ext">↗</span>
                   </a>
                 ) : (
@@ -265,12 +265,16 @@ const year = new Date().getFullYear();
     .columns { grid-template-columns: 1fr 1fr; gap: 32px; }
   }
 
-  h4 {
+  /* Footer column headings — semantically <h2> (top-level groupings of
+     footer content, peers of any in-page <h2>) so they don't break the
+     document outline by skipping levels. Visual register stays mono caps
+     10px to match the existing brand treatment. */
+  h2 {
     font-family: var(--mono);
     font-size: 10px;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: rgba(250, 247, 242, 0.4);
+    color: rgba(250, 247, 242, 0.62);
     margin: 0 0 14px;
     font-weight: 500;
   }
@@ -293,6 +297,18 @@ const year = new Date().getFullYear();
     color: rgba(250, 247, 242, 0.85);
     font-size: 13px;
     line-height: 1.7;
+  }
+  /* Mobile touch-target compliance: WCAG 2.5.8 requires ≥24px square.
+     The default 13px font × 1.7 line-height gives 22.1px without
+     padding — adding inline-block + padding-block lifts every list-link
+     above the threshold without disturbing inline-link styling
+     elsewhere in the footer (mailto, bracketed mono labels). */
+  .col-content ul li a {
+    display: inline-block;
+    padding-block: 0.25rem;
+  }
+  .col-content ul li {
+    margin-block: 0.05rem;
   }
   a {
     color: rgba(250, 247, 242, 0.85);

@@ -53,11 +53,11 @@ const { label, heading, publications, ctaLabel, ctaHref } = Astro.props;
           </p>
           <div class="pub-meta">
             <strong>{pub.journal}</strong> · {pub.year} · DOI:{' '}
-            <a href={pub.doiUrl} class="pub-doi" rel="noopener" target="_blank">
+            <a href={pub.doiUrl} class="pub-doi" rel="noopener noreferrer" target="_blank">
               {pub.doi}
             </a>
           </div>
-          <a href={pub.doiUrl} class="pub-link" rel="noopener" target="_blank">
+          <a href={pub.doiUrl} class="pub-link" rel="noopener noreferrer" target="_blank">
             <span>Read publication</span>
             <span class="arrow" aria-hidden="true">→</span>
           </a>

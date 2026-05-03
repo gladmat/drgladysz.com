@@ -103,7 +103,10 @@ const hasContent = Boolean(question || findings || meaning);
     font-size: 11px;
     letter-spacing: 0.10em;
     text-transform: uppercase;
-    color: var(--ink-3);
+    /* Was var(--ink-3) → 4.13:1 contrast on bg-deep, fails WCAG AA.
+       Stepped down to a darker grey that hits ≥5:1 on the cream
+       background while keeping the muted "metadata label" register. */
+    color: #555a5d;
     margin: 0;
     padding-top: 4px;
   }

@@ -108,7 +108,7 @@ const publicationsJsonLd = {
 ---
 <SiteLayout
   title="Publications — Mateusz Gładysz, MD"
-  description="Full peer-reviewed publication record across plastic, hand, and reconstructive surgery, including AI-assisted clinical documentation research at the University of Zurich."
+  description="Peer-reviewed publication record across plastic, hand, and reconstructive surgery, including AI-assisted clinical documentation research."
   locale="en"
   jsonLd={publicationsJsonLd}
 >
@@ -141,7 +141,7 @@ const publicationsJsonLd = {
               <p class="pub-actions">
                 <a
                   href={pub.doiUrl}
-                  rel="noopener"
+                  rel="noopener noreferrer"
                   target="_blank"
                   class="pub-action"
                 >
@@ -150,7 +150,7 @@ const publicationsJsonLd = {
                 {pub.pmid && (
                   <a
                     href={`https://pubmed.ncbi.nlm.nih.gov/${pub.pmid}/`}
-                    rel="noopener"
+                    rel="noopener noreferrer"
                     target="_blank"
                     class="pub-action"
                   >

@@ -69,7 +69,7 @@ const Component = calculatorRegistry[calc.componentName];
 const siteUrl = (
   import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com'
 ).replace(/\/$/, '');
-const canonicalUrl = `${siteUrl}/en/calculators/${slug}`;
+const canonicalUrl = `${siteUrl}/en/calculators/${slug}/`;
 
 // WebApplication / MedicalApplication shape — schema.org doesn't have a
 // formal MedicalCalculator type, so WebApplication with applicationCategory:
@@ -103,7 +103,7 @@ const calculatorJsonLd = {
 
 const breadcrumbJsonLd = generateBreadcrumb([
   { name: 'Home', url: `${siteUrl}/en/` },
-  { name: 'Calculators', url: `${siteUrl}/en/calculators` },
+  { name: 'Calculators', url: `${siteUrl}/en/calculators/` },
   { name: calc.name, url: canonicalUrl },
 ]);
 

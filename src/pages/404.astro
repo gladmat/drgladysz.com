@@ -1,0 +1,76 @@
+---
+// src/pages/404.astro
+//
+// Branded 404 page served by Astro/Vercel for any unrecognised URL on
+// drgladysz.com. The path is whatever the user typed, so we detect locale
+// heuristically from the path prefix — `/pl/...` paths get Polish copy,
+// everything else (including bare `/foo`) gets English.
+//
+// Listed in src/pages root (not under /en/ or /pl/) per Astro convention:
+// the framework treats this filename as the catch-all error page across
+// every locale, regardless of the strict i18n routing for the rest of the
+// site.
+import SiteLayout from '@/layouts/SiteLayout.astro';
+import ContentPage from '@/components/ContentPage.astro';
+
+const path = Astro.url.pathname;
+const isPolish = path.startsWith('/pl/');
+const locale = isPolish ? 'pl' : 'en';
+
+const t = isPolish
+  ? {
+      label: 'Błąd 404',
+      title: 'Strony nie znaleziono',
+      standfirst:
+        'Adres, którego szukasz, nie istnieje na tej witrynie. Mógł zostać przeniesiony, błędnie wpisany lub jeszcze nie istnieje.',
+      heading: 'Co dalej?',
+      intro: 'Stąd można:',
+      links: [
+        { href: '/pl/', label: 'wrócić na stronę główną' },
+        { href: '/pl/slowniczek', label: 'przeglądać słowniczek terminów' },
+        { href: '/pl/kalkulatory', label: 'zobaczyć kalkulatory kliniczne' },
+        { href: '/pl/uprawnienia', label: 'sprawdzić uprawnienia' },
+      ],
+      contactNote: 'Jeśli sądzisz, że odnośnik powinien działać, ',
+      contactCta: 'napisz pod office@drgladysz.com',
+      contactCtaUrl: 'mailto:office@drgladysz.com',
+      contactTail: ' — chętnie naprawię.',
+    }
+  : {
+      label: 'Error 404',
+      title: 'Page not found',
+      standfirst:
+        "The address you're looking for doesn't exist on this site. It may have moved, been mistyped, or not yet exist.",
+      heading: 'Where to next?',
+      intro: 'From here you can:',
+      links: [
+        { href: '/en/', label: 'return to the home page' },
+        { href: '/en/blog', label: 'browse the knowledge base' },
+        { href: '/en/procedures', label: 'see the procedure pages' },
+        { href: '/en/glossary', label: 'check the glossary' },
+        { href: '/en/contact', label: 'get in touch' },
+      ],
+      contactNote: 'If you think a link should work, ',
+      contactCta: 'email office@drgladysz.com',
+      contactCtaUrl: 'mailto:office@drgladysz.com',
+      contactTail: ' — happy to fix it.',
+    };
+---
+<SiteLayout
+  title={`${t.title} — Mateusz Gładysz, MD`}
+  description={t.standfirst}
+  locale={locale}
+>
+  <ContentPage label={t.label} title={t.title} standfirst={t.standfirst}>
+    <h2>{t.heading}</h2>
+    <p>{t.intro}</p>
+    <ul>
+      {t.links.map((link) => (
+        <li><a href={link.href}>{link.label}</a></li>
+      ))}
+    </ul>
+    <p>
+      {t.contactNote}<a href={t.contactCtaUrl}>{t.contactCta}</a>{t.contactTail}
+    </p>
+  </ContentPage>
+</SiteLayout>

@@ -60,8 +60,8 @@ const ARTICLE_CATEGORY_LABELS: Record<string, string> = {
 const siteUrl = (
   import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com'
 ).replace(/\/$/, '');
-const canonicalUrl = `${siteUrl}/en/glossary/${slug}`;
-const indexUrl = `${siteUrl}/en/glossary`;
+const canonicalUrl = `${siteUrl}/en/glossary/${slug}/`;
+const indexUrl = `${siteUrl}/en/glossary/`;
 
 const definedTermJsonLd = generateDefinedTermSchema({
   term,

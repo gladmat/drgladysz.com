@@ -16,6 +16,13 @@ export default defineConfig({
   output: 'static',
   adapter: vercel(),
 
+  // Trailing-slash everywhere so canonical / sitemap / Astro.url.pathname
+  // all agree. Pre-this-change, dynamic routes emitted canonicals without
+  // trailing slash while static directory routes emitted them with one,
+  // splitting indexed-URL link equity. Sitemap already used trailing
+  // slashes; this aligns canonicals to match.
+  trailingSlash: 'always',
+
   integrations: [
     mdx(),
     preact({ compat: true }),
@@ -64,17 +71,19 @@ export default defineConfig({
     // becomes a real home page.
     '/': '/en/',
 
-    // English content
-    '/about/': '/en/about',
-    '/blog/': '/en/blog',
-    '/extensor-tendon-injuries/': '/en/blog/extensor-tendon-injuries',
-    '/scaphoid-fractures/': '/en/blog/scaphoid-fractures',
-    '/flexor-tendon-injuries-and-repair/': '/en/blog/flexor-tendon-injuries-and-repair',
-    '/carpal-tunnel-syndrome-doctors-explanation/': '/en/blog/carpal-tunnel-syndrome',
-    '/homepage/contact/': '/en/contact',
+    // English content. Destinations include the trailing slash to match
+    // the site-wide trailingSlash: 'always' policy — without this Vercel
+    // would 308-redirect to add the slash, doubling the hop.
+    '/about/': '/en/about/',
+    '/blog/': '/en/blog/',
+    '/extensor-tendon-injuries/': '/en/blog/extensor-tendon-injuries/',
+    '/scaphoid-fractures/': '/en/blog/scaphoid-fractures/',
+    '/flexor-tendon-injuries-and-repair/': '/en/blog/flexor-tendon-injuries-and-repair/',
+    '/carpal-tunnel-syndrome-doctors-explanation/': '/en/blog/carpal-tunnel-syndrome/',
+    '/homepage/contact/': '/en/contact/',
 
     // Polish content (one existing post)
-    '/zespol-ciesni-nadgarstka/': '/pl/blog/zespol-ciesni-nadgarstka',
+    '/zespol-ciesni-nadgarstka/': '/pl/blog/zespol-ciesni-nadgarstka/',
 
     // FEBHS MCQ → subdomain. Per brand spec v1.8 Decision #29/30 the
     // quiz/exam-prep platform lives on learn.drgladysz.com, not on the
@@ -87,7 +96,7 @@ export default defineConfig({
 
     // Common WordPress paths
     '/wp-content/': '/en/',
-    '/feed/': '/en/blog',
+    '/feed/': '/en/blog/',
     '/sitemap_index.xml': '/sitemap-index.xml',
   },
 

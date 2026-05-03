@@ -304,6 +304,11 @@ export type SanityProcedurePage = {
   complications: PortableTextBlock[];
   patientSummary?: PortableTextBlock[];
   evidence: PortableTextBlock[];
+  // Sibling content surfaced at the bottom of the procedure page — same shape
+  // as on `article`. Unresolved references (target not yet authored) come
+  // back null and are filtered out at render time.
+  relatedArticles?: (RelatedArticleRef | null)[];
+  relatedProcedures?: (RelatedProcedureRef | null)[];
   seoTitle?: string;
   seoDescription?: string;
 };
@@ -386,6 +391,8 @@ const PROCEDURE_PROJECTION = /* groq */ `{
   closure, aftercare, complications,
   patientSummary,
   evidence,
+  "relatedArticles": relatedArticles[]->{ _id, title, slug, category },
+  "relatedProcedures": relatedProcedures[]->{ _id, title, slug, category },
   seoTitle, seoDescription
 }`;
 

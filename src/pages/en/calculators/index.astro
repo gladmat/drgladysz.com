@@ -8,6 +8,7 @@
 import SiteLayout from '@/layouts/SiteLayout.astro';
 import SectionMasthead from '@/components/SectionMasthead.astro';
 import { getAllCalculatorSummaries } from '@/lib/sanity';
+import { generateBreadcrumb } from '@/lib/schema';
 
 const calculators = await getAllCalculatorSummaries('en');
 
@@ -16,7 +17,7 @@ const totalCount = calculators.length;
 const siteUrl = (
   import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com'
 ).replace(/\/$/, '');
-const canonicalUrl = `${siteUrl}/en/calculators`;
+const canonicalUrl = `${siteUrl}/en/calculators/`;
 
 const collectionJsonLd = {
   '@context': 'https://schema.org',
@@ -30,19 +31,24 @@ const collectionJsonLd = {
     '@type': 'WebApplication',
     name: c.name,
     alternateName: c.fullName,
-    url: `${siteUrl}/en/calculators/${c.slug.current}`,
+    url: `${siteUrl}/en/calculators/${c.slug.current}/`,
     description: c.shortDescription,
     applicationCategory: 'MedicalApplication',
   })),
 };
+
+const breadcrumbJsonLd = generateBreadcrumb([
+  { name: 'Home', url: `${siteUrl}/en/` },
+  { name: 'Calculators', url: canonicalUrl },
+]);
 ---
 <SiteLayout
   title="Calculators — Mateusz Gładysz, MD"
   description="Validated outcome calculators for hand surgery: QuickDASH, PRWE, Boston CTS, MHQ, and Mayo Wrist Score."
   locale="en"
-  alternateUrl="/pl/kalkulatory"
+  alternateUrl="/pl/kalkulatory/"
   canonical={canonicalUrl}
-  jsonLd={collectionJsonLd}
+  jsonLd={[collectionJsonLd, breadcrumbJsonLd]}
 >
   <section class="index-masthead-shell">
     <SectionMasthead

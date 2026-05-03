@@ -81,12 +81,24 @@ const glossaryTerms = await getGlossaryTermsByIds(glossaryOrder);
 const siteUrl = (
   import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com'
 ).replace(/\/$/, '');
-const canonicalUrl = `${siteUrl}/en/procedures/${slug}`;
+const canonicalUrl = `${siteUrl}/en/procedures/${slug}/`;
+
+// Hero image data for the JSON-LD ImageObject (1200×800 crop). Visible <img>
+// below uses a 2000px-wide variant; both URLs hit the same Sanity asset.
+const procedureHeroImageData = procedure.heroImage
+  ? {
+      url: urlForImage(procedure.heroImage).width(1200).height(800).fit('crop').url(),
+      width: 1200,
+      height: 800,
+      alt: procedure.heroImage.alt,
+    }
+  : undefined;
 
 const procedureJsonLd = generateProcedureSchema({
   procedure,
   references,
   url: canonicalUrl,
+  heroImage: procedureHeroImageData,
 });
 
 const categoryLabels: Record<string, string> = {
@@ -97,10 +109,10 @@ const categoryLabels: Record<string, string> = {
 
 const breadcrumbJsonLd = generateBreadcrumb([
   { name: 'Home', url: `${siteUrl}/en/` },
-  { name: 'Procedures', url: `${siteUrl}/en/procedures` },
+  { name: 'Procedures', url: `${siteUrl}/en/procedures/` },
   {
     name: categoryLabels[procedure.category] || procedure.category,
-    url: `${siteUrl}/en/procedures#${procedure.category}`,
+    url: `${siteUrl}/en/procedures/#${procedure.category}`,
   },
   { name: procedure.title, url: canonicalUrl },
 ]);
@@ -121,6 +133,23 @@ const hasPositioning =
 const hasClosure = procedure.closure && procedure.closure.length > 0;
 const hasPatientSummary =
   procedure.patientSummary && procedure.patientSummary.length > 0;
+
+// Drop unresolved related references (target document deleted or not yet
+// authored). The GROQ projection returns null for unresolved refs.
+const relatedArticles = (procedure.relatedArticles ?? []).filter(
+  (a): a is NonNullable<typeof a> => Boolean(a),
+);
+const relatedProcedures = (procedure.relatedProcedures ?? []).filter(
+  (p): p is NonNullable<typeof p> => Boolean(p),
+);
+const hasRelated = relatedArticles.length > 0 || relatedProcedures.length > 0;
+
+const articleCategoryLabel: Record<string, string> = {
+  patient: 'Patient information',
+  expert: 'Expert blog',
+  'fessh-prep': 'FESSH preparation',
+  news: 'News & commentary',
+};
 ---
 <SiteLayout
   title={procedure.seoTitle || `${procedure.title} — Mateusz Gładysz, MD`}
@@ -294,6 +323,42 @@ const hasPatientSummary =
       )}
 
       <Bibliography references={references} />
+
+      {hasRelated && (
+        <aside class="proc-related" aria-labelledby="related-heading">
+          <h2 id="related-heading" class="related-heading">Related</h2>
+          {relatedArticles.length > 0 && (
+            <section class="related-section">
+              <p class="related-kicker">Articles</p>
+              <ul class="related-list">
+                {relatedArticles.map((a) => (
+                  <li>
+                    <a href={`/en/blog/${a.slug.current}/`}>
+                      <span class="related-title">{a.title}</span>
+                      <span class="related-meta">{articleCategoryLabel[a.category] ?? a.category}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+          {relatedProcedures.length > 0 && (
+            <section class="related-section">
+              <p class="related-kicker">Procedures</p>
+              <ul class="related-list">
+                {relatedProcedures.map((p) => (
+                  <li>
+                    <a href={`/en/procedures/${p.slug.current}/`}>
+                      <span class="related-title">{p.title}</span>
+                      <span class="related-meta">{categoryLabels[p.category] ?? p.category}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </aside>
+      )}
     </div>
   </article>
 </SiteLayout>
@@ -575,5 +640,60 @@ const hasPatientSummary =
 
   .patient-summary-body {
     margin-top: 16px;
+  }
+
+  /* Related — companion articles and adjacent procedures surfaced after the
+     Bibliography. Mirrors the article template's .article-related block so
+     visual register is consistent across content types. */
+  .proc-related {
+    margin-top: clamp(48px, 6vw, 80px);
+    padding-top: 32px;
+    border-top: 1px solid var(--ink-3);
+  }
+  .related-heading {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 0 0 24px;
+  }
+  .related-section { margin-bottom: 24px; }
+  .related-section:last-child { margin-bottom: 0; }
+  .related-kicker {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 12px;
+  }
+  .related-list { list-style: none; margin: 0; padding: 0; }
+  .related-list li {
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid color-mix(in oklab, var(--ink-3) 30%, transparent);
+  }
+  .related-list li:last-child {
+    border-bottom: 1px solid color-mix(in oklab, var(--ink-3) 30%, transparent);
+  }
+  .related-list a {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    padding: 14px 0;
+    text-decoration: none;
+    color: var(--ink);
+  }
+  .related-list a:hover .related-title { color: var(--accent); }
+  .related-title { font-family: var(--serif); font-size: 18px; line-height: 1.35; }
+  .related-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    flex-shrink: 0;
   }
 </style>

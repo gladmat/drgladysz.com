@@ -11,6 +11,12 @@
 import SiteLayout from '@/layouts/SiteLayout.astro';
 import SectionMasthead from '@/components/SectionMasthead.astro';
 import { getAllProcedureSummaries, type ProcedureSummary } from '@/lib/sanity';
+import { generateBreadcrumb } from '@/lib/schema';
+
+const siteUrl = (
+  import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com'
+).replace(/\/$/, '');
+const canonicalUrl = `${siteUrl}/en/procedures/`;
 
 const procedures = await getAllProcedureSummaries();
 
@@ -50,15 +56,20 @@ const collectionJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'CollectionPage',
   name: 'Procedures — Mateusz Gładysz, MD',
-  url: 'https://drgladysz.com/en/procedures',
+  url: canonicalUrl,
   inLanguage: 'en-NZ',
   hasPart: procedures.map((p) => ({
     '@type': 'MedicalProcedure',
     name: p.title,
     description: p.summary,
-    url: `https://drgladysz.com/en/procedures/${p.slug.current}`,
+    url: `${siteUrl}/en/procedures/${p.slug.current}/`,
   })),
 };
+
+const breadcrumbJsonLd = generateBreadcrumb([
+  { name: 'Home', url: `${siteUrl}/en/` },
+  { name: 'Procedures', url: canonicalUrl },
+]);
 
 function fmtDate(d?: string) {
   if (!d) return '';
@@ -73,7 +84,8 @@ function fmtDate(d?: string) {
   title="Procedures — Mateusz Gładysz, MD, FEBOPRAS, FEBHS"
   description="Procedure pages structured to AO Surgery Reference standard — indications, anatomy, key surgical steps, aftercare, complications, and supporting evidence."
   locale="en"
-  jsonLd={collectionJsonLd}
+  canonical={canonicalUrl}
+  jsonLd={[collectionJsonLd, breadcrumbJsonLd]}
 >
   <section class="index-masthead-shell">
     <SectionMasthead

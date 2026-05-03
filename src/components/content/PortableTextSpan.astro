@@ -121,7 +121,7 @@ if (decorators.includes('strong')) inner = `<strong>${inner}</strong>`;
 // Wrap with link if present. Skipped when a glossary mark is present (a
 // <button> can't nest inside an <a> per HTML interactive-content rules).
 if (linkAnnotation && linkAnnotation.href && !glossaryData) {
-  const targetAttr = linkAnnotation.newTab ? ' target="_blank" rel="noopener"' : '';
+  const targetAttr = linkAnnotation.newTab ? ' target="_blank" rel="noopener noreferrer"' : '';
   inner = `<a href="${esc(linkAnnotation.href)}"${targetAttr}>${inner}</a>`;
 }
 ---

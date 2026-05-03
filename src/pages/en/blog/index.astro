@@ -11,6 +11,12 @@
 import SiteLayout from '@/layouts/SiteLayout.astro';
 import SectionMasthead from '@/components/SectionMasthead.astro';
 import { getAllArticleSummaries, type ArticleSummary } from '@/lib/sanity';
+import { generateBreadcrumb } from '@/lib/schema';
+
+const siteUrl = (
+  import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com'
+).replace(/\/$/, '');
+const canonicalUrl = `${siteUrl}/en/blog/`;
 
 const articles = await getAllArticleSummaries();
 
@@ -55,16 +61,21 @@ const collectionJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'CollectionPage',
   name: 'Knowledge base — Mateusz Gładysz, MD',
-  url: 'https://drgladysz.com/en/blog',
+  url: canonicalUrl,
   inLanguage: 'en-NZ',
   hasPart: articles.map((a) => ({
     '@type': 'Article',
     headline: a.title,
-    url: `https://drgladysz.com/en/blog/${a.slug.current}`,
+    url: `${siteUrl}/en/blog/${a.slug.current}/`,
     datePublished: a.publishedDate,
     description: a.excerpt,
   })),
 };
+
+const breadcrumbJsonLd = generateBreadcrumb([
+  { name: 'Home', url: `${siteUrl}/en/` },
+  { name: 'Knowledge base', url: canonicalUrl },
+]);
 
 function fmtDate(d?: string) {
   if (!d) return '';
@@ -86,7 +97,8 @@ const categoryLabels: Record<ArticleSummary['category'], string> = {
   title="Knowledge base — Mateusz Gładysz, MD"
   description="Patient guides, expert clinical writing on hand and reconstructive surgery, and FESSH Diploma preparation notes."
   locale="en"
-  jsonLd={collectionJsonLd}
+  canonical={canonicalUrl}
+  jsonLd={[collectionJsonLd, breadcrumbJsonLd]}
 >
   <section class="index-masthead-shell">
     <SectionMasthead

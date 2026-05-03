@@ -4,6 +4,7 @@ import '@/styles/globals.css';
 import { getImage } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
 import { IMAGE_WIDTHS, IMAGE_QUALITY, IMAGE_SIZES_FULLBLEED } from '@/lib/image-config';
+import ogSourceImage from '@/assets/img/img-08.jpg';
 
 interface HeroPreload {
   src: ImageMetadata;
@@ -18,6 +19,7 @@ interface Props {
   alternateUrl?: string;
   canonical?: string;
   ogImage?: string;
+  ogImageAlt?: string;
   jsonLd?: Record<string, any> | Record<string, any>[];
   // Preloads the AVIF variant of the LCP image with <link rel="preload">.
   // Browsers that don't support AVIF skip the preload and fetch via <picture>.
@@ -26,20 +28,53 @@ interface Props {
 
 const {
   title,
-  description = 'Mateusz Gładysz, MD, FEBOPRAS, FEBHS — Consultant Plastic and Hand Surgeon',
+  description: rawDescription = 'Mateusz Gładysz, MD, FEBOPRAS, FEBHS — Consultant Plastic and Hand Surgeon',
   locale = 'en',
   alternateUrl,
   canonical,
-  ogImage = '/og/default.jpg',
+  ogImage,
+  ogImageAlt = 'Surgical instrument tray — Mateusz Gładysz, MD',
   jsonLd,
   heroPreload,
 } = Astro.props;
+
+// Trim long descriptions for meta only — the visible body of glossary /
+// article / procedure pages still renders the full text. SEO snippet limit
+// is ~155-160 chars before SERP truncation. We cut at the last word boundary
+// so we don't slice mid-token.
+function trimMetaDescription(desc: string, max = 158): string {
+  if (desc.length <= max) return desc;
+  const ellipsis = '…';
+  const window = desc.slice(0, max - ellipsis.length);
+  const lastSpace = window.lastIndexOf(' ');
+  const cutPoint = lastSpace > Math.floor(max * 0.6) ? lastSpace : window.length;
+  return window.slice(0, cutPoint).replace(/[\s,;:.!?-]+$/, '') + ellipsis;
+}
+const description = trimMetaDescription(rawDescription);
 
 const siteUrl = import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com';
 const fullTitle = title.includes('Mateusz') ? title : `${title} — Mateusz Gładysz, MD`;
 const canonicalUrl = canonical || `${siteUrl}${Astro.url.pathname}`;
 const langCode = locale === 'pl' ? 'pl-PL' : 'en-NZ';
 const altLangCode = locale === 'pl' ? 'en-NZ' : 'pl-PL';
+
+// Default OG card derived at build time from img-08 (surgical instrument
+// tray, 16:9 brand photo). Astro's pipeline generates a hashed JPEG in
+// dist/_astro/. If a page passes an explicit `ogImage` (e.g. an article's
+// hero), that overrides the derived default. Width/height meta is emitted
+// only for the derived default — for explicit overrides we omit it because
+// we don't know the dimensions without inspecting the asset.
+const ogDefault = await getImage({
+  src: ogSourceImage,
+  format: 'jpg',
+  width: 1200,
+  quality: 85,
+});
+const resolvedOgImageUrl = ogImage
+  ? `${siteUrl}${ogImage}`
+  : `${siteUrl}${ogDefault.src}`;
+const ogImageWidth = ogImage ? undefined : ogDefault.attributes.width;
+const ogImageHeight = ogImage ? undefined : ogDefault.attributes.height;
 
 // Compute the AVIF srcset for the LCP hero so the browser starts fetching
 // before HTML body parsing. The options here MUST match PhotoBreak's <Picture>
@@ -81,17 +116,23 @@ if (heroPreload) {
   
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Mateusz Gładysz, MD" />
   <meta property="og:title" content={fullTitle} />
   <meta property="og:description" content={description} />
   <meta property="og:url" content={canonicalUrl} />
-  <meta property="og:image" content={`${siteUrl}${ogImage}`} />
+  <meta property="og:image" content={resolvedOgImageUrl} />
+  <meta property="og:image:alt" content={ogImageAlt} />
+  {ogImageWidth && <meta property="og:image:width" content={String(ogImageWidth)} />}
+  {ogImageHeight && <meta property="og:image:height" content={String(ogImageHeight)} />}
+  <meta property="og:image:type" content="image/jpeg" />
   <meta property="og:locale" content={langCode.replace('-', '_')} />
-  
+
   <!-- Twitter card -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content={fullTitle} />
   <meta name="twitter:description" content={description} />
-  <meta name="twitter:image" content={`${siteUrl}${ogImage}`} />
+  <meta name="twitter:image" content={resolvedOgImageUrl} />
+  <meta name="twitter:image:alt" content={ogImageAlt} />
   
   <!-- Favicon — MG monogram per brand spec v1.7 §2.
        SVG is the canonical mark for modern browsers. The 16/32 PNGs are

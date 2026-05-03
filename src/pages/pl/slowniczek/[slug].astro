@@ -79,7 +79,7 @@ const polishIncomplete = !usingPolishTerm && !usingPolishShortDef && !hasFullPl;
 const siteUrl = (
   import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com'
 ).replace(/\/$/, '');
-const canonicalUrl = `${siteUrl}/pl/slowniczek/${slug}`;
+const canonicalUrl = `${siteUrl}/pl/slowniczek/${slug}/`;
 const indexUrl = `${siteUrl}/pl/slowniczek`;
 
 const definedTermJsonLd = generateDefinedTermSchema({

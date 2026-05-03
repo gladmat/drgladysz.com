@@ -310,6 +310,26 @@ export const procedurePage = defineType({
         'Discussion of supporting literature. Use the citation inline mark to attach references.',
     }),
 
+    // === RELATED CONTENT ===
+    defineField({
+      name: 'relatedArticles',
+      title: 'Related articles',
+      type: 'array',
+      group: 'evidence',
+      of: [{ type: 'reference', to: [{ type: 'article' }] }],
+      description:
+        'Companion articles on the same topic — patient explainer, FESSH-prep notes, etc. Surfaced at the foot of the page.',
+    }),
+    defineField({
+      name: 'relatedProcedures',
+      title: 'Related procedures',
+      type: 'array',
+      group: 'evidence',
+      of: [{ type: 'reference', to: [{ type: 'procedurePage' }] }],
+      description:
+        'Adjacent procedures the reader is likely to want next — alternative techniques, sibling procedures in the same anatomy, salvage options.',
+    }),
+
     // === SEO ===
     defineField({
       name: 'seoTitle',

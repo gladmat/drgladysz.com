@@ -16,7 +16,7 @@ import { generateContactPageSchema } from '@/lib/schema';
 const siteUrl = (
   import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com'
 ).replace(/\/$/, '');
-const canonicalUrl = `${siteUrl}/en/contact`;
+const canonicalUrl = `${siteUrl}/en/contact/`;
 
 const contactPageJsonLd = generateContactPageSchema({
   url: canonicalUrl,
@@ -29,7 +29,6 @@ const contactPageJsonLd = generateContactPageSchema({
   description="Contact information and referral pathway for patient enquiries, and direct correspondence for professional and academic contact."
   locale="en"
   canonical={canonicalUrl}
-  alternateUrl="/pl/kontakt"
   jsonLd={contactPageJsonLd}
 >
   <ContentPage

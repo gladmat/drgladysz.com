@@ -90,6 +90,17 @@ interface ArticleSchemaInput {
   references: SanityRefDoc[];
   url: string; // canonical URL of the article
   authorName?: string;
+  // Pre-resolved hero image data — caller computes the URL via Sanity's
+  // image-url builder (the schema module deliberately doesn't import it
+  // to keep this generator pure / framework-agnostic). Width/height are
+  // the dimensions of the URL emitted, not the source asset; pass 1200×800
+  // for a standard rich-snippet aspect.
+  heroImage?: {
+    url: string;
+    width: number;
+    height: number;
+    alt?: string;
+  };
 }
 
 export function generateArticleSchema({
@@ -97,6 +108,7 @@ export function generateArticleSchema({
   references,
   url,
   authorName = 'Mateusz Gładysz',
+  heroImage,
 }: ArticleSchemaInput) {
   const isPatientFacing = article.audience === 'patient';
   const articleType = isPatientFacing
@@ -136,11 +148,17 @@ export function generateArticleSchema({
     ...(references.length > 0
       ? { citation: references.map(refToCitationItem) }
       : {}),
-    ...(article.heroImage
+    // Emit a complete ImageObject only when the caller supplies a URL —
+    // a description-only image entry is useless to search engines, so the
+    // generator now omits the field entirely when there's nothing to point at.
+    ...(heroImage
       ? {
           image: {
             '@type': 'ImageObject',
-            description: article.heroImage.alt,
+            url: heroImage.url,
+            width: heroImage.width,
+            height: heroImage.height,
+            ...(heroImage.alt ? { description: heroImage.alt } : {}),
           },
         }
       : {}),
@@ -156,6 +174,12 @@ interface ProcedureSchemaInput {
   references: SanityRefDoc[];
   url: string;
   authorName?: string;
+  heroImage?: {
+    url: string;
+    width: number;
+    height: number;
+    alt?: string;
+  };
 }
 
 export function generateProcedureSchema({
@@ -163,6 +187,7 @@ export function generateProcedureSchema({
   references,
   url,
   authorName = 'Mateusz Gładysz',
+  heroImage,
 }: ProcedureSchemaInput) {
   const description =
     procedure.seoDescription ||
@@ -207,11 +232,14 @@ export function generateProcedureSchema({
     ...(references.length > 0
       ? { citation: references.map(refToCitationItem) }
       : {}),
-    ...(procedure.heroImage
+    ...(heroImage
       ? {
           image: {
             '@type': 'ImageObject',
-            description: procedure.heroImage.alt,
+            url: heroImage.url,
+            width: heroImage.width,
+            height: heroImage.height,
+            ...(heroImage.alt ? { description: heroImage.alt } : {}),
           },
         }
       : {}),

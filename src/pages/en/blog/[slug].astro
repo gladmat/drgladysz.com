@@ -60,17 +60,30 @@ const glossaryTerms = await getGlossaryTermsByIds(glossaryOrder);
 const siteUrl = (
   import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com'
 ).replace(/\/$/, '');
-const canonicalUrl = `${siteUrl}/en/blog/${slug}`;
+const canonicalUrl = `${siteUrl}/en/blog/${slug}/`;
+
+// Hero image data for the JSON-LD ImageObject. We render at 1200×800 for a
+// rich-snippet-friendly aspect; the visible <img> below uses a separate URL
+// at 2000px wide for sharp display. Both URLs hit the same Sanity asset.
+const articleHeroImageData = article.heroImage
+  ? {
+      url: urlForImage(article.heroImage).width(1200).height(800).fit('crop').url(),
+      width: 1200,
+      height: 800,
+      alt: article.heroImage.alt,
+    }
+  : undefined;
 
 const articleJsonLd = generateArticleSchema({
   article,
   references,
   url: canonicalUrl,
+  heroImage: articleHeroImageData,
 });
 
 const breadcrumbJsonLd = generateBreadcrumb([
   { name: 'Home', url: `${siteUrl}/en/` },
-  { name: 'Knowledge base', url: `${siteUrl}/en/blog` },
+  { name: 'Knowledge base', url: `${siteUrl}/en/blog/` },
   { name: article.title, url: canonicalUrl },
 ]);
 

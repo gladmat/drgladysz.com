@@ -173,18 +173,18 @@ export function formatVancouver(
     const tail: string[] = [];
     if (ref.pmid) {
       tail.push(
-        `<a class="ref-link" href="https://pubmed.ncbi.nlm.nih.gov/${esc(ref.pmid)}/" target="_blank" rel="noopener">PubMed</a>`,
+        `<a class="ref-link" href="https://pubmed.ncbi.nlm.nih.gov/${esc(ref.pmid)}/" target="_blank" rel="noopener noreferrer">PubMed</a>`,
       );
     }
     if (ref.doi) {
       tail.push(
-        `<a class="ref-link" href="https://doi.org/${esc(ref.doi)}" target="_blank" rel="noopener">DOI</a>`,
+        `<a class="ref-link" href="https://doi.org/${esc(ref.doi)}" target="_blank" rel="noopener noreferrer">DOI</a>`,
       );
     }
     if (ref.pmcid) {
       const pmcid = ref.pmcid.replace(/^PMC/i, '');
       tail.push(
-        `<a class="ref-link" href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC${esc(pmcid)}/" target="_blank" rel="noopener">PMC</a>`,
+        `<a class="ref-link" href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC${esc(pmcid)}/" target="_blank" rel="noopener noreferrer">PMC</a>`,
       );
     }
     if (tail.length > 0) {
