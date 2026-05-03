@@ -51,18 +51,21 @@ type Span = {
 };
 
 type MarkDef = {
-  _type: 'citation' | 'glossaryTerm';
+  _type: 'citation' | 'glossaryTerm' | 'link';
   _key: string;
   reference?: { _type: 'reference'; _ref: string };
   term?: { _type: 'reference'; _ref: string };
+  href?: string;
 };
 
 type Block = {
   _type: 'block';
   _key: string;
-  style: 'normal' | 'h2';
+  style: 'normal' | 'h2' | 'h3' | 'blockquote';
   markDefs: MarkDef[];
   children: Span[];
+  listItem?: 'bullet' | 'number';
+  level?: number;
 };
 
 function readPackageFile(name: string): string {
@@ -110,13 +113,21 @@ function paragraphize(body: string): string[] {
 type InlineToken =
   | { type: 'text'; value: string }
   | { type: 'em'; value: string }
+  | { type: 'strong'; value: string }
   | { type: 'ref'; slug: string }
-  | { type: 'gloss'; slug: string; displayed: string };
+  | { type: 'gloss'; slug: string; displayed: string }
+  | { type: 'link'; text: string; href: string };
 
+// Token patterns are tried in order. Place longer / more specific patterns
+// first so e.g. `**bold**` doesn't match as two `*em*` runs.
 const TOKEN_PATTERNS: Array<{
   regex: RegExp;
   build: (m: RegExpMatchArray) => InlineToken;
 }> = [
+  {
+    regex: /^\*\*([^*\n]+)\*\*/,
+    build: (m) => ({ type: 'strong', value: m[1] }),
+  },
   {
     regex: /^\*([^*\n]+)\*/,
     build: (m) => ({ type: 'em', value: m[1] }),
@@ -128,6 +139,10 @@ const TOKEN_PATTERNS: Array<{
   {
     regex: /^\[gloss:([a-z0-9-]+)\|([^\]]+)\]/,
     build: (m) => ({ type: 'gloss', slug: m[1], displayed: m[2] }),
+  },
+  {
+    regex: /^\[([^\]]+)\]\(([^)\s]+)\)/,
+    build: (m) => ({ type: 'link', text: m[1], href: m[2] }),
   },
 ];
 
@@ -169,7 +184,7 @@ let _spanCounter = 0;
 const nextSpanKey = () => `s${++_spanCounter}`;
 
 let _markCounter = 0;
-const nextMarkKey = (prefix: 'c' | 'g') => `${prefix}${++_markCounter}`;
+const nextMarkKey = (prefix: 'c' | 'g' | 'l') => `${prefix}${++_markCounter}`;
 
 let _blockCounter = 0;
 const nextBlockKey = () => `b${++_blockCounter}`;
@@ -206,6 +221,28 @@ function tokensToBlock(
         _key: nextSpanKey(),
         text: tok.value,
         marks: ['em'],
+      });
+    } else if (tok.type === 'strong') {
+      flushText();
+      children.push({
+        _type: 'span',
+        _key: nextSpanKey(),
+        text: tok.value,
+        marks: ['strong'],
+      });
+    } else if (tok.type === 'link') {
+      flushText();
+      const markKey = nextMarkKey('l');
+      markDefs.push({
+        _type: 'link',
+        _key: markKey,
+        href: tok.href,
+      });
+      children.push({
+        _type: 'span',
+        _key: nextSpanKey(),
+        text: tok.text,
+        marks: [markKey],
       });
     } else if (tok.type === 'gloss') {
       if (!glossarySlugs.has(tok.slug)) {
@@ -266,52 +303,116 @@ function tokensToBlock(
   return { children, markDefs };
 }
 
+// Build a Portable Text body from authored markdown. Line-aware walker that
+// recognises:
+//   - h2 / h3 headings (h4+ remains forbidden — packages don't author those)
+//   - bullet ('- ' / '* ') and numbered ('N. ') lists, one line per item
+//   - blockquotes ('> ') — single-line per quote (sufficient for the
+//     `> **Examination notes.**` callouts in the FESSH-prep CTS draft)
+//   - paragraphs spanning multiple lines, joined by spaces, flushed on blank line
+// Inline tokens (em, strong, link, citation, glossary) work identically inside
+// any block kind because tokenisation is line-content-agnostic.
 function buildBody(
   bodyMd: string,
   glossarySlugs: Set<string>,
   refSlugs: Set<string>,
 ): Block[] {
   const stripped = stripAuthoringHeader(bodyMd);
-  const paragraphs = paragraphize(stripped);
+  const lines = stripped.split('\n');
   const blocks: Block[] = [];
-  for (const p of paragraphs) {
-    if (p.startsWith('## ')) {
-      const headingText = p.slice(3).trim();
-      const { children, markDefs } = tokensToBlock(
-        tokenizeInline(headingText),
-        glossarySlugs,
-        refSlugs,
-      );
-      blocks.push({
-        _type: 'block',
-        _key: nextBlockKey(),
-        style: 'h2',
-        markDefs,
-        children,
-      });
-    } else if (p.startsWith('# ')) {
-      continue;
-    } else if (p.startsWith('#')) {
-      throw new Error(
-        `Heading level >h2 forbidden by package: "${p.slice(0, 60)}…"`,
-      );
-    } else if (p.startsWith('- ') || p.startsWith('* ') || /^\d+\.\s/.test(p)) {
-      throw new Error(`Lists forbidden by package §6: "${p.slice(0, 60)}…"`);
-    } else {
-      const { children, markDefs } = tokensToBlock(
-        tokenizeInline(p),
-        glossarySlugs,
-        refSlugs,
-      );
-      blocks.push({
-        _type: 'block',
-        _key: nextBlockKey(),
-        style: 'normal',
-        markDefs,
-        children,
-      });
+
+  // Paragraph buffer; flushed on blank line / heading / list / blockquote.
+  let paraBuf: string[] = [];
+  const flushPara = () => {
+    if (paraBuf.length === 0) return;
+    const text = paraBuf.join(' ').trim();
+    paraBuf = [];
+    if (!text) return;
+    const { children, markDefs } = tokensToBlock(
+      tokenizeInline(text),
+      glossarySlugs,
+      refSlugs,
+    );
+    blocks.push({
+      _type: 'block',
+      _key: nextBlockKey(),
+      style: 'normal',
+      markDefs,
+      children,
+    });
+  };
+
+  const emitInlineBlock = (
+    text: string,
+    style: 'h2' | 'h3' | 'blockquote' | 'normal',
+    listItem?: 'bullet' | 'number',
+  ) => {
+    const { children, markDefs } = tokensToBlock(
+      tokenizeInline(text),
+      glossarySlugs,
+      refSlugs,
+    );
+    const block: Block = {
+      _type: 'block',
+      _key: nextBlockKey(),
+      style,
+      markDefs,
+      children,
+    };
+    if (listItem) {
+      block.listItem = listItem;
+      block.level = 1;
     }
+    blocks.push(block);
+  };
+
+  for (const rawLine of lines) {
+    const line = rawLine.replace(/\s+$/, '');
+    if (line.trim() === '') {
+      flushPara();
+      continue;
+    }
+    if (line.startsWith('## ')) {
+      flushPara();
+      emitInlineBlock(line.slice(3).trim(), 'h2');
+      continue;
+    }
+    if (line.startsWith('### ')) {
+      flushPara();
+      emitInlineBlock(line.slice(4).trim(), 'h3');
+      continue;
+    }
+    if (line.startsWith('# ')) {
+      // Top-level title from authoring header — already stripped, but a stray
+      // single-# heading anywhere in the body is silently ignored.
+      flushPara();
+      continue;
+    }
+    if (/^#{4,}\s/.test(line)) {
+      throw new Error(
+        `Heading level >h3 forbidden: "${line.slice(0, 60)}…"`,
+      );
+    }
+    if (line.startsWith('> ')) {
+      flushPara();
+      emitInlineBlock(line.slice(2).trim(), 'blockquote');
+      continue;
+    }
+    if (line.startsWith('- ') || line.startsWith('* ')) {
+      flushPara();
+      emitInlineBlock(line.slice(2).trim(), 'normal', 'bullet');
+      continue;
+    }
+    const numberedMatch = line.match(/^\d+\.\s+(.*)$/);
+    if (numberedMatch) {
+      flushPara();
+      emitInlineBlock(numberedMatch[1].trim(), 'normal', 'number');
+      continue;
+    }
+    paraBuf.push(line);
   }
+  flushPara();
+
   return blocks;
 }
 

@@ -164,7 +164,14 @@ async function seedGlossary(docs: Doc[]) {
   }
 }
 
-async function filterExistingRefs(refs: RefEntry[]): Promise<RefEntry[]> {
+// Resolve refs by `_id` first; for any unresolved, fall back to a slug-current
+// lookup against the matching document type and rewrite the `_ref` to the live
+// `_id`. This handles the legacy case where Phase-5 docs were seeded with UUID
+// `_id`s and slug-form refs from the package would otherwise be filtered out.
+async function filterExistingRefs(
+  refs: RefEntry[],
+  fallback?: { type: string; refPrefix: string },
+): Promise<RefEntry[]> {
   if (refs.length === 0) return refs;
   const ids = refs.map((r) => r._ref);
   const existing = await client.fetch<string[]>(
@@ -172,7 +179,26 @@ async function filterExistingRefs(refs: RefEntry[]): Promise<RefEntry[]> {
     { ids },
   );
   const existingSet = new Set(existing);
-  return refs.filter((r) => existingSet.has(r._ref));
+  const resolved: RefEntry[] = [];
+  for (const r of refs) {
+    if (existingSet.has(r._ref)) {
+      resolved.push(r);
+      continue;
+    }
+    if (fallback) {
+      // Treat the unresolved `_ref` as `<refPrefix><slug>` and look up by
+      // slug.current. Handles legacy Phase-5 docs seeded with UUID `_id`s.
+      const slugCandidate = r._ref.replace(new RegExp(`^${fallback.refPrefix}`), '');
+      const liveId = await client.fetch<string | null>(
+        `*[_type == $type && slug.current == $slug][0]._id`,
+        { type: fallback.type, slug: slugCandidate },
+      );
+      if (liveId) {
+        resolved.push({ ...r, _ref: liveId });
+      }
+    }
+  }
+  return resolved;
 }
 
 async function seedArticles(docs: Doc[]) {
@@ -187,7 +213,7 @@ async function seedArticles(docs: Doc[]) {
     // later to backfill the relationship once the target exists.
     if (article.relatedArticles && article.relatedArticles.length > 0) {
       const before = article.relatedArticles.length;
-      article.relatedArticles = await filterExistingRefs(article.relatedArticles);
+      article.relatedArticles = await filterExistingRefs(article.relatedArticles, { type: 'article', refPrefix: 'article-' });
       const dropped = before - article.relatedArticles.length;
       if (dropped > 0) {
         console.log(
@@ -198,7 +224,7 @@ async function seedArticles(docs: Doc[]) {
     }
     if (article.relatedProcedures && article.relatedProcedures.length > 0) {
       const before = article.relatedProcedures.length;
-      article.relatedProcedures = await filterExistingRefs(article.relatedProcedures);
+      article.relatedProcedures = await filterExistingRefs(article.relatedProcedures, { type: 'procedurePage', refPrefix: 'procedure-' });
       const dropped = before - article.relatedProcedures.length;
       if (dropped > 0) {
         console.log(
