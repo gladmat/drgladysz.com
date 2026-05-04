@@ -12,16 +12,25 @@
 // references.
 interface Props {
   body?: string;
+  // Use bodyHtml when the paragraph contains inline markup (e.g. <em> around
+  // foreign-language terms per editorial convention #2). Mirrors the
+  // titleHtml / leadHtml convention used in PublicationsTeaser and
+  // CredentialsHero. bodyHtml takes precedence over body if both are passed.
+  bodyHtml?: string;
   bodyMaxWidth?: string;
 }
 
-const { body, bodyMaxWidth = '760px' } = Astro.props;
+const { body, bodyHtml, bodyMaxWidth = '760px' } = Astro.props;
 ---
 <section class="standfirst-section">
   <div class="standfirst-inner">
     <div class="standfirst-grid" style={`--standfirst-body-max: ${bodyMaxWidth}`}>
       <div class="standfirst-body">
-        {body ? <p>{body}</p> : <slot />}
+        {bodyHtml
+          ? <p set:html={bodyHtml} />
+          : body
+            ? <p>{body}</p>
+            : <slot />}
       </div>
       <aside class="standfirst-aside">
         <slot name="aside">
