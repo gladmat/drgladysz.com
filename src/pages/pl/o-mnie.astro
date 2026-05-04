@@ -1,0 +1,253 @@
+---
+// src/pages/pl/o-mnie.astro
+//
+// Polish About page (Strona O mnie). Locked content from
+// 01-brand-system/polish content/drgladysz-content-pl-master-v0_3.md.
+// Independent Polish composition per Decision #13. Editorial register:
+// Decision #41 (third-person institutional voice across PL site) — except
+// Sekcja 6 ("Poza salą operacyjną") which uses first person per
+// Decision #54 (single locked exception, personal content register).
+//
+// Italics convention #2: foreign-language terms italicised on first
+// occurrence per page, then unitalicised. Per-page italics:
+// Oberarzt, Handchirurgie, Surgical Common Trunk, Facharzt, ambient,
+// limb salvage, JMIR AI, European Burn Journal, Pseudomonas aeruginosa.
+//
+// Photo placements per Decision-#41 photography note (PL pages mirror EN):
+// hero img-14, photo break between Sekcja 2 and 3 = img-08,
+// photo break before Sekcja 4 = img-19.
+import SiteLayout from '@/layouts/SiteLayout.astro';
+import AboutHero from '@/components/AboutHero.astro';
+import AboutSection from '@/components/AboutSection.astro';
+import PhotoBreak from '@/components/PhotoBreak.astro';
+import { IMAGE_SIZES_HERO_SPLIT } from '@/lib/image-config';
+import img14 from '@/assets/img/img-14.jpg';
+import img08 from '@/assets/img/img-08.jpg';
+import img19 from '@/assets/img/img-19.jpg';
+
+// Person JSON-LD — PL variant. honorificSuffix retains FEBOPRAS, FEBHS
+// (the prenominal `lek.` belongs in the footer identity column per
+// Decision #40, not in JSON-LD honorificSuffix). jobTitle in Polish.
+const personJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Physician',
+  '@id': 'https://drgladysz.com/pl/o-mnie/#person',
+  name: 'Mateusz Gładysz',
+  honorificSuffix: 'FEBOPRAS, FEBHS',
+  jobTitle: 'Konsultant chirurgii plastycznej i chirurgii ręki',
+  email: 'office@drgladysz.com',
+  url: 'https://drgladysz.com/pl/o-mnie/',
+  medicalSpecialty: ['PlasticSurgery'],
+  knowsLanguage: ['pl', 'en', 'de'],
+  workLocation: {
+    '@type': 'Hospital',
+    name: 'Waikato Hospital',
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: 'Hamilton',
+      addressCountry: 'NZ',
+    },
+  },
+  alumniOf: [
+    { '@type': 'CollegeOrUniversity', name: 'Warszawski Uniwersytet Medyczny' },
+    { '@type': 'CollegeOrUniversity', name: 'Universitätsspital Zürich' },
+    { '@type': 'CollegeOrUniversity', name: 'Medizinische Hochschule Hannover' },
+  ],
+  sameAs: [
+    'https://orcid.org/0009-0009-2380-4056',
+    'https://www.linkedin.com/in/mateuszgladysz',
+  ],
+};
+---
+<SiteLayout
+  title="O mnie — Mateusz Gładysz, lek."
+  description="Konsultant chirurgii plastycznej i chirurgii ręki w Waikato Hospital. Droga szkoleniowa: Warszawa, Zurych, Hannover, Perth, Aarau. Specjalista chirurgii plastycznej (FEBOPRAS), specjalista chirurgii ręki (FEBHS)."
+  locale="pl"
+  alternateUrl="/en/about/"
+  heroPreload={{ src: img14, sizes: IMAGE_SIZES_HERO_SPLIT }}
+  jsonLd={personJsonLd}
+>
+  <AboutHero
+    photo={img14}
+    photoAlt="Mateusz Gładysz w gabinecie z plakatami anatomicznymi"
+    eyebrow="O mnie"
+    lead="Konsultant chirurgii plastycznej i chirurgii ręki w Waikato Hospital w Hamilton — z drogą szkoleniową prowadzącą przez Szwajcarię, Niemcy, Australię i Nową Zelandię."
+  />
+
+  <section class="opening-narrative">
+    <div class="opening-inner">
+      <div class="opening-layout">
+        <div class="opening-num">§ 01</div>
+        <div class="opening-main">
+          <div class="opening-narrow">
+            <p>
+              Mateusz Gładysz jest chirurgiem plastycznym i chirurgiem ręki — konsultantem w Waikato Hospital w Hamilton, w Nowej Zelandii. Droga szkoleniowa prowadząca przez Szwajcarię, Niemcy, Australię i Nową Zelandię ukształtowała praktykę kliniczną opartą na mikrochirurgii rekonstrukcyjnej, chirurgii ręki oraz chirurgicznym leczeniu czerniaka i zaawansowanych nowotworów skóry. Najbardziej wymagająca — i najbardziej warta podejmowania — jest praca na styku tego, czego potrzebuje pacjent, tego, co jest chirurgicznie możliwe, i tego, co jest klinicznie rozsądne.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <AboutSection number="§ 02" label="Praktyka" heading="Obszary praktyki">
+    <Fragment slot="aside">
+      <span class="aside-num">Podspecjalizacje</span>
+      <ul class="aside-list">
+        <li>Chirurgia ręki</li>
+        <li>Mikrochirurgia rekonstrukcyjna</li>
+        <li>Chirurgia nowotworów skóry</li>
+      </ul>
+    </Fragment>
+    <p>
+      Po ukończeniu specjalizacji z chirurgii plastycznej w Medizinische Hochschule Hannover dalsze szkolenie zawodowe Mateusza Gładysza skupiło się na dwóch obszarach: mikrochirurgii rekonstrukcyjnej oraz chirurgii ręki. Szkolenie mikrochirurgiczne odbył w trakcie rocznego stażu w Perth — Perth International Plastic and Reconstructive Fellowship, Sir Charles Gairdner Hospital. W latach 2023–2025 pracował jako <em>Oberarzt</em> w Kantonsspital Aarau, w Klinice Chirurgii Plastycznej i Chirurgii Ręki kierowanej przez prof. J. Plock, w zespole <em>Handchirurgie</em> pod kierunkiem PD Dr F. Früh. Lata w Aarau zwieńczył egzamin Europejskiej Rady Chirurgii Ręki (FEBHS).
+    </p>
+    <p>
+      Obecna praktyka kliniczna obejmuje obie specjalności. Główne obszary pracy to chirurgia ręki oraz mikrochirurgia rekonstrukcyjna w pełnym zakresie. W obrębie praktyki rekonstrukcyjnej szczególne miejsce zajmują współpraca ortoplastyczna oraz rekonstrukcje onkologiczne — w tym chirurgiczne leczenie czerniaka i zaawansowanych nowotworów skóry. W Waikato Hospital jest odpowiedzialny za współpracę ortoplastyczną w departamencie oraz pełni funkcję przewodniczącego wielospecjalistycznego zespołu ds. czerniaka i nowotworów skóry wysokiego ryzyka.
+    </p>
+  </AboutSection>
+
+  <PhotoBreak
+    src={img08}
+    alt="Taca z narzędziami chirurgicznymi, rączki ze stali i mosiądzu"
+    aspect="16/9"
+  />
+
+  <AboutSection number="§ 03" label="Droga" heading="Wykształcenie i droga szkoleniowa">
+    <Fragment slot="aside">
+      <span class="aside-num">Chronologia</span>
+      <ul class="aside-list">
+        <li>2008–14 Warszawa</li>
+        <li>2014–15 Warszawa (staż)</li>
+        <li>2015–17 Zurych</li>
+        <li>2018–22 Hannover</li>
+        <li>2022 Seul</li>
+        <li>2022–23 Perth</li>
+        <li>2023–25 Aarau</li>
+        <li>2025– Hamilton</li>
+      </ul>
+    </Fragment>
+    <p>
+      Studia medyczne ukończył na Warszawskim Uniwersytecie Medycznym w latach 2008–2014, uzyskując dyplom lekarza w 2014 roku. Staż podyplomowy odbył w Wojskowym Instytucie Medycznym w Warszawie w okresie od października 2014 do października 2015.
+    </p>
+    <p>
+      Wstępne szkolenie chirurgiczne kontynuował w Universitätsspital Zürich, dołączając w listopadzie 2015 roku do programu <em>Surgical Common Trunk</em> w Klinice Chirurgii i Transplantologii pod kierunkiem prof. P.-A. Clavien. Dwa lata w Zurychu obejmowały rotacje z chirurgii ogólnej, medycyny ratunkowej i chirurgii klatki piersiowej, zwieńczone zdaniem Surgical Basic Examination w listopadzie 2016 roku. Po zakończeniu szkolenia w Zurychu pod koniec 2017 roku, w marcu 2018 roku — po uzyskaniu niemieckiej licencji lekarskiej — rozpoczął specjalizację z chirurgii plastycznej w Medizinische Hochschule Hannover.
+    </p>
+    <p>
+      Lata w Hannoverze stanowiły zasadniczy okres szkolenia z chirurgii plastycznej. Pracował w Klinice Chirurgii Plastycznej, Estetycznej, Chirurgii Ręki i Rekonstrukcyjnej w Medizinische Hochschule Hannover pod kierownictwem prof. P. M. Vogt, we wszystkich obszarach chirurgii plastycznej. Egzamin Europejskiej Rady Chirurgii Plastycznej, Rekonstrukcyjnej i Estetycznej (FEBOPRAS) zdał w listopadzie 2021 roku, a niemiecki tytuł <em>Facharzt</em> z chirurgii plastycznej, rekonstrukcyjnej i estetycznej uzyskał w czerwcu 2022 roku.
+    </p>
+    <p>
+      W sierpniu 2022 roku odbył staż u prof. J. P. Hong w Asan Medical Center w Seulu. Od września 2022 do lipca 2023 roku był stypendystą Perth International Plastic and Reconstructive Fellowship w Sir Charles Gairdner Hospital w Australii Zachodniej, w klinice kierowanej przez Mr. R. Papini — koordynatorem fellowshipu i głównym nauczycielem mikrochirurgii był Mr. D. Taylor.
+    </p>
+    <p>
+      Po powrocie do Szwajcarii, w październiku 2023 roku, dołączył do zespołu chirurgii ręki w Kantonsspital Aarau, w Klinice Chirurgii Plastycznej i Chirurgii Ręki. W szwajcarskim systemie Handchirurgie jest odrębną specjalizacją, równoważną z chirurgią plastyczną; lata w Aarau pełniły funkcję fellowshipu z chirurgii ręki. Egzamin Europejskiej Rady Chirurgii Ręki (FEBHS), wymagający co najmniej rocznego okresu pracy po uzyskaniu specjalizacji wyłącznie w zakresie chirurgii ręki, zdał w czerwcu 2025 roku.
+    </p>
+    <p>
+      Od września 2025 roku pracuje jako konsultant w Klinice Chirurgii Plastycznej w Waikato Hospital w Hamilton, w Nowej Zelandii.
+    </p>
+  </AboutSection>
+
+  <PhotoBreak
+    src={img19}
+    alt="Mateusz Gładysz przy drzwiach francuskich, antracytowa marynarka, dłonie przy klapach"
+    aspect="16/9"
+    position="center 30%"
+  />
+
+  <AboutSection number="§ 04" label="Praca naukowa" heading="Praca naukowa i akademicka">
+    <Fragment slot="aside">
+      <span class="aside-num">Wybrane publikacje</span>
+      <ul class="aside-list">
+        <li>JMIR AI · 2026</li>
+        <li>European Burn Journal · 2022</li>
+      </ul>
+    </Fragment>
+    <p>
+      Praca doktorska, którą przygotowuje na Universität Zürich, dotyczy klinicznej dokumentacji medycznej wspomaganej sztuczną inteligencją w wielojęzycznym środowisku ochrony zdrowia. Promotorem rozprawy jest prof. P. Giovanoli z UZH; leżąca u jej podstaw praca kliniczna była prowadzona w Kantonsspital Aarau pod akademicką opieką prof. J. Plock — w okresie pracy w Aarau opracowywano i oceniano tam systemy AI do automatycznej dokumentacji. Badanie proof-of-concept porównywało cztery sposoby prowadzenia dokumentacji klinicznej, w tym dyktowanie wspomagane sztuczną inteligencją w trybie <em>ambient</em>, z naciskiem na to, jak lekarze nieposługujący się językiem niemieckim jako ojczystym radzą sobie z obciążeniem dokumentacyjnym w szwajcarskim szpitalu trzeciego poziomu referencyjnego. Wyniki opublikowano w <em>JMIR AI</em> w 2026 roku.
+    </p>
+    <p>
+      Wcześniejsza praca kliniczna z lat w Hannoverze obejmowała opis przypadku w <em>European Burn Journal</em> dotyczący zastosowania matrycy NovoSorb BTM jako pośredniej osłony rany w przewlekłym zakażeniu <em>Pseudomonas aeruginosa</em> — przypadku <em>limb salvage</em>, który pokazał, w jakich sytuacjach skórne matryce regeneracyjne mogą poszerzać opcje rekonstrukcyjne w silnie skażonych ranach.
+    </p>
+    <p>
+      Pełny zapis dorobku znajduje się w archiwum <a href="/pl/publikacje/">publikacji</a>.
+    </p>
+  </AboutSection>
+
+  <AboutSection number="§ 05" label="Podejście" heading="Języki i podejście">
+    <Fragment slot="aside">
+      <span class="aside-num">Języki konsultacji</span>
+      <ul class="aside-list">
+        <li>Polski</li>
+        <li>English</li>
+        <li>Deutsch</li>
+      </ul>
+    </Fragment>
+    <p>
+      Konsultacje prowadzone są w językach polskim, angielskim i niemieckim. Praca w pięciu różnych systemach ochrony zdrowia — polskim, szwajcarskim, niemieckim, australijskim i nowozelandzkim — ukształtowała praktykę kliniczną, która łatwo dopasowuje się do nowych środowisk i struktur. Ten sam problem chirurgiczny rozwiązuje się inaczej w różnych systemach; bezpośrednie doświadczenie tych różnic czyni leżącą u ich podstaw umiejętność oceny klinicznej łatwiejszą do przeniesienia między ośrodkami.
+    </p>
+  </AboutSection>
+
+  <AboutSection number="§ 06" label="Poza pracą" heading="Poza salą operacyjną" class="last">
+    <Fragment slot="aside">
+      <span class="aside-num">Poza pracą</span>
+      <ul class="aside-list">
+        <li>Rodzina</li>
+        <li>Wiosłowanie</li>
+        <li>Pianino</li>
+        <li>Języki</li>
+      </ul>
+    </Fragment>
+    <p>
+      Jestem ojcem trójki małych dzieci i to one nadają kształt większości czasu poza pracą. Wiosłowanie na ergometrze jest moją regularną poranną praktyką — zwykle zanim zacznie się reszta dnia. Razem z dziećmi uczę się gry na pianinie i kontynuuję naukę języków.
+    </p>
+  </AboutSection>
+</SiteLayout>
+
+<style>
+  /* Opening narrative — same scaffold as /en/about (§ 01 prefix in left
+     margin, narrow centered paragraph, top/bottom rule). Style is shared
+     between both pages — the only divergence from /en/about is the locked
+     PL prose (Decision #50: no oxblood-italic philosophical statement on
+     the PL About; PL Sekcja 1 is three factual sentences, no <span class="accent">). */
+  .opening-narrative {
+    padding-block: clamp(60px, 10vh, 120px);
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    background: var(--bg);
+  }
+  .opening-inner {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding-inline: clamp(20px, 5vw, 80px);
+  }
+  .opening-layout {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+  @media (max-width: 600px) {
+    .opening-layout { grid-template-columns: 1fr; gap: 12px; }
+  }
+  .opening-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    padding-top: 10px;
+    border-top: 2px solid var(--accent);
+  }
+  .opening-narrow {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  .opening-narrative p {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(20px, 2vw, 26px);
+    line-height: 1.5;
+    color: var(--ink);
+    margin: 0;
+  }
+
+  :global(.about-section.last) { border-bottom: none; }
+</style>

@@ -37,10 +37,6 @@ export default defineConfig({
       filter: (page) => {
         const path = new URL(page).pathname;
         if (path.startsWith('/studio/')) return false;
-        // The /pl/ holding page is excluded until the full Polish site
-        // ships. Other /pl/* routes (legal, glossary, calculators) stay in
-        // the sitemap because they have real Polish content.
-        if (path === '/pl/' || path === '/pl') return false;
         return true;
       },
     }),

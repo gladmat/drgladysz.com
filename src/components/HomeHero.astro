@@ -31,6 +31,8 @@ import {
 interface Props {
   photo: ImageMetadata;
   photoAlt: string;
+  credentials?: string;
+  positioning?: string;
   ctaHref?: string;
   ctaLabel?: string;
 }
@@ -38,7 +40,9 @@ interface Props {
 const {
   photo,
   photoAlt,
-  ctaHref = '/en/contact#form',
+  credentials = 'MD · FEBOPRAS · FEBHS',
+  positioning = 'Surgical care for the hand and reconstructive microsurgery — European double board-certified plastic and hand surgeon, with clinical practice across Switzerland, Germany, Australia, and New Zealand.',
+  ctaHref = '/en/contact/#form',
   ctaLabel = 'Make an appointment',
 } = Astro.props;
 ---
@@ -46,9 +50,7 @@ const {
   <div class="hero-inner">
     <div class="hero-grid">
       <div class="hero-text">
-        <p class="hero-credentials">
-          MD&nbsp;·&nbsp;FEBOPRAS&nbsp;·&nbsp;FEBHS
-        </p>
+        <p class="hero-credentials" set:html={credentials.replace(/ · /g, '&nbsp;·&nbsp;')} />
         <h1 class="hero-name">
           <span class="cap">M</span>ateusz <span class="second"><span class="cap">G</span>ładysz</span>
         </h1>
@@ -57,9 +59,7 @@ const {
             <slot name="qualifications" />
           </div>
         )}
-        <p class="hero-positioning">
-          Surgical care for the hand and reconstructive microsurgery — European double board-certified plastic and hand surgeon, with clinical practice across Switzerland, Germany, Australia, and New Zealand.
-        </p>
+        <p class="hero-positioning">{positioning}</p>
         <a href={ctaHref} class="hero-cta">
           <span>{ctaLabel}</span>
           <span class="arrow" aria-hidden="true">→</span>

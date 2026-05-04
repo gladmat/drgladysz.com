@@ -1,44 +1,194 @@
 ---
 // src/pages/pl/index.astro
 //
-// Holding page for the Polish locale. Lands /pl/ visitors while the native
-// Polish composition session for the full site (home, about, contact,
-// publications, procedures index, blog index) remains pending. Surfaces
-// the routes that ARE live in Polish: 5 legal pages, glossary, calculators.
+// Polish home page (Strona główna). Locked content from
+// 01-brand-system/polish content/drgladysz-content-pl-master-v0_3.md
+// (May 2026). Independent Polish composition per Decision #13 — not
+// translation. Editorial conventions: Decisions #39–#62 (brand spec v1.10).
 //
-// `alternateUrl="/en/"` keeps the language switcher useful in the
-// /pl/ → /en/ direction. Sitemap excludes this page (see astro.config.mjs).
+// Hero photo: img-20 (same as EN home, post-v1.9 promotion). Hero
+// credentials line drops the prenominal `MD` per Decision #40
+// (PL convention: post-nominals only on hero, prenominal `lek.` reserved
+// for footer identity column).
 import SiteLayout from '@/layouts/SiteLayout.astro';
-import ContentPage from '@/components/ContentPage.astro';
+import HomeHero from '@/components/HomeHero.astro';
+import QualificationsBlock from '@/components/QualificationsBlock.astro';
+import Standfirst from '@/components/Standfirst.astro';
+import SpecialtyBlocks from '@/components/SpecialtyBlocks.astro';
+import PhotoBreak from '@/components/PhotoBreak.astro';
+import PublicationsTeaser from '@/components/PublicationsTeaser.astro';
+import ArticlesTeaser from '@/components/ArticlesTeaser.astro';
+import { IMAGE_SIZES_HERO_SPLIT } from '@/lib/image-config';
+import img20 from '@/assets/img/img-20.jpg';
+import img02 from '@/assets/img/img-02.jpg';
+
+// Akapit standfirst paragraph (Sekcja 2). ~145 słów. Italics: Oberarzt
+// (pierwsze wystąpienie na stronie). HTML <em> wokół wyrażeń obcojęzycznych
+// per editorial convention #2 — italics tylko przy pierwszym wystąpieniu.
+const standfirstBody =
+  'Praktyka obejmuje chirurgię ręki, mikrochirurgię rekonstrukcyjną — w tym rekonstrukcje ortoplastyczne kończyny dolnej, rekonstrukcje piersi z wykorzystaniem wolnych płatów oraz rekonstrukcje w obrębie głowy i szyi we współpracy z laryngologami i chirurgami onkologicznymi — a także chirurgiczne leczenie czerniaka i zaawansowanych nowotworów skóry. W Waikato Hospital w Hamilton Mateusz Gładysz przewodniczy wielospecjalistycznemu zespołowi ds. czerniaka i nowotworów skóry wysokiego ryzyka. Wstępne szkolenie chirurgiczne odbył w Universitätsspital Zürich, specjalizację z chirurgii plastycznej ukończył w Medizinische Hochschule Hannover, a Perth International Plastic and Reconstructive Fellowship odbył w Sir Charles Gairdner Hospital w Australii Zachodniej. Szkolenie z chirurgii ręki ukończył jako <em>Oberarzt</em> w Kantonsspital Aarau, pod kierunkiem prof. J. Plock. Obecnie pracuje jako konsultant w Waikato Hospital w Hamilton, w Nowej Zelandii. Praca doktorska, którą przygotowuje na Universität Zürich, dotyczy klinicznych zastosowań sztucznej inteligencji w chirurgii.';
+
+// Trzy obszary praktyki — Sekcja 3. Per Decision #42 (anatomical scope
+// clarification): Block 1 restricted to "ręka i nadgarstek" (excludes
+// upper limb proximal to distal forearm). Slugs ASCII per convention #13.
+const specialties = [
+  {
+    heading: 'Chirurgia ręki',
+    href: '/pl/zabiegi/chirurgia-reki/#chirurgia-reki',
+    body:
+      'Operacyjne leczenie ręki i nadgarstka — w pełnym zakresie urazów oraz schorzeń wymagających leczenia planowego. Wśród urazów: złamania palców, ręki i nadgarstka — w tym złamania kości łódeczkowatej, rany cięte z uszkodzeniem ścięgien zginaczy lub prostowników, urazy nerwów obwodowych, urazy złożone dłoni. Wśród schorzeń planowych: zespół cieśni nadgarstka i inne neuropatie uciskowe, choroba Dupuytrena, palec strzelający, choroba de Quervaina, zwyrodnienie podstawy kciuka, ganglion nadgarstka.',
+  },
+  {
+    heading: 'Mikrochirurgia rekonstrukcyjna',
+    href: '/pl/zabiegi/mikrochirurgia-rekonstrukcyjna/#mikrochirurgia-rekonstrukcyjna',
+    body:
+      'Rekonstrukcja tkanek miękkich i ubytków złożonych — po urazach, resekcjach onkologicznych, przewlekłych ranach i powikłaniach radioterapii. Bieżące obszary praktyki obejmują rekonstrukcje ortoplastyczne kończyny dolnej, rekonstrukcje piersi z wykorzystaniem wolnych płatów, rekonstrukcje w obrębie głowy i szyi we współpracy z laryngologami i chirurgami onkologicznymi, a także replantacje i rekonstrukcje mikrochirurgiczne ręki — w tym rekonstrukcje nerwów obwodowych oraz wolne płaty do pokrycia ubytków po urazach złożonych dłoni.',
+  },
+  {
+    heading: 'Chirurgia nowotworów skóry',
+    href: '/pl/zabiegi/nowotwory-skory/#nowotwory-skory',
+    body:
+      'Operacyjne leczenie czerniaka i nieczerniakowych nowotworów skóry wysokiego ryzyka — od wycięcia diagnostycznego po szerokie wycięcie miejscowe, biopsję węzła wartowniczego oraz rekonstrukcję ubytków po resekcjach onkologicznych. Wolumen i specyfika praktyki w Nowej Zelandii — kraju o jednym z najwyższych wskaźników zachorowalności na czerniaka na świecie — wraz z funkcją przewodniczącego wielospecjalistycznego zespołu w Waikato Hospital wyznaczają obecny zakres pracy klinicznej w tym obszarze.',
+  },
+];
+
+// Wybrane publikacje — Sekcja 4. Italics na pierwsze wystąpienie czasopism
+// (JMIR AI, European Burn Journal) i Pseudomonas aeruginosa, zgodnie z
+// editorial convention #2.
+const publications = [
+  {
+    titleHtml:
+      'AI-Assisted Medical Documentation in a Multilingual Swiss Healthcare System',
+    authors: [
+      'Mateusz Gładysz',
+      'Fabrizio Fiumedinisi',
+      'Felice Burn',
+      'Nikki Rommers',
+      'Pietro Giovanoli',
+      'Jan Alexander Plock',
+    ],
+    authorsBoldIndex: 0,
+    journal: 'JMIR AI',
+    year: 2026,
+    doi: '10.2196/77351',
+    doiUrl: 'https://doi.org/10.2196/77351',
+  },
+  {
+    titleHtml:
+      'Limb Salvage with Acellular Dermal Matrix Template in Persistent <em>Pseudomonas aeruginosa</em> Burn Infection',
+    authors: [
+      'Mateusz Gładysz',
+      'Vincent März',
+      'Stefan Ruemke',
+      'Evgenii Rubalskii',
+      'Peter Maria Vogt',
+      'Nicco Krezdorn',
+    ],
+    authorsBoldIndex: 0,
+    journal: 'European Burn Journal',
+    year: 2022,
+    doi: '10.3390/ebj3010004',
+    doiUrl: 'https://doi.org/10.3390/ebj3010004',
+  },
+];
+
+// Wybrane artykuły — Sekcja 5. Tylko Karta 1 — pozostałe sloty
+// puste do czasu kompozycji kolejnych polskich artykułów.
+const articles = [
+  {
+    category: 'Informacje dla pacjenta',
+    title: 'Zespół cieśni nadgarstka — przewodnik dla pacjenta',
+    href: '/pl/blog/zespol-ciesni-nadgarstka/',
+    body:
+      'Zespół cieśni nadgarstka, znany również jako zespół kanału nadgarstka (ICD-10: G56.0), powoduje drętwienie, mrowienie i ból ręki na skutek ucisku nerwu pośrodkowego w obrębie nadgarstka. Niniejszy artykuł omawia objawy, diagnostykę oraz wskazania do leczenia operacyjnego.',
+  },
+];
+
+// JSON-LD: Physician schema for the Polish home page. Polish-language
+// jobTitle. honorificSuffix drops `MD` per Decision #40 (PL hero credentials
+// convention). knowsLanguage retains all three; medicalSpecialty in EN
+// per schema.org enum (the property values are not localised).
+const personJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Physician',
+  '@id': 'https://drgladysz.com/#person',
+  name: 'Mateusz Gładysz',
+  honorificSuffix: 'FEBOPRAS, FEBHS',
+  jobTitle: 'Konsultant chirurgii plastycznej i chirurgii ręki',
+  email: 'office@drgladysz.com',
+  url: 'https://drgladysz.com/pl/',
+  medicalSpecialty: ['PlasticSurgery'],
+  worksFor: { '@type': 'Hospital', name: 'Waikato Hospital' },
+  alumniOf: [
+    { '@type': 'CollegeOrUniversity', name: 'Warszawski Uniwersytet Medyczny' },
+    { '@type': 'CollegeOrUniversity', name: 'Universitätsspital Zürich' },
+    { '@type': 'CollegeOrUniversity', name: 'Medizinische Hochschule Hannover' },
+  ],
+  knowsLanguage: ['pl', 'en', 'de'],
+  sameAs: [
+    'https://orcid.org/0009-0009-2380-4056',
+    'https://www.linkedin.com/in/mateuszgladysz',
+  ],
+};
 ---
 <SiteLayout
-  title="Strona w przygotowaniu — Mateusz Gładysz, MD"
-  description="Polskojęzyczna wersja serwisu jest w trakcie redakcji. W międzyczasie dostępna jest pełna wersja angielska oraz wybrane strony polskie."
+  title="Mateusz Gładysz, lek., FEBOPRAS, FEBHS — chirurg plastyczny, chirurg ręki"
+  description="Operacyjne leczenie ręki i nadgarstka, mikrochirurgia rekonstrukcyjna, chirurgia nowotworów skóry. Chirurg plastyczny i chirurg ręki z dyplomami europejskimi (FEBOPRAS, FEBHS)."
   locale="pl"
   alternateUrl="/en/"
+  heroPreload={{ src: img20, sizes: IMAGE_SIZES_HERO_SPLIT }}
+  jsonLd={personJsonLd}
 >
-  <ContentPage
-    label="Polski"
-    title="Strona w przygotowaniu"
-    standfirst="Polskojęzyczna wersja serwisu jest obecnie w trakcie redakcji. Pełna treść zostanie udostępniona po zakończeniu prac autorskich. Aktualne informacje znajdują się w wersji angielskiej oraz na wymienionych poniżej stronach polskich."
+  <HomeHero
+    photo={img20}
+    photoAlt="Mateusz Gładysz w antracytowej marynarce, ręce skrzyżowane"
+    credentials="FEBOPRAS · FEBHS"
+    positioning="Chirurg plastyczny, chirurg ręki, mikrochirurgia rekonstrukcyjna — z doświadczeniem klinicznym w Szwajcarii, Niemczech, Australii i Nowej Zelandii."
+    ctaHref="/pl/kontakt/#form"
+    ctaLabel="Umów wizytę"
   >
-    <h2>Wersja angielska</h2>
-    <p>Pełny serwis dostępny jest pod adresem <a href="/en/">drgladysz.com/en</a> — strona główna, biografia zawodowa, opisy procedur, wykaz publikacji oraz dane kontaktowe.</p>
+    <QualificationsBlock slot="qualifications" items={[
+      { abbr: 'FEBOPRAS', expansion: 'Fellow of the European Board of Plastic, Reconstructive and Aesthetic Surgery' },
+      { abbr: 'FEBHS', expansion: 'Fellow of the European Board of Hand Surgery' },
+    ]} />
+  </HomeHero>
 
-    <h2>Strony dostępne po polsku</h2>
-    <h3>Dokumenty prawne</h3>
-    <ul>
-      <li><a href="/pl/nota-prawna">Nota prawna</a></li>
-      <li><a href="/pl/polityka-prywatnosci">Polityka prywatności</a></li>
-      <li><a href="/pl/zastrzezenie-medyczne">Zastrzeżenie medyczne</a></li>
-      <li><a href="/pl/zgoda">Zgoda</a></li>
-      <li><a href="/pl/uprawnienia">Uprawnienia</a></li>
-    </ul>
+  <Standfirst body={standfirstBody}>
+    <Fragment slot="aside">
+      <span class="aside-num">Obszary praktyki</span>
+      <ul class="aside-list">
+        <li>Chirurgia ręki</li>
+        <li>Mikrochirurgia rekonstrukcyjna</li>
+        <li>Chirurgia nowotworów skóry</li>
+      </ul>
+    </Fragment>
+  </Standfirst>
 
-    <h3>Zasoby kliniczne</h3>
-    <ul>
-      <li><a href="/pl/slowniczek">Słowniczek pojęć medycznych</a></li>
-      <li><a href="/pl/kalkulatory">Kalkulatory kliniczne</a></li>
-    </ul>
-  </ContentPage>
+  <SpecialtyBlocks
+    label="Obszary praktyki"
+    heading="Trzy obszary praktyki"
+    blocks={specialties}
+  />
+
+  <PhotoBreak
+    src={img02}
+    alt="Dłonie w rękawiczkach trzymające delikatne narzędzia chirurgiczne"
+    aspect="16/9"
+  />
+
+  <PublicationsTeaser
+    label="Praca naukowa"
+    heading="Wybrane publikacje"
+    publications={publications}
+    ctaLabel="Wszystkie publikacje"
+    ctaHref="/pl/publikacje/"
+  />
+
+  <ArticlesTeaser
+    label="Baza wiedzy"
+    heading="Wybrane artykuły"
+    articles={articles}
+    ctaLabel="Wszystkie artykuły"
+    ctaHref="/pl/blog/"
+  />
 </SiteLayout>

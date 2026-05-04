@@ -1,13 +1,24 @@
 ---
-// src/pages/en/contact.astro
+// src/pages/pl/kontakt.astro
 //
-// Implements the locked Contact page draft v1.0 (see
-// 01-brand-system/drgladysz-locked-content-contact-v1.0.md). Five §-numbered
-// sections — Practice / Referrals / Enquiries / Form / Privacy. The form
-// submits to /api/contact (Resend-backed, server-side validated, honeypot
-// + rate-limited). Compliance posture per draft Section "Compliance
-// considerations": no Waikato Hospital email, no phone, no address;
-// patient flow routes back to GP-referral pathway.
+// Polish Contact page (Strona Kontakt). Locked content from
+// 01-brand-system/polish content/drgladysz-content-pl-master-v0_3.md
+// Sekcje 1–5. Independent Polish composition per Decision #13.
+//
+// Decision #59 (Wariant A): "Dla pacjentów" handles three scenarios in
+// three paragraphs — (1) NZ patients (incl. Polish-speaking residents)
+// → GP referral; (2) acute injuries → ED; (3) patients outside NZ
+// → honest information that the site does not serve them. PL deliberately
+// diverges from the EN draft's "patient enquiries from outside NZ via form"
+// routing, which would have been misleading.
+//
+// Decision #62: full Polish RODO regulation name at first occurrence,
+// skrót RODO in parentheses; Privacy Act 2020 retained in original.
+//
+// API endpoint /api/contact is locale-agnostic; form posts identical
+// payload shape to EN. Internal enum values preserved for API back-compat
+// (professional / clinical / editorial / other) — only the user-facing
+// labels are localised.
 import SiteLayout from '@/layouts/SiteLayout.astro';
 import ContentPage from '@/components/ContentPage.astro';
 import SectionMasthead from '@/components/SectionMasthead.astro';
@@ -16,73 +27,71 @@ import { generateContactPageSchema } from '@/lib/schema';
 const siteUrl = (
   import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com'
 ).replace(/\/$/, '');
-const canonicalUrl = `${siteUrl}/en/contact/`;
+const canonicalUrl = `${siteUrl}/pl/kontakt/`;
 
 const contactPageJsonLd = generateContactPageSchema({
   url: canonicalUrl,
-  locale: 'en',
+  locale: 'pl',
   siteUrl,
+  name: 'Kontakt — Mateusz Gładysz',
 });
 ---
 <SiteLayout
-  title="Contact — Mateusz Gładysz, MD"
-  description="Contact information and referral pathway for patient enquiries, and direct correspondence for professional and academic contact."
-  locale="en"
-  alternateUrl="/pl/kontakt/"
+  title="Kontakt — Mateusz Gładysz, lek."
+  description="Formy kontaktu i ścieżki skierowań w Nowej Zelandii. Korespondencja zawodowa, akademicka, medialna oraz w sprawie wystąpień i podcastów przez formularz lub adres office@drgladysz.com."
+  locale="pl"
+  alternateUrl="/en/contact/"
   canonical={canonicalUrl}
   jsonLd={contactPageJsonLd}
 >
   <ContentPage
-    label="Contact"
-    title="Contact"
-    standfirst="This page sets out how to make contact for patient enquiries, and for professional and academic correspondence. Practice arrangements and referral pathways are described in the sections below."
+    label="Kontakt"
+    title="Kontakt"
+    standfirst="Niniejsza strona przedstawia formy kontaktu dla pacjentów oraz w korespondencji zawodowej i akademickiej. Zasady prowadzenia praktyki oraz ścieżki skierowań opisano w sekcjach poniżej."
   >
     <section class="contact-section">
       <header class="contact-section-header">
         <div class="section-num">§ 01</div>
-        <SectionMasthead label="Practice" heading="Current practice" />
+        <SectionMasthead label="Praktyka" heading="Obecna praktyka" />
       </header>
       <p>
-        Current clinical practice is at Waikato Hospital, Hamilton, New Zealand. The role covers operative care for the hand and upper extremity, microsurgical reconstruction, and the surgical management of melanoma and complex skin cancer through the Melanoma and High-Risk Skin Cancer MDT.
+        Obecna praktyka kliniczna prowadzona jest w Waikato Hospital w Hamilton, w Nowej Zelandii. Zakres pracy obejmuje chirurgię ręki, mikrochirurgię rekonstrukcyjną oraz chirurgiczne leczenie czerniaka i zaawansowanych nowotworów skóry w ramach wielospecjalistycznego zespołu ds. czerniaka i nowotworów skóry wysokiego ryzyka.
       </p>
       <p>
-        Patient care within the New Zealand public system is referral-based. New patient appointments are arranged through the regional service following GP referral, not directly through this website.
+        Opieka nad pacjentami w nowozelandzkim systemie publicznym opiera się na skierowaniach. Wizyty nowych pacjentów organizowane są przez regionalną poradnię po skierowaniu od lekarza pierwszego kontaktu (<em>General Practitioner</em>, GP), nie bezpośrednio przez tę stronę.
       </p>
     </section>
 
     <section class="contact-section">
       <header class="contact-section-header">
         <div class="section-num">§ 02</div>
-        <SectionMasthead label="Referrals" heading="For patients in New Zealand" />
+        <SectionMasthead label="Skierowania" heading="Dla pacjentów" />
       </header>
       <p>
-        If you are seeking surgical care for a hand or upper-limb condition, a soft-tissue reconstruction, or a skin-cancer concern, the appropriate first step is to see your general practitioner. The GP can then refer you into the regional hand surgery and plastic surgery service, where referrals are triaged and appointments arranged through the public system.
+        Pacjenci w Nowej Zelandii — w tym osoby polskojęzyczne mieszkające na stałe w tym kraju — uzyskują dostęp do leczenia w zakresie chirurgii ręki, rekonstrukcji tkanek miękkich oraz chirurgii nowotworów skóry przez skierowanie od lekarza pierwszego kontaktu (GP). Lekarz rodzinny kieruje pacjenta do regionalnej poradni chirurgii ręki i chirurgii plastycznej, gdzie skierowania podlegają triażowi, a wizyty są organizowane w ramach systemu publicznego.
       </p>
       <p>
-        For acute hand injuries &mdash; including suspected scaphoid fractures, tendon injuries, or significant lacerations &mdash; the appropriate pathway is the local emergency department, which arranges hand-team review where indicated. Urgent presentations are not handled through this website. In a medical emergency in New Zealand call <strong>111</strong>; in Poland and the European Union call <strong>112</strong>.
+        W przypadku ostrych urazów ręki — w tym podejrzenia złamania kości łódeczkowatej, urazów ścięgien lub ran z uszkodzeniem struktur głębokich — właściwą drogą jest miejscowy szpitalny oddział ratunkowy, który w razie wskazań organizuje konsultację zespołu chirurgii ręki. Pilne sytuacje wymagają drogi innej niż ta strona. W razie zagrożenia życia w Nowej Zelandii należy zadzwonić pod numer <strong>111</strong>; w Polsce i Unii Europejskiej pod numer <strong>112</strong>.
       </p>
       <p>
-        Private referrals follow the same first step: discuss the concern with your GP, who can direct the referral as appropriate.
+        Praktyka kliniczna prowadzona jest obecnie w Nowej Zelandii. Strona nie służy do umawiania konsultacji ani udzielania porad medycznych pacjentom mieszkającym poza Nową Zelandią.
       </p>
     </section>
 
     <section class="contact-section">
       <header class="contact-section-header">
         <div class="section-num">§ 03</div>
-        <SectionMasthead label="Enquiries" heading="Professional and academic enquiries" />
+        <SectionMasthead label="Zapytania" heading="Zapytania zawodowe i akademickie" />
       </header>
       <p>
-        Correspondence from peer clinicians, researchers, journal editors, conference organisers, and academic collaborators is handled through the form below or by email at <a class="contact-email" href="mailto:office@drgladysz.com">office@drgladysz.com</a>.
-      </p>
-      <p>
-        Patient information enquiries from outside New Zealand &mdash; including general questions about a planned consultation or a published article &mdash; can also be sent through the same form. Specific clinical advice is not provided by email; the form is for correspondence and orientation, not consultation.
+        Korespondencję od lekarzy, naukowców, redaktorów czasopism, organizatorów konferencji oraz współpracowników akademickich obsługuje formularz poniżej lub adres <a class="contact-email" href="mailto:office@drgladysz.com">office@drgladysz.com</a>. Tym samym kanałem prowadzona jest korespondencja w sprawie zaproszeń do wystąpień, wykładów, podcastów oraz innych form udziału w wydarzeniach zawodowych i edukacyjnych.
       </p>
     </section>
 
     <section class="contact-section" id="form">
       <header class="contact-section-header">
         <div class="section-num">§ 04</div>
-        <SectionMasthead label="Form" heading="Send enquiry" />
+        <SectionMasthead label="Formularz" heading="Wyślij zapytanie" />
       </header>
 
       <form
@@ -103,7 +112,7 @@ const contactPageJsonLd = generateContactPageSchema({
           />
         </div>
         <div class="field">
-          <label for="contact-name">Full name</label>
+          <label for="contact-name">Imię i nazwisko</label>
           <input
             id="contact-name"
             name="Name"
@@ -115,7 +124,7 @@ const contactPageJsonLd = generateContactPageSchema({
           />
         </div>
         <div class="field">
-          <label for="contact-from">Email address</label>
+          <label for="contact-from">Adres email</label>
           <input
             id="contact-from"
             name="Email"
@@ -126,17 +135,17 @@ const contactPageJsonLd = generateContactPageSchema({
           />
         </div>
         <div class="field">
-          <label for="contact-context">Type of enquiry</label>
+          <label for="contact-context">Rodzaj zapytania</label>
           <select id="contact-context" name="Context" required aria-required="true">
-            <option value="">Select…</option>
-            <option value="professional">Professional / academic</option>
-            <option value="clinical">Patient information</option>
-            <option value="editorial">Media or speaking</option>
-            <option value="other">Other</option>
+            <option value="">Wybierz…</option>
+            <option value="professional">Zapytanie zawodowe lub akademickie</option>
+            <option value="clinical">Informacje dla pacjenta</option>
+            <option value="editorial">Media lub wystąpienie publiczne</option>
+            <option value="other">Inne</option>
           </select>
         </div>
         <div class="field">
-          <label for="contact-subject">Subject</label>
+          <label for="contact-subject">Temat</label>
           <input
             id="contact-subject"
             name="Subject"
@@ -147,7 +156,7 @@ const contactPageJsonLd = generateContactPageSchema({
           />
         </div>
         <div class="field">
-          <label for="contact-message">Message</label>
+          <label for="contact-message">Wiadomość</label>
           <textarea
             id="contact-message"
             name="Message"
@@ -166,15 +175,15 @@ const contactPageJsonLd = generateContactPageSchema({
             aria-required="true"
           />
           <label for="contact-consent">
-            I consent to the processing of the personal data submitted in this form for the purpose of replying to my enquiry. I have read the <a href="/en/privacy">Privacy Policy</a>.
+            Wyrażam zgodę na przetwarzanie danych osobowych przesłanych w formularzu w celu udzielenia odpowiedzi na zapytanie. Zapoznałem(am) się z <a href="/pl/polityka-prywatnosci/">Polityką prywatności</a>.
           </label>
         </div>
         <button type="submit" class="contact-submit">
-          Send enquiry <span class="cta-arrow" aria-hidden="true">&rarr;</span>
+          Wyślij zapytanie <span class="cta-arrow" aria-hidden="true">&rarr;</span>
         </button>
         <p class="form-status" data-contact-status role="status" aria-live="polite"></p>
         <p class="form-note">
-          The form sends correspondence to <a href="mailto:office@drgladysz.com">office@drgladysz.com</a>. Replies are sent from the same address. Specific clinical advice is not provided by email.
+          Formularz przesyła korespondencję na adres <a href="mailto:office@drgladysz.com">office@drgladysz.com</a>. Odpowiedzi wysyłane są z tego samego adresu. Konkretne porady kliniczne nie są udzielane drogą mailową.
         </p>
       </form>
       <script is:inline>
@@ -184,20 +193,20 @@ const contactPageJsonLd = generateContactPageSchema({
           const status = form.querySelector('[data-contact-status]');
           const submit = form.querySelector('button[type="submit"]');
           const ERRORS = {
-            invalid_name: 'Please enter your full name.',
-            invalid_email: 'Please enter a valid email address.',
-            invalid_context: 'Please select a type of enquiry.',
-            invalid_subject: 'Please enter a subject (up to 160 characters).',
-            invalid_message: 'Please write a message of at least 10 characters.',
-            invalid_consent: 'Please confirm consent to proceed.',
-            rate_limited: 'Too many recent submissions from this address. Please try again in a few minutes.',
-            send_failed: 'The message could not be sent. Please try again, or email office@drgladysz.com directly.',
-            server_misconfigured: 'The form is temporarily unavailable. Please email office@drgladysz.com directly.',
+            invalid_name: 'Proszę podać imię i nazwisko.',
+            invalid_email: 'Proszę podać prawidłowy adres email.',
+            invalid_context: 'Proszę wybrać rodzaj zapytania.',
+            invalid_subject: 'Proszę podać temat (do 160 znaków).',
+            invalid_message: 'Proszę napisać wiadomość (co najmniej 10 znaków).',
+            invalid_consent: 'Proszę potwierdzić zgodę, aby przesłać formularz.',
+            rate_limited: 'Zbyt wiele zgłoszeń z tego adresu w ostatnim czasie. Proszę spróbować ponownie za kilka minut.',
+            send_failed: 'Wiadomości nie udało się wysłać. Proszę spróbować ponownie lub napisać bezpośrednio na adres office@drgladysz.com.',
+            server_misconfigured: 'Formularz jest chwilowo niedostępny. Proszę napisać bezpośrednio na adres office@drgladysz.com.',
           };
           form.addEventListener('submit', async (event) => {
             event.preventDefault();
             submit.disabled = true;
-            status.textContent = 'Sending…';
+            status.textContent = 'Wysyłanie…';
             status.className = 'form-status';
             try {
               const response = await fetch('/api/contact', {
@@ -206,15 +215,15 @@ const contactPageJsonLd = generateContactPageSchema({
               });
               const result = await response.json();
               if (result.ok) {
-                status.textContent = 'Your message has been sent. A reply will follow by email.';
+                status.textContent = 'Wiadomość została wysłana. Odpowiedź zostanie przesłana mailem.';
                 status.className = 'form-status is-success';
                 form.reset();
               } else {
-                status.textContent = ERRORS[result.error] || 'Something went wrong. Please try again, or email office@drgladysz.com directly.';
+                status.textContent = ERRORS[result.error] || 'Coś poszło nie tak. Proszę spróbować ponownie lub napisać bezpośrednio na adres office@drgladysz.com.';
                 status.className = 'form-status is-error';
               }
             } catch {
-              status.textContent = 'Network error. Please try again, or email office@drgladysz.com directly.';
+              status.textContent = 'Błąd sieci. Proszę spróbować ponownie lub napisać bezpośrednio na adres office@drgladysz.com.';
               status.className = 'form-status is-error';
             } finally {
               submit.disabled = false;
@@ -227,20 +236,19 @@ const contactPageJsonLd = generateContactPageSchema({
     <section class="contact-section">
       <header class="contact-section-header">
         <div class="section-num">§ 05</div>
-        <SectionMasthead label="Privacy" heading="How form data is handled" />
+        <SectionMasthead label="Prywatność" heading="Sposób przetwarzania danych z formularza" />
       </header>
       <p>
-        Data submitted through the form is processed for the sole purpose of replying to the enquiry. The data controller is Mateusz Gładysz. The processing is based on consent under Article 6(1)(a) of the General Data Protection Regulation (RODO) for visitors in the European Union, and on the legitimate purpose of correspondence under the Privacy Act 2020 for visitors in New Zealand. Submissions are retained for the duration of the correspondence and for a reasonable period afterwards. The full <a href="/en/privacy">Privacy Policy</a> describes data subject rights and how to exercise them.
+        Dane przesłane przez formularz przetwarzane są wyłącznie w celu udzielenia odpowiedzi na zapytanie. Administratorem danych jest Mateusz Gładysz. Podstawą przetwarzania jest zgoda na podstawie art. 6 ust. 1 lit. a) Rozporządzenia Parlamentu Europejskiego i Rady (UE) 2016/679 (RODO) w odniesieniu do osób przebywających w Unii Europejskiej oraz uzasadniony cel prowadzenia korespondencji na podstawie nowozelandzkiej ustawy Privacy Act 2020 w odniesieniu do osób przebywających w Nowej Zelandii. Zgłoszenia przechowywane są przez okres prowadzenia korespondencji oraz przez rozsądny czas po jej zakończeniu. Pełna <a href="/pl/polityka-prywatnosci/">Polityka prywatności</a> opisuje prawa osób, których dane dotyczą, oraz sposób ich realizacji.
       </p>
     </section>
   </ContentPage>
 </SiteLayout>
 
 <style>
-  /* Section layout — each contact section gets a §-number prefix matching
-     the About-page convention (mono caps, accent color, 2px accent top
-     rule), aligned to the left of the section header. SectionMasthead
-     follows in the flow; body content sits below it. */
+  /* Section layout — same scaffold as /en/contact (§-number prefix in
+     mono caps + accent top rule, SectionMasthead beneath, body content
+     follows). Visual parity is intentional — only the prose differs. */
   .contact-section {
     margin-bottom: clamp(48px, 7vw, 88px);
   }
@@ -264,7 +272,6 @@ const contactPageJsonLd = generateContactPageSchema({
     min-width: 48px;
   }
 
-  /* Inline office@ link in §03 — mono caps, oxblood accent, hover→ink. */
   .contact-email {
     font-family: var(--mono);
     font-size: 0.92em;
@@ -280,7 +287,6 @@ const contactPageJsonLd = generateContactPageSchema({
     border-bottom-color: var(--ink);
   }
 
-  /* Form */
   .contact-form {
     display: grid;
     gap: 20px;
@@ -332,7 +338,6 @@ const contactPageJsonLd = generateContactPageSchema({
     line-height: 1.55;
   }
 
-  /* Consent checkbox: inline label, sans body 14px, link styled inline. */
   .field-checkbox {
     grid-template-columns: auto 1fr;
     align-items: start;
@@ -419,8 +424,6 @@ const contactPageJsonLd = generateContactPageSchema({
     border-bottom: 1px solid var(--rule-strong);
   }
 
-  /* Honeypot field — visually hidden but accessible to bots that fill
-     every field. */
   .hp-field {
     position: absolute;
     left: -9999px;
