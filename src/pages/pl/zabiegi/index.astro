@@ -1,0 +1,165 @@
+---
+// src/pages/pl/zabiegi/index.astro
+//
+// Polish procedures index (Strona Zabiegi). Locked content from
+// 01-brand-system/drgladysz-content-master-v1.0.md Part B1 Sekcja 3
+// (sub-specialty blurbs adapted from PL home page; the home Sekcja 3 prose
+// is the longer narrative version, this index uses tightened 1–2-sentence
+// summaries since the user has just clicked through).
+//
+// Three category sections with PL anchors (#chirurgia-reki,
+// #mikrochirurgia-rekonstrukcyjna, #nowotwory-skory) so deep-links from
+// the home Specialty Blocks resolve here.
+//
+// Per-procedure PL pages (`/pl/zabiegi/[slug]`) are deferred to dedicated
+// composition sessions. The `procedurePage` Sanity schema has no
+// `language` field today, so this index does NOT query Sanity (the EN
+// procedures index would otherwise leak EN procedures into the PL list).
+// Each category renders an empty state until PL procedures are authored
+// and the schema gains a locale filter.
+import SiteLayout from '@/layouts/SiteLayout.astro';
+import SectionMasthead from '@/components/SectionMasthead.astro';
+import { generateBreadcrumb } from '@/lib/schema';
+
+const siteUrl = (
+  import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com'
+).replace(/\/$/, '');
+const canonicalUrl = `${siteUrl}/pl/zabiegi/`;
+
+const CATEGORIES = [
+  {
+    value: 'hand-surgery',
+    anchor: 'chirurgia-reki',
+    label: 'Chirurgia ręki',
+    blurb:
+      'Operacyjne leczenie ręki i nadgarstka — neuropatie uciskowe, złamania kości łódeczkowatej i innych kości nadgarstka, urazy ścięgien zginaczy i prostowników, choroba Dupuytrena oraz zwyrodnienie podstawy kciuka.',
+  },
+  {
+    value: 'reconstructive-microsurgery',
+    anchor: 'mikrochirurgia-rekonstrukcyjna',
+    label: 'Mikrochirurgia rekonstrukcyjna',
+    blurb:
+      'Rekonstrukcja tkanek miękkich i ubytków złożonych — rekonstrukcje ortoplastyczne kończyny dolnej, rekonstrukcje piersi z wykorzystaniem wolnych płatów oraz rekonstrukcje w obrębie głowy i szyi we współpracy z laryngologami i chirurgami onkologicznymi.',
+  },
+  {
+    value: 'skin-cancer',
+    anchor: 'nowotwory-skory',
+    label: 'Chirurgia nowotworów skóry',
+    blurb:
+      'Operacyjne leczenie czerniaka i nieczerniakowych nowotworów skóry wysokiego ryzyka — wycięcia diagnostyczne, biopsje węzła wartowniczego i rekonstrukcje ubytków po resekcjach onkologicznych.',
+  },
+];
+
+const collectionJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'Zabiegi — Mateusz Gładysz, lek.',
+  url: canonicalUrl,
+  inLanguage: 'pl-PL',
+  hasPart: [],
+};
+
+const breadcrumbJsonLd = generateBreadcrumb([
+  { name: 'Strona główna', url: `${siteUrl}/pl/` },
+  { name: 'Zabiegi', url: canonicalUrl },
+]);
+---
+<SiteLayout
+  title="Zabiegi — Mateusz Gładysz, lek., FEBOPRAS, FEBHS"
+  description="Operacyjne leczenie ręki i nadgarstka, mikrochirurgia rekonstrukcyjna oraz chirurgia nowotworów skóry. Strony zabiegowe w przygotowaniu — według struktury AO Surgery Reference."
+  locale="pl"
+  alternateUrl="/en/procedures/"
+  canonical={canonicalUrl}
+  jsonLd={[collectionJsonLd, breadcrumbJsonLd]}
+>
+  <section class="index-masthead-shell">
+    <SectionMasthead
+      label="Zabiegi"
+      heading="Zabiegi operacyjne"
+      headingTag="h1"
+      standfirst="Każda strona zabiegu zachowuje spójną strukturę AO Surgery Reference — wskazania, anatomia, kluczowe etapy operacyjne, postępowanie pooperacyjne, powikłania oraz podstawy literaturowe — niezależnie od tego, czy temat dotyczy otwartego odbarczenia kanału nadgarstka, czy rekonstrukcji wolnym płatem."
+    />
+  </section>
+
+  <section class="proc-index">
+    <div class="proc-index-inner">
+      {CATEGORIES.map((cat) => (
+        <section
+          class="cat-section"
+          id={cat.anchor}
+          aria-labelledby={`cat-h-${cat.value}`}
+        >
+          <header class="cat-header">
+            <h2 id={`cat-h-${cat.value}`} class="cat-heading">{cat.label}</h2>
+            <p class="cat-blurb">{cat.blurb}</p>
+          </header>
+
+          <p class="empty">W przygotowaniu. Pierwsze strony w tej kategorii są w opracowaniu.</p>
+        </section>
+      ))}
+    </div>
+  </section>
+</SiteLayout>
+
+<style>
+  .index-masthead-shell {
+    padding: clamp(56px, 8vw, 120px) clamp(20px, 5vw, 80px) 0;
+    max-width: 1320px;
+    margin: 0 auto;
+  }
+
+  .proc-index {
+    padding: clamp(40px, 6vw, 80px) 0 120px;
+  }
+
+  .proc-index-inner {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding-inline: clamp(20px, 5vw, 80px);
+  }
+
+  .cat-section {
+    margin-bottom: clamp(56px, 8vw, 96px);
+    padding-top: 32px;
+    border-top: 1px solid var(--rule);
+    scroll-margin-top: 96px;
+  }
+
+  .cat-section:first-of-type {
+    border-top: none;
+    padding-top: 0;
+  }
+
+  .cat-header {
+    max-width: 720px;
+    margin-bottom: 40px;
+  }
+
+  .cat-heading {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(28px, 3vw, 40px);
+    line-height: 1.15;
+    color: var(--ink);
+    margin: 0 0 12px;
+    letter-spacing: -0.018em;
+  }
+
+  .cat-blurb {
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    margin: 0;
+    max-width: 60ch;
+  }
+
+  .empty {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 16px;
+    color: var(--ink-3);
+    max-width: 60ch;
+    margin: 0;
+  }
+</style>

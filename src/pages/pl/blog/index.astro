@@ -1,0 +1,151 @@
+---
+// src/pages/pl/blog/index.astro
+//
+// Polish knowledge base index (Baza wiedzy). Polish equivalent of
+// /en/blog/index.astro.
+//
+// The article Sanity schema has no `language` field today, so this index
+// does NOT call getAllArticleSummaries (the EN list would otherwise leak
+// into the PL view). Three category sections render an empty state until
+// the first PL article ships and the schema gains a locale filter.
+//
+// Note: `category: fessh-prep` articles are English-only by design (FESSH
+// Diploma exam is English-language; per memory feedback_fessh_english_only)
+// — that category does not appear here.
+import SiteLayout from '@/layouts/SiteLayout.astro';
+import SectionMasthead from '@/components/SectionMasthead.astro';
+import { generateBreadcrumb } from '@/lib/schema';
+
+const siteUrl = (
+  import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com'
+).replace(/\/$/, '');
+const canonicalUrl = `${siteUrl}/pl/blog/`;
+
+const CATEGORIES = [
+  {
+    value: 'patient',
+    label: 'Informacje dla pacjenta',
+    blurb:
+      'Przewodniki w przystępnym języku — opis schorzeń, przebieg diagnostyki oraz to, czego można się spodziewać po leczeniu.',
+  },
+  {
+    value: 'expert',
+    label: 'Blog ekspercki',
+    blurb:
+      'Technika operacyjna, przegląd dowodów i decyzje kliniczne — pisane z myślą o lekarzach.',
+  },
+  {
+    value: 'news',
+    label: 'Aktualności',
+    blurb:
+      'Notatki z konferencji, spotkań naukowych i bieżących wydarzeń w obszarze chirurgii ręki i mikrochirurgii rekonstrukcyjnej.',
+  },
+];
+
+const collectionJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'Baza wiedzy — Mateusz Gładysz, lek.',
+  url: canonicalUrl,
+  inLanguage: 'pl-PL',
+  hasPart: [],
+};
+
+const breadcrumbJsonLd = generateBreadcrumb([
+  { name: 'Strona główna', url: `${siteUrl}/pl/` },
+  { name: 'Baza wiedzy', url: canonicalUrl },
+]);
+---
+<SiteLayout
+  title="Baza wiedzy — Mateusz Gładysz, lek."
+  description="Przewodniki dla pacjentów, teksty eksperckie z chirurgii ręki i mikrochirurgii rekonstrukcyjnej oraz notatki z konferencji."
+  locale="pl"
+  alternateUrl="/en/blog/"
+  canonical={canonicalUrl}
+  jsonLd={[collectionJsonLd, breadcrumbJsonLd]}
+>
+  <section class="index-masthead-shell">
+    <SectionMasthead
+      label="Baza wiedzy"
+      heading="Artykuły, notatki techniczne i lektury"
+      headingTag="h1"
+      standfirst="Przewodniki dla pacjentów napisane w przystępnym języku obok eksperckich tekstów dla lekarzy — obejmują technikę operacyjną, ocenę dowodów oraz decyzje kliniczne w zakresie chirurgii ręki i mikrochirurgii rekonstrukcyjnej."
+    />
+  </section>
+
+  <section class="blog-index">
+    <div class="blog-index-inner">
+      {CATEGORIES.map((cat) => (
+        <section class="cat-section" aria-labelledby={`cat-${cat.value}`}>
+          <header class="cat-header">
+            <h2 id={`cat-${cat.value}`} class="cat-heading">{cat.label}</h2>
+            <p class="cat-blurb">{cat.blurb}</p>
+          </header>
+          <p class="empty">W przygotowaniu. Pierwsze artykuły w tej kategorii są w opracowaniu.</p>
+        </section>
+      ))}
+    </div>
+  </section>
+</SiteLayout>
+
+<style>
+  .index-masthead-shell {
+    padding: clamp(56px, 8vw, 120px) clamp(20px, 5vw, 80px) 0;
+    max-width: 1320px;
+    margin: 0 auto;
+  }
+
+  .blog-index {
+    padding: clamp(40px, 6vw, 80px) 0 120px;
+  }
+
+  .blog-index-inner {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding-inline: clamp(20px, 5vw, 80px);
+  }
+
+  .cat-section {
+    margin-bottom: clamp(56px, 8vw, 96px);
+    padding-top: 32px;
+    border-top: 1px solid var(--rule);
+  }
+
+  .cat-section:first-child {
+    border-top: none;
+    padding-top: 0;
+  }
+
+  .cat-header {
+    max-width: 720px;
+    margin-bottom: 24px;
+  }
+
+  .cat-heading {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(28px, 3vw, 40px);
+    line-height: 1.15;
+    color: var(--ink);
+    margin: 0 0 12px;
+    letter-spacing: -0.018em;
+  }
+
+  .cat-blurb {
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    margin: 0;
+    max-width: 60ch;
+  }
+
+  .empty {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 16px;
+    color: var(--ink-3);
+    max-width: 60ch;
+    margin: 0;
+  }
+</style>

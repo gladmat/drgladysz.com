@@ -15,17 +15,19 @@ const { locale = 'en', currentPath = '', alternateUrl } = Astro.props;
 const navItems = locale === 'pl'
   ? [
       { href: '/pl/', label: 'Strona główna' },
-      { href: '/pl/o-mnie', label: 'O mnie' },
-      { href: '/pl/zabiegi', label: 'Zabiegi' },
-      { href: '/pl/publikacje', label: 'Publikacje' },
-      { href: '/pl/kontakt', label: 'Kontakt' },
+      { href: '/pl/o-mnie/', label: 'O mnie' },
+      { href: '/pl/zabiegi/', label: 'Zabiegi' },
+      { href: '/pl/publikacje/', label: 'Publikacje' },
+      { href: '/pl/blog/', label: 'Baza wiedzy' },
+      { href: '/pl/kontakt/', label: 'Kontakt' },
     ]
   : [
       { href: '/en/', label: 'Home' },
-      { href: '/en/about', label: 'About' },
-      { href: '/en/procedures', label: 'Procedures' },
-      { href: '/en/publications', label: 'Publications' },
-      { href: '/en/contact', label: 'Contact' },
+      { href: '/en/about/', label: 'About' },
+      { href: '/en/procedures/', label: 'Procedures' },
+      { href: '/en/publications/', label: 'Publications' },
+      { href: '/en/blog/', label: 'Knowledge base' },
+      { href: '/en/contact/', label: 'Contact' },
     ];
 
 const wordmarkHref = locale === 'pl' ? '/pl/' : '/en/';
