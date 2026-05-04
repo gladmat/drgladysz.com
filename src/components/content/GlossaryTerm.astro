@@ -15,6 +15,7 @@
 // popover ids (avoids the duplicate-id pattern flagged in CLAUDE.md
 // open item #10 for citations).
 import type { SanityGlossaryTerm } from '@/lib/sanity';
+import { capFirst } from '@/lib/strings';
 
 interface Props {
   term: SanityGlossaryTerm;
@@ -83,7 +84,7 @@ const moreLinkLabel = locale === 'pl' ? 'Więcej o tym haśle' : 'More about thi
   style={`position-anchor: --${popoverId}`}
 >
   <p class="glossary-popover-cat">{categoryLabel}</p>
-  <h4 class="glossary-popover-term" id={`${popoverId}-label`}>{displayedTerm}</h4>
+  <h4 class="glossary-popover-term" id={`${popoverId}-label`}>{capFirst(displayedTerm)}</h4>
   <p class="glossary-popover-def">{definition}</p>
   <a class="glossary-popover-more" href={detailUrl}>
     {moreLinkLabel} <span aria-hidden="true">&rarr;</span>

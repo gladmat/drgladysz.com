@@ -24,6 +24,7 @@ import {
   generateBreadcrumb,
   generateDefinedTermSchema,
 } from '@/lib/schema';
+import { capFirst } from '@/lib/strings';
 
 export async function getStaticPaths() {
   const slugs = await getAllGlossaryTermSlugs();
@@ -74,7 +75,7 @@ const definedTermJsonLd = generateDefinedTermSchema({
 const breadcrumbJsonLd = generateBreadcrumb([
   { name: 'Home', url: `${siteUrl}/en/` },
   { name: 'Glossary', url: indexUrl },
-  { name: term.term, url: canonicalUrl },
+  { name: capFirst(term.term), url: canonicalUrl },
 ]);
 
 const illustrationUrl = term.illustration
@@ -94,7 +95,7 @@ function fmtDate(d?: string) {
 }
 ---
 <SiteLayout
-  title={`${term.term} — Glossary — Mateusz Gładysz, MD`}
+  title={`${capFirst(term.term)} — Glossary — Mateusz Gładysz, MD`}
   description={term.shortDefinition}
   locale="en"
   alternateUrl={`/pl/slowniczek/${slug}`}
@@ -108,11 +109,11 @@ function fmtDate(d?: string) {
         <span aria-hidden="true">·</span>
         <span>{CATEGORY_LABELS[term.category]}</span>
       </p>
-      <h1 class="term-title">{term.term}</h1>
+      <h1 class="term-title">{capFirst(term.term)}</h1>
       {term.termPolish && term.termPolish !== term.term && (
         <p class="term-polish" lang="pl">
           <span class="polish-label">Polski:</span>
-          <span class="polish-value">{term.termPolish}</span>
+          <span class="polish-value">{capFirst(term.termPolish)}</span>
           <a class="polish-link" href={`/pl/slowniczek/${slug}`} hreflang="pl">
             Czytaj po polsku &rarr;
           </a>
@@ -176,7 +177,7 @@ function fmtDate(d?: string) {
                   <p class="related-meta">
                     {CATEGORY_LABELS[rt.category]}
                   </p>
-                  <h3 class="related-term">{rt.term}</h3>
+                  <h3 class="related-term">{capFirst(rt.term)}</h3>
                   <p class="related-def">{rt.shortDefinition}</p>
                 </a>
               </li>

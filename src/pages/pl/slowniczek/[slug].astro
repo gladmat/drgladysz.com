@@ -24,6 +24,7 @@ import {
   generateBreadcrumb,
   generateDefinedTermSchema,
 } from '@/lib/schema';
+import { capFirst } from '@/lib/strings';
 
 export async function getStaticPaths() {
   const slugs = await getAllGlossaryTermSlugs();
@@ -93,7 +94,7 @@ const definedTermJsonLd = generateDefinedTermSchema({
 const breadcrumbJsonLd = generateBreadcrumb([
   { name: 'Strona główna', url: `${siteUrl}/pl/` },
   { name: 'Słowniczek', url: indexUrl },
-  { name: displayTerm, url: canonicalUrl },
+  { name: capFirst(displayTerm), url: canonicalUrl },
 ]);
 
 const illustrationUrl = term.illustration
@@ -110,7 +111,7 @@ function fmtDate(d?: string) {
 }
 ---
 <SiteLayout
-  title={`${displayTerm} — Słowniczek — Mateusz Gładysz, MD`}
+  title={`${capFirst(displayTerm)} — Słowniczek — Mateusz Gładysz, MD`}
   description={displayShortDef}
   locale="pl"
   alternateUrl={`/en/glossary/${slug}`}
@@ -128,12 +129,12 @@ function fmtDate(d?: string) {
         class="term-title"
         lang={usingPolishTerm ? 'pl' : 'en'}
       >
-        {displayTerm}
+        {capFirst(displayTerm)}
       </h1>
       {usingPolishTerm && term.term && term.termPolish !== term.term && (
         <p class="term-other-lang" lang="en">
           <span class="other-lang-label">English:</span>
-          <span class="other-lang-value">{term.term}</span>
+          <span class="other-lang-value">{capFirst(term.term)}</span>
         </p>
       )}
       {!usingPolishTerm && (
@@ -230,7 +231,7 @@ function fmtDate(d?: string) {
                       class="related-term"
                       lang={rtUsingPl ? 'pl' : 'en'}
                     >
-                      {rtTerm}
+                      {capFirst(rtTerm)}
                     </h3>
                     <p
                       class="related-def"

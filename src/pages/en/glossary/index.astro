@@ -17,6 +17,7 @@ import SiteLayout from '@/layouts/SiteLayout.astro';
 import SectionMasthead from '@/components/SectionMasthead.astro';
 import { getAllGlossaryTerms, type GlossarySummary } from '@/lib/sanity';
 import { generateDefinedTermSetSchema, generateBreadcrumb } from '@/lib/schema';
+import { capFirst } from '@/lib/strings';
 
 const terms = await getAllGlossaryTerms();
 
@@ -130,12 +131,12 @@ const breadcrumbJsonLd = generateBreadcrumb([
                         <>
                           <span aria-hidden="true">·</span>
                           <span class="card-pl" lang="pl">
-                            {term.termPolish}
+                            {capFirst(term.termPolish)}
                           </span>
                         </>
                       )}
                     </p>
-                    <h3 class="card-term">{term.term}</h3>
+                    <h3 class="card-term">{capFirst(term.term)}</h3>
                     <p class="card-def">{term.shortDefinition}</p>
                   </a>
                 </li>
