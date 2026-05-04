@@ -1,21 +1,9 @@
 ---
-// src/pages/en/blog/[slug].astro
+// src/pages/pl/blog/[slug].astro
 //
-// Article detail page. Statically generates one page per published article in
-// Sanity. The route is `getStaticPaths`-driven, so when there are no articles
-// (Phase 5 baseline) the route resolves to zero generated pages and the build
-// is clean.
-//
-// Layout responsibilities:
-//   - Sidenote gutter: `.article-content` reserves padding-right: 320px on
-//     desktop ≥1024px so Citation.astro's right-floated sidenote lands clear
-//     of the body. Below 1024px, citations open as native HTML popovers from
-//     the inline marker.
-//   - Heading sequence:
-//        H1 (article title) → KeyPoints box → ARTICLE BODY (PortableText)
-//        → Bibliography (numbered references)
-//   - Schema.org JSON-LD: MedicalScholarlyArticle (peer/expert) or
-//     MedicalWebPage (patient), populated via lib/schema.ts.
+// Polish article detail page. Mirror of /en/blog/[slug].astro, scoped to
+// language == 'pl'. Localizes all chrome strings (kicker, byline, meta,
+// related, breadcrumb) into Polish and emits JSON-LD with `inLanguage: pl-PL`.
 import SiteLayout from '@/layouts/SiteLayout.astro';
 import KeyPoints from '@/components/content/KeyPoints.astro';
 import Bibliography from '@/components/content/Bibliography.astro';
@@ -32,39 +20,42 @@ import {
 import { generateArticleSchema, generateBreadcrumb } from '@/lib/schema';
 
 export async function getStaticPaths() {
-  const slugs = await getAllArticleSlugs('en');
+  const slugs = await getAllArticleSlugs('pl');
   return slugs.map((slug) => ({ params: { slug } }));
 }
 
 const { slug } = Astro.params;
 if (!slug) throw new Error('Missing slug param');
 
-const article = await getArticleBySlug(slug, 'en');
+const article = await getArticleBySlug(slug, 'pl');
 if (!article) {
-  // Sanity returned no doc with this slug — let Astro 404 handle it.
-  return Astro.redirect('/en/blog');
+  return Astro.redirect('/pl/blog/');
 }
 
-// Collect citation references in document order, then load.
+// PL→EN slug map for hreflang (alternateUrl). Authored explicitly so the
+// reverse direction is obvious; falls back to none (no alternate emitted) for
+// PL-only articles. Update this when adding new PL articles.
+const PL_TO_EN_SLUG: Record<string, string> = {
+  'zespol-ciesni-nadgarstka': 'carpal-tunnel-syndrome',
+  'zespol-ciesni-nadgarstka-przeglad-kliniczny': 'carpal-tunnel-syndrome-fessh-prep',
+};
+const enSlug = PL_TO_EN_SLUG[slug];
+const alternateUrl = enSlug ? `/en/blog/${enSlug}/` : undefined;
+
 const citationOrder = extractCitationOrderFromBlocks([article.body]);
 const referencesUnsorted = await getReferencesByIds(citationOrder);
 const references = citationOrder
   .map((id) => referencesUnsorted.find((r) => r._id === id))
   .filter((r): r is NonNullable<typeof r> => Boolean(r));
 
-// Collect glossary-term references and load. Order doesn't drive numbering
-// (unlike citations) — the lookup is keyed by _id.
 const glossaryOrder = extractGlossaryOrderFromBlocks([article.body]);
 const glossaryTerms = await getGlossaryTermsByIds(glossaryOrder);
 
 const siteUrl = (
   import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com'
 ).replace(/\/$/, '');
-const canonicalUrl = `${siteUrl}/en/blog/${slug}/`;
+const canonicalUrl = `${siteUrl}/pl/blog/${slug}/`;
 
-// Hero image data for the JSON-LD ImageObject. We render at 1200×800 for a
-// rich-snippet-friendly aspect; the visible <img> below uses a separate URL
-// at 2000px wide for sharp display. Both URLs hit the same Sanity asset.
 const articleHeroImageData = article.heroImage
   ? {
       url: urlForImage(article.heroImage).width(1200).height(800).fit('crop').url(),
@@ -79,20 +70,21 @@ const articleJsonLd = generateArticleSchema({
   references,
   url: canonicalUrl,
   heroImage: articleHeroImageData,
+  locale: 'pl',
 });
 
 const breadcrumbJsonLd = generateBreadcrumb([
-  { name: 'Home', url: `${siteUrl}/en/` },
-  { name: 'Knowledge base', url: `${siteUrl}/en/blog/` },
+  { name: 'Strona główna', url: `${siteUrl}/pl/` },
+  { name: 'Baza wiedzy', url: `${siteUrl}/pl/blog/` },
   { name: article.title, url: canonicalUrl },
 ]);
 
 const publishedDateLabel = new Date(article.publishedDate).toLocaleDateString(
-  'en-NZ',
+  'pl-PL',
   { year: 'numeric', month: 'long', day: 'numeric' },
 );
 const updatedDateLabel = article.lastUpdated
-  ? new Date(article.lastUpdated).toLocaleDateString('en-NZ', {
+  ? new Date(article.lastUpdated).toLocaleDateString('pl-PL', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -104,20 +96,14 @@ const heroImageUrl = article.heroImage
   : null;
 
 const categoryLabel: Record<string, string> = {
-  patient: 'Patient information',
-  expert: 'Expert blog',
+  patient: 'Informacje dla pacjenta',
+  expert: 'Artykuł ekspercki',
   'fessh-prep': 'FESSH preparation',
-  news: 'News & commentary',
+  news: 'Aktualności',
 };
 
-// Author byline. The brand convention renders the name and post-nominals
-// mid-dot-separated ("Mateusz Gładysz · MD · FEBOPRAS · FEBHS").
-//
-// The Phase 5 seed populated post-nominals under a non-schema `title` field
-// (and put the role string into `credentials`), so we look in both fields
-// and pick whichever segment looks like post-nominals — comma-separated
-// short uppercase tokens. Newly authored author docs that follow the schema
-// will store post-nominals in `credentials` and this logic still works.
+// Author byline — same defensive logic as EN (post-nominals may live in
+// `credentials` or `title` field).
 const POSTNOM_PATTERN = /^[A-Z][A-Za-z0-9]*$/;
 function postNominalSegments(value: string | undefined): string[] {
   if (!value) return [];
@@ -129,16 +115,16 @@ const authorPostNominals = article.author
     ? postNominalSegments(article.author.credentials)
     : postNominalSegments(article.author.title)
   : [];
+// PL convention: prenominal `lek.` reserved for footer; byline drops MD per
+// Decision #40. Trim 'MD' from post-nominals if present so the PL byline
+// reads "Mateusz Gładysz · FEBOPRAS · FEBHS".
+const plAuthorPostNominals = authorPostNominals.filter((p) => p !== 'MD');
 const authorByline = article.author
-  ? [article.author.name, ...authorPostNominals].join(' · ')
+  ? [article.author.name, ...plAuthorPostNominals].join(' · ')
   : null;
 
-// Standfirst falls back to excerpt for articles authored before the schema
-// gained a dedicated standfirst field (carpal-tunnel-syndrome).
 const standfirstText = article.standfirst?.trim() || article.excerpt;
 
-// Drop unresolved related references (target document deleted). The GROQ
-// projection returns null for unresolved refs in the array.
 const relatedArticles = (article.relatedArticles ?? []).filter(
   (a): a is NonNullable<typeof a> => Boolean(a),
 );
@@ -148,28 +134,29 @@ const relatedProcedures = (article.relatedProcedures ?? []).filter(
 const hasRelated = relatedArticles.length > 0 || relatedProcedures.length > 0;
 
 const articleCategoryLabel: Record<string, string> = {
-  patient: 'Patient information',
-  expert: 'Expert blog',
+  patient: 'Informacje dla pacjenta',
+  expert: 'Artykuł ekspercki',
   'fessh-prep': 'FESSH preparation',
-  news: 'News & commentary',
+  news: 'Aktualności',
 };
 const procedureCategoryLabel: Record<string, string> = {
-  'hand-surgery': 'Hand surgery',
-  'reconstructive-microsurgery': 'Reconstructive & microsurgery',
-  'skin-cancer': 'Skin cancer surgery',
+  'hand-surgery': 'Chirurgia ręki',
+  'reconstructive-microsurgery': 'Mikrochirurgia rekonstrukcyjna',
+  'skin-cancer': 'Chirurgia nowotworów skóry',
 };
 ---
 <SiteLayout
-  title={article.seoTitle || `${article.title} — Mateusz Gładysz, MD`}
+  title={article.seoTitle || `${article.title} — Mateusz Gładysz, lek.`}
   description={article.seoDescription || article.excerpt}
-  locale="en"
+  locale="pl"
+  alternateUrl={alternateUrl}
   canonical={canonicalUrl}
   jsonLd={[articleJsonLd, breadcrumbJsonLd]}
 >
   <article class="article-shell">
     <header class="article-header">
       <p class="article-kicker">
-        <a href="/en/blog">Knowledge base</a>
+        <a href="/pl/blog/">Baza wiedzy</a>
         <span aria-hidden="true">·</span>
         <span>{categoryLabel[article.category] ?? article.category}</span>
       </p>
@@ -178,13 +165,13 @@ const procedureCategoryLabel: Record<string, string> = {
       {standfirstText && <p class="article-standfirst">{standfirstText}</p>}
       <p class="article-meta">
         <span>
-          Published <time datetime={article.publishedDate}>{publishedDateLabel}</time>
+          Opublikowano <time datetime={article.publishedDate}>{publishedDateLabel}</time>
         </span>
         {updatedDateLabel && (
           <>
             <span aria-hidden="true">·</span>
             <span>
-              Last clinically reviewed <time datetime={article.lastUpdated}>{updatedDateLabel}</time>
+              Ostatnia weryfikacja medyczna <time datetime={article.lastUpdated}>{updatedDateLabel}</time>
             </span>
           </>
         )}
@@ -223,14 +210,14 @@ const procedureCategoryLabel: Record<string, string> = {
 
       {hasRelated && (
         <aside class="article-related" aria-labelledby="related-heading">
-          <h2 id="related-heading" class="related-heading">Related</h2>
+          <h2 id="related-heading" class="related-heading">Powiązane</h2>
           {relatedArticles.length > 0 && (
             <section class="related-section">
-              <p class="related-kicker">Articles</p>
+              <p class="related-kicker">Artykuły</p>
               <ul class="related-list">
                 {relatedArticles.map((a) => (
                   <li>
-                    <a href={`/en/blog/${a.slug.current}`}>
+                    <a href={`/pl/blog/${a.slug.current}/`}>
                       <span class="related-title">{a.title}</span>
                       <span class="related-meta">{articleCategoryLabel[a.category] ?? a.category}</span>
                     </a>
@@ -241,11 +228,11 @@ const procedureCategoryLabel: Record<string, string> = {
           )}
           {relatedProcedures.length > 0 && (
             <section class="related-section">
-              <p class="related-kicker">Procedures</p>
+              <p class="related-kicker">Zabiegi</p>
               <ul class="related-list">
                 {relatedProcedures.map((p) => (
                   <li>
-                    <a href={`/en/procedures/${p.slug.current}`}>
+                    <a href={`/pl/zabiegi/${p.slug.current}/`}>
                       <span class="related-title">{p.title}</span>
                       <span class="related-meta">{procedureCategoryLabel[p.category] ?? p.category}</span>
                     </a>
@@ -348,10 +335,6 @@ const procedureCategoryLabel: Record<string, string> = {
     object-fit: cover;
   }
 
-  /* Body container — reserves a 320px right gutter on desktop ≥1024px so
-     <Citation>'s right-floated sidenote can land in the margin without
-     overlapping prose. Below 1024px the gutter collapses and citations open
-     as native popovers from the inline marker. */
   .article-content {
     max-width: 720px;
     margin: 0;
@@ -365,17 +348,12 @@ const procedureCategoryLabel: Record<string, string> = {
     }
   }
 
-  .article-body {
-    /* clearfix so floated sidenotes don't bleed past the body */
-  }
-
   .article-body::after {
     content: '';
     display: block;
     clear: both;
   }
 
-  /* Related — sibling articles + procedures surfaced after Bibliography. */
   .article-related {
     margin-top: clamp(48px, 6vw, 80px);
     padding-top: 32px;
@@ -391,13 +369,8 @@ const procedureCategoryLabel: Record<string, string> = {
     margin: 0 0 24px;
   }
 
-  .related-section {
-    margin-bottom: 24px;
-  }
-
-  .related-section:last-child {
-    margin-bottom: 0;
-  }
+  .related-section { margin-bottom: 24px; }
+  .related-section:last-child { margin-bottom: 0; }
 
   .related-kicker {
     font-family: var(--mono);
@@ -408,11 +381,7 @@ const procedureCategoryLabel: Record<string, string> = {
     margin: 0 0 12px;
   }
 
-  .related-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
+  .related-list { list-style: none; margin: 0; padding: 0; }
 
   .related-list li {
     margin: 0;
@@ -434,9 +403,7 @@ const procedureCategoryLabel: Record<string, string> = {
     color: var(--ink);
   }
 
-  .related-list a:hover .related-title {
-    color: var(--accent);
-  }
+  .related-list a:hover .related-title { color: var(--accent); }
 
   .related-title {
     font-family: var(--serif);

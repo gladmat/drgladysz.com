@@ -1,13 +1,11 @@
 ---
-// src/pages/en/procedures/[slug].astro
+// src/pages/pl/zabiegi/[slug].astro
 //
-// Procedure detail page — AO Surgery Reference structure (10 numbered
-// sections + Key Points box). Each clinical section renders Portable Text
-// content via the shared renderer; citation marks within evidence/anatomy/
-// approach/etc. attach numbered sidenotes (desktop) or popovers (mobile).
+// Polish procedure detail page. Mirror of /en/procedures/[slug].astro,
+// scoped to language == 'pl', with PL section labels and FAQ rendering.
 //
-// Schema.org JSON-LD: MedicalProcedure with bodyLocation/preparation/followup/
-// expectedPrognosis populated from the matching clinical sections.
+// JSON-LD: MedicalProcedure + MedicalCondition + FAQPage + BreadcrumbList,
+// all `inLanguage: 'pl-PL'`.
 import SiteLayout from '@/layouts/SiteLayout.astro';
 import KeyPoints from '@/components/content/KeyPoints.astro';
 import Bibliography from '@/components/content/Bibliography.astro';
@@ -21,25 +19,70 @@ import {
   extractGlossaryOrderFromBlocks,
   urlForImage,
 } from '@/lib/sanity';
-import { generateProcedureSchema, generateBreadcrumb } from '@/lib/schema';
+import {
+  generateProcedureSchema,
+  generateBreadcrumb,
+  generateFaqPageSchema,
+  generateMedicalConditionSchema,
+} from '@/lib/schema';
 
 export async function getStaticPaths() {
-  const slugs = await getAllProcedureSlugs('en');
+  const slugs = await getAllProcedureSlugs('pl');
   return slugs.map((slug) => ({ params: { slug } }));
 }
 
 const { slug } = Astro.params;
 if (!slug) throw new Error('Missing slug param');
 
-const procedure = await getProcedureBySlug(slug, 'en');
+const procedure = await getProcedureBySlug(slug, 'pl');
 if (!procedure) {
-  return Astro.redirect('/en/procedures');
+  return Astro.redirect('/pl/zabiegi/');
 }
 
-// Pull references in document order across all sections that may contain
-// citations. Order: indications → contraindications → anatomy → positioning →
-// approach → keySteps[].description → closure → aftercare → complications →
-// patientSummary → evidence. Matches the visual section order.
+// PL→EN slug map for hreflang. Update this when adding new PL procedures.
+const PL_TO_EN_SLUG: Record<string, string> = {
+  'zespol-ciesni-nadgarstka': 'open-carpal-tunnel-release',
+};
+const enSlug = PL_TO_EN_SLUG[slug];
+const alternateUrl = enSlug ? `/en/procedures/${enSlug}/` : undefined;
+
+// MedicalCondition pairing — currently only one PL procedure (CTS) but
+// authored as a slug-keyed map so future procedures (Dupuytren, trigger
+// finger, de Quervain, ganglion) can each declare their own condition.
+//
+// Values per the locked SEO spec for this procedure (PL CTS package
+// `drgladysz-seo-and-schema-procedure-cts-pl-v1_1.md` §2.2). ICD-10 G56.0.
+type MedicalConditionMeta = Parameters<typeof generateMedicalConditionSchema>[0];
+const CONDITION_BY_PROCEDURE: Record<string, Omit<MedicalConditionMeta, 'url' | 'locale'>> = {
+  'zespol-ciesni-nadgarstka': {
+    name: 'Zespół cieśni nadgarstka',
+    alternateName: ['ZCN', 'Zespół kanału nadgarstka', 'ZKN'],
+    description:
+      'Najczęstsza neuropatia uciskowa kończyny górnej; ucisk nerwu pośrodkowego w obrębie kanału nadgarstka powodujący drętwienia, parestezje i ból w obszarze unerwienia nerwu pośrodkowego.',
+    icd10: 'G56.0',
+    signOrSymptom: [
+      'Drętwienia i parestezje w obszarze unerwienia nerwu pośrodkowego',
+      'Nocne dolegliwości',
+      'Osłabienie i zanik mięśni kłębu kciuka',
+      'Ból w okolicy nadgarstka i przedramienia',
+    ],
+    possibleTreatment: [
+      'Otwarte odbarczenie kanału nadgarstka',
+      'Endoskopowe odbarczenie kanału nadgarstka',
+      'Iniekcja glikokortykosteroidu',
+      'Orteza unieruchamiająca nadgarstek',
+    ],
+    differentialDiagnosis: [
+      'Radikulopatia szyjna C6/C7',
+      'Neuropatia nerwu łokciowego',
+      'Neuropatia obwodowa (cukrzycowa, alkoholowa)',
+      'Zespół ujścia górnego klatki piersiowej',
+    ],
+    epidemiology: '~3–5% populacji ogólnej; częściej kobiety, szczyt zachorowalności 40–60 r.ż.',
+    relevantSpecialty: ['Hand surgery', 'Plastic surgery', 'Orthopaedic surgery', 'Neurology'],
+  },
+};
+
 const stepDescriptions = procedure.keySteps.map((s) => s.description).flat();
 
 const citationOrder = extractCitationOrderFromBlocks([
@@ -61,8 +104,6 @@ const references = citationOrder
   .map((id) => referencesUnsorted.find((r) => r._id === id))
   .filter((r): r is NonNullable<typeof r> => Boolean(r));
 
-// Glossary marks attach to spans across the same sections; pull terms in
-// document order so popovers resolve uniformly regardless of section.
 const glossaryOrder = extractGlossaryOrderFromBlocks([
   procedure.indications,
   procedure.contraindications,
@@ -81,10 +122,8 @@ const glossaryTerms = await getGlossaryTermsByIds(glossaryOrder);
 const siteUrl = (
   import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com'
 ).replace(/\/$/, '');
-const canonicalUrl = `${siteUrl}/en/procedures/${slug}/`;
+const canonicalUrl = `${siteUrl}/pl/zabiegi/${slug}/`;
 
-// Hero image data for the JSON-LD ImageObject (1200×800 crop). Visible <img>
-// below uses a 2000px-wide variant; both URLs hit the same Sanity asset.
 const procedureHeroImageData = procedure.heroImage
   ? {
       url: urlForImage(procedure.heroImage).width(1200).height(800).fit('crop').url(),
@@ -99,26 +138,49 @@ const procedureJsonLd = generateProcedureSchema({
   references,
   url: canonicalUrl,
   heroImage: procedureHeroImageData,
+  locale: 'pl',
 });
 
 const categoryLabels: Record<string, string> = {
-  'hand-surgery': 'Hand surgery',
-  'reconstructive-microsurgery': 'Reconstructive & microsurgery',
-  'skin-cancer': 'Skin cancer surgery',
+  'hand-surgery': 'Chirurgia ręki',
+  'reconstructive-microsurgery': 'Mikrochirurgia rekonstrukcyjna',
+  'skin-cancer': 'Chirurgia nowotworów skóry',
 };
 
 const breadcrumbJsonLd = generateBreadcrumb([
-  { name: 'Home', url: `${siteUrl}/en/` },
-  { name: 'Procedures', url: `${siteUrl}/en/procedures/` },
+  { name: 'Strona główna', url: `${siteUrl}/pl/` },
+  { name: 'Zabiegi', url: `${siteUrl}/pl/zabiegi/` },
   {
     name: categoryLabels[procedure.category] || procedure.category,
-    url: `${siteUrl}/en/procedures/#${procedure.category}`,
+    url: `${siteUrl}/pl/zabiegi/#${procedure.category}`,
   },
   { name: procedure.title, url: canonicalUrl },
 ]);
 
+const conditionMeta = CONDITION_BY_PROCEDURE[slug];
+const conditionJsonLd = conditionMeta
+  ? generateMedicalConditionSchema({
+      url: canonicalUrl,
+      locale: 'pl',
+      ...conditionMeta,
+    })
+  : undefined;
+
+const faqJsonLd =
+  procedure.faq && procedure.faq.length > 0
+    ? generateFaqPageSchema(procedure.faq, canonicalUrl, 'pl')
+    : undefined;
+
+// Compose the JSON-LD array from defined entries only.
+const jsonLdBlocks = [
+  procedureJsonLd,
+  breadcrumbJsonLd,
+  ...(conditionJsonLd ? [conditionJsonLd] : []),
+  ...(faqJsonLd ? [faqJsonLd] : []),
+];
+
 const lastUpdatedLabel = new Date(procedure.lastUpdated).toLocaleDateString(
-  'en-NZ',
+  'pl-PL',
   { year: 'numeric', month: 'long', day: 'numeric' },
 );
 
@@ -133,9 +195,8 @@ const hasPositioning =
 const hasClosure = procedure.closure && procedure.closure.length > 0;
 const hasPatientSummary =
   procedure.patientSummary && procedure.patientSummary.length > 0;
+const hasFaq = procedure.faq && procedure.faq.length > 0;
 
-// Drop unresolved related references (target document deleted or not yet
-// authored). The GROQ projection returns null for unresolved refs.
 const relatedArticles = (procedure.relatedArticles ?? []).filter(
   (a): a is NonNullable<typeof a> => Boolean(a),
 );
@@ -145,23 +206,24 @@ const relatedProcedures = (procedure.relatedProcedures ?? []).filter(
 const hasRelated = relatedArticles.length > 0 || relatedProcedures.length > 0;
 
 const articleCategoryLabel: Record<string, string> = {
-  patient: 'Patient information',
-  expert: 'Expert blog',
+  patient: 'Informacje dla pacjenta',
+  expert: 'Artykuł ekspercki',
   'fessh-prep': 'FESSH preparation',
-  news: 'News & commentary',
+  news: 'Aktualności',
 };
 ---
 <SiteLayout
-  title={procedure.seoTitle || `${procedure.title} — Mateusz Gładysz, MD`}
+  title={procedure.seoTitle || `${procedure.title} — Mateusz Gładysz, lek.`}
   description={procedure.seoDescription || procedure.summary}
-  locale="en"
+  locale="pl"
+  alternateUrl={alternateUrl}
   canonical={canonicalUrl}
-  jsonLd={[procedureJsonLd, breadcrumbJsonLd]}
+  jsonLd={jsonLdBlocks}
 >
   <article class="procedure-shell">
     <header class="procedure-header">
       <p class="procedure-kicker">
-        <a href="/en/procedures">Procedures</a>
+        <a href="/pl/zabiegi/">Zabiegi</a>
         <span aria-hidden="true">·</span>
         <span>{categoryLabels[procedure.category] ?? procedure.category}</span>
       </p>
@@ -170,7 +232,7 @@ const articleCategoryLabel: Record<string, string> = {
         <p class="procedure-summary">{procedure.summary}</p>
       )}
       <p class="procedure-meta">
-        Last clinically reviewed
+        Ostatnia weryfikacja medyczna
         <time datetime={procedure.lastUpdated}>{lastUpdatedLabel}</time>
       </p>
     </header>
@@ -195,62 +257,63 @@ const articleCategoryLabel: Record<string, string> = {
           question={procedure.keyPoints.question}
           findings={procedure.keyPoints.findings}
           meaning={procedure.keyPoints.meaning}
-          findingsLabel="Indications"
-          meaningLabel="Clinical relevance"
+          findingsLabel="Wskazania i przebieg"
+          meaningLabel="Znaczenie kliniczne"
         />
       )}
 
-      <nav class="procedure-toc" aria-label="Procedure sections">
-        <p class="toc-label">Sections</p>
+      <nav class="procedure-toc" aria-label="Sekcje strony zabiegowej">
+        <p class="toc-label">Spis treści</p>
         <ol>
-          <li><a href="#indications">Indications</a></li>
+          <li><a href="#indications">Wskazania</a></li>
           {hasContraindications && (
-            <li><a href="#contraindications">Contraindications</a></li>
+            <li><a href="#contraindications">Przeciwwskazania</a></li>
           )}
-          <li><a href="#anatomy">Anatomy</a></li>
+          <li><a href="#anatomy">Anatomia</a></li>
           {hasPositioning && (
-            <li><a href="#positioning">Patient positioning</a></li>
+            <li><a href="#positioning">Pozycjonowanie pacjenta</a></li>
           )}
-          <li><a href="#approach">Approach</a></li>
-          <li><a href="#key-steps">Key steps</a></li>
-          {hasClosure && <li><a href="#closure">Closure</a></li>}
-          <li><a href="#aftercare">Aftercare</a></li>
-          <li><a href="#complications">Complications</a></li>
-          <li><a href="#evidence">Evidence</a></li>
+          <li><a href="#approach">Dostęp operacyjny</a></li>
+          <li><a href="#key-steps">Etapy kluczowe</a></li>
+          {hasClosure && <li><a href="#closure">Zamknięcie</a></li>}
+          <li><a href="#aftercare">Postępowanie pooperacyjne</a></li>
+          <li><a href="#complications">Powikłania</a></li>
+          <li><a href="#evidence">Dowody i piśmiennictwo</a></li>
+          {hasFaq && <li><a href="#faq">FAQ</a></li>}
         </ol>
       </nav>
 
       <section id="indications" class="proc-section" aria-labelledby="h-indications">
-        <h2 id="h-indications" class="proc-h"><span class="proc-num">1.</span> Indications</h2>
+        <h2 id="h-indications" class="proc-h"><span class="proc-num">1.</span> Wskazania</h2>
         <PortableTextRenderer value={procedure.indications} references={references} glossaryTerms={glossaryTerms} />
       </section>
 
       {hasContraindications && (
         <section id="contraindications" class="proc-section" aria-labelledby="h-contraind">
-          <h2 id="h-contraind" class="proc-h"><span class="proc-num">2.</span> Contraindications</h2>
+          <h2 id="h-contraind" class="proc-h"><span class="proc-num">2.</span> Przeciwwskazania</h2>
           <PortableTextRenderer value={procedure.contraindications} references={references} glossaryTerms={glossaryTerms} />
         </section>
       )}
 
       <section id="anatomy" class="proc-section" aria-labelledby="h-anatomy">
-        <h2 id="h-anatomy" class="proc-h"><span class="proc-num">3.</span> Relevant anatomy</h2>
+        <h2 id="h-anatomy" class="proc-h"><span class="proc-num">3.</span> Anatomia</h2>
         <PortableTextRenderer value={procedure.anatomy} references={references} glossaryTerms={glossaryTerms} />
       </section>
 
       {hasPositioning && (
         <section id="positioning" class="proc-section" aria-labelledby="h-pos">
-          <h2 id="h-pos" class="proc-h"><span class="proc-num">4.</span> Patient positioning</h2>
+          <h2 id="h-pos" class="proc-h"><span class="proc-num">4.</span> Pozycjonowanie pacjenta</h2>
           <PortableTextRenderer value={procedure.positioning} references={references} glossaryTerms={glossaryTerms} />
         </section>
       )}
 
       <section id="approach" class="proc-section" aria-labelledby="h-approach">
-        <h2 id="h-approach" class="proc-h"><span class="proc-num">5.</span> Approach</h2>
+        <h2 id="h-approach" class="proc-h"><span class="proc-num">5.</span> Dostęp operacyjny</h2>
         <PortableTextRenderer value={procedure.approach} references={references} glossaryTerms={glossaryTerms} />
       </section>
 
       <section id="key-steps" class="proc-section proc-steps" aria-labelledby="h-steps">
-        <h2 id="h-steps" class="proc-h"><span class="proc-num">6.</span> Key steps</h2>
+        <h2 id="h-steps" class="proc-h"><span class="proc-num">6.</span> Etapy kluczowe</h2>
         <ol class="steps-list">
           {procedure.keySteps.map((step, i) => (
             <li id={`step-${i + 1}`} class="step">
@@ -278,7 +341,7 @@ const articleCategoryLabel: Record<string, string> = {
               )}
               {step.pitfall && (
                 <aside class="pitfall" role="note">
-                  <p class="pitfall-label">Pitfall</p>
+                  <p class="pitfall-label">Uwaga techniczna</p>
                   <p class="pitfall-body">{step.pitfall}</p>
                 </aside>
               )}
@@ -289,29 +352,29 @@ const articleCategoryLabel: Record<string, string> = {
 
       {hasClosure && (
         <section id="closure" class="proc-section" aria-labelledby="h-closure">
-          <h2 id="h-closure" class="proc-h"><span class="proc-num">7.</span> Closure</h2>
+          <h2 id="h-closure" class="proc-h"><span class="proc-num">7.</span> Zamknięcie</h2>
           <PortableTextRenderer value={procedure.closure} references={references} glossaryTerms={glossaryTerms} />
         </section>
       )}
 
       <section id="aftercare" class="proc-section" aria-labelledby="h-aftercare">
-        <h2 id="h-aftercare" class="proc-h"><span class="proc-num">8.</span> Aftercare</h2>
+        <h2 id="h-aftercare" class="proc-h"><span class="proc-num">8.</span> Postępowanie pooperacyjne</h2>
         <PortableTextRenderer value={procedure.aftercare} references={references} glossaryTerms={glossaryTerms} />
       </section>
 
       <section id="complications" class="proc-section" aria-labelledby="h-comp">
-        <h2 id="h-comp" class="proc-h"><span class="proc-num">9.</span> Complications</h2>
+        <h2 id="h-comp" class="proc-h"><span class="proc-num">9.</span> Powikłania</h2>
         <PortableTextRenderer value={procedure.complications} references={references} glossaryTerms={glossaryTerms} />
       </section>
 
       <section id="evidence" class="proc-section" aria-labelledby="h-evidence">
-        <h2 id="h-evidence" class="proc-h"><span class="proc-num">10.</span> Evidence</h2>
+        <h2 id="h-evidence" class="proc-h"><span class="proc-num">10.</span> Dowody i piśmiennictwo</h2>
         <PortableTextRenderer value={procedure.evidence} references={references} glossaryTerms={glossaryTerms} />
       </section>
 
       {hasPatientSummary && (
         <details class="patient-summary">
-          <summary>For patients — plain-language summary</summary>
+          <summary>Dla pacjentów — informacje w przystępnym języku</summary>
           <div class="patient-summary-body">
             <PortableTextRenderer
               value={procedure.patientSummary}
@@ -322,18 +385,38 @@ const articleCategoryLabel: Record<string, string> = {
         </details>
       )}
 
+      {hasFaq && (
+        <section id="faq" class="proc-faq" aria-labelledby="h-faq">
+          <h2 id="h-faq" class="proc-h"><span class="proc-num">FAQ</span> Najczęstsze pytania</h2>
+          <div class="faq-list">
+            {procedure.faq!.map((item, i) => (
+              <details class="faq-item" name="cts-faq" open={i === 0 ? true : undefined}>
+                <summary>{item.question}</summary>
+                <div class="faq-answer">
+                  <PortableTextRenderer
+                    value={item.answer}
+                    references={references}
+                    glossaryTerms={glossaryTerms}
+                  />
+                </div>
+              </details>
+            ))}
+          </div>
+        </section>
+      )}
+
       <Bibliography references={references} />
 
       {hasRelated && (
         <aside class="proc-related" aria-labelledby="related-heading">
-          <h2 id="related-heading" class="related-heading">Related</h2>
+          <h2 id="related-heading" class="related-heading">Powiązane</h2>
           {relatedArticles.length > 0 && (
             <section class="related-section">
-              <p class="related-kicker">Articles</p>
+              <p class="related-kicker">Artykuły</p>
               <ul class="related-list">
                 {relatedArticles.map((a) => (
                   <li>
-                    <a href={`/en/blog/${a.slug.current}/`}>
+                    <a href={`/pl/blog/${a.slug.current}/`}>
                       <span class="related-title">{a.title}</span>
                       <span class="related-meta">{articleCategoryLabel[a.category] ?? a.category}</span>
                     </a>
@@ -344,11 +427,11 @@ const articleCategoryLabel: Record<string, string> = {
           )}
           {relatedProcedures.length > 0 && (
             <section class="related-section">
-              <p class="related-kicker">Procedures</p>
+              <p class="related-kicker">Zabiegi</p>
               <ul class="related-list">
                 {relatedProcedures.map((p) => (
                   <li>
-                    <a href={`/en/procedures/${p.slug.current}/`}>
+                    <a href={`/pl/zabiegi/${p.slug.current}/`}>
                       <span class="related-title">{p.title}</span>
                       <span class="related-meta">{categoryLabels[p.category] ?? p.category}</span>
                     </a>
@@ -422,10 +505,7 @@ const articleCategoryLabel: Record<string, string> = {
     margin: 0;
   }
 
-  .procedure-hero {
-    margin: 0 0 64px;
-  }
-
+  .procedure-hero { margin: 0 0 64px; }
   .procedure-hero img {
     width: 100%;
     height: auto;
@@ -433,7 +513,6 @@ const articleCategoryLabel: Record<string, string> = {
     aspect-ratio: 16/9;
     object-fit: cover;
   }
-
   .procedure-hero figcaption {
     font-family: var(--sans);
     font-size: 13px;
@@ -448,7 +527,6 @@ const articleCategoryLabel: Record<string, string> = {
     margin: 0;
     position: relative;
   }
-
   @media (min-width: 1024px) {
     .article-content {
       padding-right: 320px;
@@ -462,7 +540,6 @@ const articleCategoryLabel: Record<string, string> = {
     background: var(--bg-deep);
     border-left: 3px solid var(--rule-strong);
   }
-
   .toc-label {
     font-family: var(--mono);
     font-size: 11px;
@@ -471,7 +548,6 @@ const articleCategoryLabel: Record<string, string> = {
     color: var(--ink-3);
     margin: 0 0 16px;
   }
-
   .procedure-toc ol {
     margin: 0;
     padding: 0;
@@ -480,11 +556,6 @@ const articleCategoryLabel: Record<string, string> = {
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 8px 24px;
   }
-
-  .procedure-toc li {
-    counter-increment: toc-counter;
-  }
-
   .procedure-toc a {
     font-family: var(--sans);
     font-size: 14px;
@@ -493,7 +564,6 @@ const articleCategoryLabel: Record<string, string> = {
     border-bottom: 1px dotted var(--rule-strong);
     padding-bottom: 1px;
   }
-
   .procedure-toc a:hover {
     color: var(--accent);
     border-bottom-color: var(--accent);
@@ -503,12 +573,7 @@ const articleCategoryLabel: Record<string, string> = {
     margin-bottom: 72px;
     scroll-margin-top: 96px;
   }
-
-  .proc-section::after {
-    content: '';
-    display: block;
-    clear: both;
-  }
+  .proc-section::after { content: ''; display: block; clear: both; }
 
   .proc-h {
     font-family: var(--serif);
@@ -519,7 +584,6 @@ const articleCategoryLabel: Record<string, string> = {
     margin: 0 0 28px;
     letter-spacing: -0.018em;
   }
-
   .proc-num {
     font-family: var(--mono);
     font-weight: 400;
@@ -529,17 +593,11 @@ const articleCategoryLabel: Record<string, string> = {
     letter-spacing: 0.04em;
   }
 
-  .steps-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
+  .steps-list { list-style: none; padding: 0; margin: 0; }
   .step {
     margin-bottom: 64px;
     scroll-margin-top: 96px;
   }
-
   .step-h {
     font-family: var(--serif);
     font-weight: 500;
@@ -549,7 +607,6 @@ const articleCategoryLabel: Record<string, string> = {
     margin: 0 0 20px;
     letter-spacing: -0.012em;
   }
-
   .step-num {
     font-family: var(--mono);
     font-weight: 400;
@@ -557,16 +614,8 @@ const articleCategoryLabel: Record<string, string> = {
     margin-right: 10px;
   }
 
-  .step-figure {
-    margin: 24px 0;
-  }
-
-  .step-figure img {
-    width: 100%;
-    height: auto;
-    display: block;
-  }
-
+  .step-figure { margin: 24px 0; }
+  .step-figure img { width: 100%; height: auto; display: block; }
   .step-figure figcaption {
     font-family: var(--sans);
     font-size: 13px;
@@ -582,7 +631,6 @@ const articleCategoryLabel: Record<string, string> = {
     background: var(--bg-deep);
     border-left: 3px solid var(--accent);
   }
-
   .pitfall-label {
     font-family: var(--mono);
     font-size: 11px;
@@ -592,7 +640,6 @@ const articleCategoryLabel: Record<string, string> = {
     margin: 0 0 8px;
     font-weight: 500;
   }
-
   .pitfall-body {
     font-family: var(--sans);
     font-size: 15px;
@@ -608,7 +655,6 @@ const articleCategoryLabel: Record<string, string> = {
     background: var(--bg-deep);
     border-left: 3px solid var(--accent);
   }
-
   .patient-summary summary {
     font-family: var(--serif);
     font-weight: 500;
@@ -617,11 +663,7 @@ const articleCategoryLabel: Record<string, string> = {
     cursor: pointer;
     list-style: none;
   }
-
-  .patient-summary summary::-webkit-details-marker {
-    display: none;
-  }
-
+  .patient-summary summary::-webkit-details-marker { display: none; }
   .patient-summary summary::before {
     content: '+ ';
     font-family: var(--mono);
@@ -629,22 +671,54 @@ const articleCategoryLabel: Record<string, string> = {
     margin-right: 8px;
     font-weight: 400;
   }
+  .patient-summary[open] summary::before { content: '− '; }
+  .patient-summary[open] summary { margin-bottom: 16px; }
+  .patient-summary-body { margin-top: 16px; }
 
-  .patient-summary[open] summary::before {
-    content: '− ';
+  /* FAQ — collapsible Q/A blocks. The `name="cts-faq"` exclusive accordion
+     pattern is opt-in: only one FAQ item open at a time per native HTML. */
+  .proc-faq {
+    margin-bottom: 72px;
+    scroll-margin-top: 96px;
+  }
+  .faq-list {
+    border-top: 1px solid var(--rule);
+  }
+  .faq-item {
+    border-bottom: 1px solid var(--rule);
+  }
+  .faq-item summary {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 19px;
+    line-height: 1.35;
+    color: var(--ink);
+    cursor: pointer;
+    list-style: none;
+    padding: 20px 0;
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+  }
+  .faq-item summary::-webkit-details-marker { display: none; }
+  .faq-item summary::before {
+    content: '+';
+    font-family: var(--mono);
+    color: var(--accent);
+    font-size: 18px;
+    flex-shrink: 0;
+    width: 16px;
+  }
+  .faq-item[open] summary::before { content: '−'; }
+  .faq-item[open] summary {
+    color: var(--accent);
+    padding-bottom: 8px;
+  }
+  .faq-answer {
+    padding: 0 0 24px 30px;
+    max-width: 60ch;
   }
 
-  .patient-summary[open] summary {
-    margin-bottom: 16px;
-  }
-
-  .patient-summary-body {
-    margin-top: 16px;
-  }
-
-  /* Related — companion articles and adjacent procedures surfaced after the
-     Bibliography. Mirrors the article template's .article-related block so
-     visual register is consistent across content types. */
   .proc-related {
     margin-top: clamp(48px, 6vw, 80px);
     padding-top: 32px;

@@ -249,6 +249,9 @@ export type SanityArticle = {
   title: string;
   slug: { current: string };
   category: 'patient' | 'expert' | 'fessh-prep' | 'news';
+  // Optional for back-compat with pre-language-field docs (defaults to 'en'
+  // at render time when missing — EN-era seeded docs predate the field).
+  language?: Locale;
   audience: 'patient' | 'peer' | 'mixed';
   // GROQ projects author->{name, credentials}; null if the reference is
   // unresolved (deleted target). Author is required in the schema, so this
@@ -282,12 +285,20 @@ export type ProcedureStep = {
   pitfall?: string;
 };
 
+export type FaqItem = {
+  _key?: string;
+  question: string;
+  answer: PortableTextBlock[];
+};
+
 export type SanityProcedurePage = {
   _id: string;
   _type: 'procedurePage';
   title: string;
   slug: { current: string };
   category: 'hand-surgery' | 'reconstructive-microsurgery' | 'skin-cancer';
+  // Optional for back-compat (see SanityArticle.language note).
+  language?: Locale;
   audience: 'patient' | 'peer' | 'mixed';
   lastUpdated: string;
   summary: string;
@@ -304,6 +315,7 @@ export type SanityProcedurePage = {
   complications: PortableTextBlock[];
   patientSummary?: PortableTextBlock[];
   evidence: PortableTextBlock[];
+  faq?: FaqItem[];
   // Sibling content surfaced at the bottom of the procedure page — same shape
   // as on `article`. Unresolved references (target not yet authored) come
   // back null and are filtered out at render time.
@@ -326,7 +338,7 @@ const REFERENCE_PROJECTION = /* groq */ `{
 }`;
 
 const ARTICLE_PROJECTION = /* groq */ `{
-  _id, _type, title, slug, category, audience,
+  _id, _type, title, slug, category, language, audience,
   "author": author->{name, credentials, title, role},
   publishedDate, lastUpdated, excerpt, standfirst,
   heroImage,
@@ -383,7 +395,7 @@ const GLOSSARY_DETAIL_PROJECTION = /* groq */ `{
 }`;
 
 const PROCEDURE_PROJECTION = /* groq */ `{
-  _id, _type, title, slug, category, audience, lastUpdated, summary,
+  _id, _type, title, slug, category, language, audience, lastUpdated, summary,
   keyPoints,
   heroImage,
   indications, contraindications, anatomy, positioning, approach,
@@ -391,24 +403,39 @@ const PROCEDURE_PROJECTION = /* groq */ `{
   closure, aftercare, complications,
   patientSummary,
   evidence,
+  faq,
   "relatedArticles": relatedArticles[]->{ _id, title, slug, category },
   "relatedProcedures": relatedProcedures[]->{ _id, title, slug, category },
   seoTitle, seoDescription
 }`;
 
-export async function getAllArticleSlugs(): Promise<string[]> {
+// Locale filter helper — keeps EN-era seeded docs (no language field) visible
+// to the EN routes while strictly scoping PL routes to language == 'pl'.
+//
+// EN call (`getAllArticleSlugs('en')`) → matches docs where language is 'en'
+//   OR not set (back-compat with Phase 5/6 docs that predate the field).
+// PL call (`getAllArticleSlugs('pl')`) → matches docs where language is 'pl'.
+// No-arg call → no filter (caller wants every doc; used by build-time scripts).
+function languageFilter(locale?: Locale): string {
+  if (!locale) return '';
+  if (locale === 'en') return ' && (language == "en" || !defined(language))';
+  return ` && language == "${locale}"`;
+}
+
+export async function getAllArticleSlugs(locale?: Locale): Promise<string[]> {
   return sanityClient.fetch<string[]>(
-    /* groq */ `*[_type == "article" && defined(slug.current)].slug.current`,
+    /* groq */ `*[_type == "article" && defined(slug.current)${languageFilter(locale)}].slug.current`,
   );
 }
 
-// Lightweight projection for the /en/blog index — title/category/audience/
+// Lightweight projection for the blog/wiedza index — title/category/audience/
 // publishedDate/excerpt only. Avoids pulling the full Portable Text body.
 export type ArticleSummary = {
   _id: string;
   title: string;
   slug: { current: string };
   category: SanityArticle['category'];
+  language?: Locale;
   audience: SanityArticle['audience'];
   publishedDate: string;
   lastUpdated?: string;
@@ -416,10 +443,12 @@ export type ArticleSummary = {
   heroImage?: SanityImage;
 };
 
-export async function getAllArticleSummaries(): Promise<ArticleSummary[]> {
+export async function getAllArticleSummaries(
+  locale?: Locale,
+): Promise<ArticleSummary[]> {
   return sanityClient.fetch<ArticleSummary[]>(
-    /* groq */ `*[_type == "article" && defined(slug.current)] | order(publishedDate desc){
-      _id, title, slug, category, audience, publishedDate, lastUpdated, excerpt, heroImage
+    /* groq */ `*[_type == "article" && defined(slug.current)${languageFilter(locale)}] | order(publishedDate desc){
+      _id, title, slug, category, language, audience, publishedDate, lastUpdated, excerpt, heroImage
     }`,
   );
 }
@@ -429,40 +458,45 @@ export type ProcedureSummary = {
   title: string;
   slug: { current: string };
   category: SanityProcedurePage['category'];
+  language?: Locale;
   audience: SanityProcedurePage['audience'];
   lastUpdated: string;
   summary: string;
   heroImage?: SanityImage;
 };
 
-export async function getAllProcedureSummaries(): Promise<ProcedureSummary[]> {
+export async function getAllProcedureSummaries(
+  locale?: Locale,
+): Promise<ProcedureSummary[]> {
   return sanityClient.fetch<ProcedureSummary[]>(
-    /* groq */ `*[_type == "procedurePage" && defined(slug.current)] | order(title asc){
-      _id, title, slug, category, audience, lastUpdated, summary, heroImage
+    /* groq */ `*[_type == "procedurePage" && defined(slug.current)${languageFilter(locale)}] | order(title asc){
+      _id, title, slug, category, language, audience, lastUpdated, summary, heroImage
     }`,
   );
 }
 
 export async function getArticleBySlug(
   slug: string,
+  locale?: Locale,
 ): Promise<SanityArticle | null> {
   return sanityClient.fetch<SanityArticle | null>(
-    /* groq */ `*[_type == "article" && slug.current == $slug][0]${ARTICLE_PROJECTION}`,
+    /* groq */ `*[_type == "article" && slug.current == $slug${languageFilter(locale)}][0]${ARTICLE_PROJECTION}`,
     { slug },
   );
 }
 
-export async function getAllProcedureSlugs(): Promise<string[]> {
+export async function getAllProcedureSlugs(locale?: Locale): Promise<string[]> {
   return sanityClient.fetch<string[]>(
-    /* groq */ `*[_type == "procedurePage" && defined(slug.current)].slug.current`,
+    /* groq */ `*[_type == "procedurePage" && defined(slug.current)${languageFilter(locale)}].slug.current`,
   );
 }
 
 export async function getProcedureBySlug(
   slug: string,
+  locale?: Locale,
 ): Promise<SanityProcedurePage | null> {
   return sanityClient.fetch<SanityProcedurePage | null>(
-    /* groq */ `*[_type == "procedurePage" && slug.current == $slug][0]${PROCEDURE_PROJECTION}`,
+    /* groq */ `*[_type == "procedurePage" && slug.current == $slug${languageFilter(locale)}][0]${PROCEDURE_PROJECTION}`,
     { slug },
   );
 }

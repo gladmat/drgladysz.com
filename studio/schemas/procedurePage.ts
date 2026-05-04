@@ -53,6 +53,21 @@ export const procedurePage = defineType({
       validation: (Rule) => Rule.required(),
     }),
     defineField({
+      name: 'language',
+      title: 'Language',
+      type: 'string',
+      group: 'meta',
+      options: {
+        list: [
+          { title: 'English', value: 'en' },
+          { title: 'Polski', value: 'pl' },
+        ],
+      },
+      initialValue: 'en',
+      validation: (Rule) => Rule.required(),
+      description: 'Drives /en vs /pl routing and inLanguage in JSON-LD.',
+    }),
+    defineField({
       name: 'audience',
       title: 'Primary audience',
       type: 'string',
@@ -308,6 +323,42 @@ export const procedurePage = defineType({
       validation: (Rule) => Rule.required(),
       description:
         'Discussion of supporting literature. Use the citation inline mark to attach references.',
+    }),
+
+    // === FAQ (optional, drives FAQPage JSON-LD when populated) ===
+    defineField({
+      name: 'faq',
+      title: 'FAQ — patient-facing questions (optional)',
+      type: 'array',
+      group: 'clinical',
+      of: [
+        {
+          type: 'object',
+          name: 'faqItem',
+          title: 'FAQ item',
+          fields: [
+            {
+              name: 'question',
+              title: 'Question',
+              type: 'string',
+              validation: (Rule) => Rule.required().max(200),
+            },
+            {
+              name: 'answer',
+              title: 'Answer',
+              type: 'array',
+              of: [{ type: 'block' }],
+              validation: (Rule) => Rule.required().min(1),
+            },
+          ],
+          preview: {
+            select: { title: 'question' },
+            prepare: ({ title }) => ({ title: title || 'Untitled question' }),
+          },
+        },
+      ],
+      description:
+        'Eight or so plain-language questions a referring patient might ask. Rendered as collapsible <details> blocks at the foot of the page and emitted as FAQPage JSON-LD for rich-snippet eligibility.',
     }),
 
     // === RELATED CONTENT ===

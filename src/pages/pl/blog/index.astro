@@ -1,19 +1,15 @@
 ---
 // src/pages/pl/blog/index.astro
 //
-// Polish knowledge base index (Baza wiedzy). Polish equivalent of
-// /en/blog/index.astro.
+// Polish knowledge base index (Baza wiedzy). Lists PL articles grouped by
+// category in fixed editorial order. Per Decision #34 / brand spec v1.10,
+// PL has 3 categories (no fessh-prep — FESSH exam is English-language).
 //
-// The article Sanity schema has no `language` field today, so this index
-// does NOT call getAllArticleSummaries (the EN list would otherwise leak
-// into the PL view). Three category sections render an empty state until
-// the first PL article ships and the schema gains a locale filter.
-//
-// Note: `category: fessh-prep` articles are English-only by design (FESSH
-// Diploma exam is English-language; per memory feedback_fessh_english_only)
-// — that category does not appear here.
+// Empty categories render an "in preparation" line so the page reads as a
+// section index rather than collapsing to nothing while early articles ship.
 import SiteLayout from '@/layouts/SiteLayout.astro';
 import SectionMasthead from '@/components/SectionMasthead.astro';
+import { getAllArticleSummaries, type ArticleSummary } from '@/lib/sanity';
 import { generateBreadcrumb } from '@/lib/schema';
 
 const siteUrl = (
@@ -21,7 +17,13 @@ const siteUrl = (
 ).replace(/\/$/, '');
 const canonicalUrl = `${siteUrl}/pl/blog/`;
 
-const CATEGORIES = [
+const articles = await getAllArticleSummaries('pl');
+
+const CATEGORIES: {
+  value: ArticleSummary['category'];
+  label: string;
+  blurb: string;
+}[] = [
   {
     value: 'patient',
     label: 'Informacje dla pacjenta',
@@ -30,7 +32,7 @@ const CATEGORIES = [
   },
   {
     value: 'expert',
-    label: 'Blog ekspercki',
+    label: 'Artykuły eksperckie',
     blurb:
       'Technika operacyjna, przegląd dowodów i decyzje kliniczne — pisane z myślą o lekarzach.',
   },
@@ -42,19 +44,46 @@ const CATEGORIES = [
   },
 ];
 
+const grouped = CATEGORIES.map((c) => ({
+  ...c,
+  items: articles.filter((a) => a.category === c.value),
+}));
+
 const collectionJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'CollectionPage',
   name: 'Baza wiedzy — Mateusz Gładysz, lek.',
   url: canonicalUrl,
   inLanguage: 'pl-PL',
-  hasPart: [],
+  hasPart: articles.map((a) => ({
+    '@type': 'Article',
+    headline: a.title,
+    url: `${siteUrl}/pl/blog/${a.slug.current}/`,
+    datePublished: a.publishedDate,
+    description: a.excerpt,
+  })),
 };
 
 const breadcrumbJsonLd = generateBreadcrumb([
   { name: 'Strona główna', url: `${siteUrl}/pl/` },
   { name: 'Baza wiedzy', url: canonicalUrl },
 ]);
+
+function fmtDate(d?: string) {
+  if (!d) return '';
+  return new Date(d).toLocaleDateString('pl-PL', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+
+const categoryLabels: Record<ArticleSummary['category'], string> = {
+  patient: 'Informacje dla pacjenta',
+  expert: 'Artykuł ekspercki',
+  'fessh-prep': 'FESSH preparation',
+  news: 'Aktualności',
+};
 ---
 <SiteLayout
   title="Baza wiedzy — Mateusz Gładysz, lek."
@@ -75,13 +104,41 @@ const breadcrumbJsonLd = generateBreadcrumb([
 
   <section class="blog-index">
     <div class="blog-index-inner">
-      {CATEGORIES.map((cat) => (
+      {grouped.map((cat) => (
         <section class="cat-section" aria-labelledby={`cat-${cat.value}`}>
           <header class="cat-header">
             <h2 id={`cat-${cat.value}`} class="cat-heading">{cat.label}</h2>
             <p class="cat-blurb">{cat.blurb}</p>
           </header>
-          <p class="empty">W przygotowaniu. Pierwsze artykuły w tej kategorii są w opracowaniu.</p>
+          {cat.items.length > 0 ? (
+            <ol class="article-list">
+              {cat.items.map((article) => (
+                <li class="article-card">
+                  <a href={`/pl/blog/${article.slug.current}/`} class="article-card-link">
+                    <p class="card-meta">
+                      <span class="card-cat">{categoryLabels[article.category]}</span>
+                      <span aria-hidden="true">·</span>
+                      <time datetime={article.publishedDate}>
+                        {fmtDate(article.publishedDate)}
+                      </time>
+                      {article.lastUpdated && article.lastUpdated !== article.publishedDate && (
+                        <>
+                          <span aria-hidden="true">·</span>
+                          <span class="card-updated">
+                            Aktualizacja {fmtDate(article.lastUpdated)}
+                          </span>
+                        </>
+                      )}
+                    </p>
+                    <h3 class="card-title">{article.title}</h3>
+                    <p class="card-excerpt">{article.excerpt}</p>
+                  </a>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p class="empty">W przygotowaniu. Pierwsze artykuły w tej kategorii są w opracowaniu.</p>
+          )}
         </section>
       ))}
     </div>
@@ -118,7 +175,7 @@ const breadcrumbJsonLd = generateBreadcrumb([
 
   .cat-header {
     max-width: 720px;
-    margin-bottom: 24px;
+    margin-bottom: 40px;
   }
 
   .cat-heading {
@@ -147,5 +204,78 @@ const breadcrumbJsonLd = generateBreadcrumb([
     color: var(--ink-3);
     max-width: 60ch;
     margin: 0;
+  }
+
+  .article-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 32px;
+  }
+
+  .article-card {
+    border-top: 1px solid var(--rule);
+    padding-top: 28px;
+  }
+
+  .article-card-link {
+    display: grid;
+    gap: 12px;
+    text-decoration: none;
+    color: inherit;
+    grid-template-columns: 1fr;
+    max-width: 760px;
+  }
+
+  .article-card-link:hover .card-title {
+    color: var(--accent);
+  }
+
+  .article-card-link:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 6px;
+  }
+
+  .card-meta {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: var(--ink-3);
+    margin: 0;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: baseline;
+  }
+
+  .card-cat {
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  .card-updated {
+    color: var(--ink-3);
+  }
+
+  .card-title {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(22px, 2.2vw, 28px);
+    line-height: 1.2;
+    color: var(--ink);
+    margin: 0;
+    letter-spacing: -0.012em;
+    transition: color 0.15s ease;
+  }
+
+  .card-excerpt {
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    margin: 0;
+    max-width: 60ch;
   }
 </style>

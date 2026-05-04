@@ -42,6 +42,21 @@ export const article = defineType({
       validation: (Rule) => Rule.required(),
     }),
     defineField({
+      name: 'language',
+      title: 'Language',
+      type: 'string',
+      group: 'meta',
+      options: {
+        list: [
+          { title: 'English', value: 'en' },
+          { title: 'Polski', value: 'pl' },
+        ],
+      },
+      initialValue: 'en',
+      validation: (Rule) => Rule.required(),
+      description: 'Drives /en vs /pl routing and inLanguage in JSON-LD.',
+    }),
+    defineField({
       name: 'audience',
       title: 'Primary audience',
       type: 'string',

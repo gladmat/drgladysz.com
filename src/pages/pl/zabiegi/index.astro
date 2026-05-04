@@ -11,14 +11,12 @@
 // #mikrochirurgia-rekonstrukcyjna, #nowotwory-skory) so deep-links from
 // the home Specialty Blocks resolve here.
 //
-// Per-procedure PL pages (`/pl/zabiegi/[slug]`) are deferred to dedicated
-// composition sessions. The `procedurePage` Sanity schema has no
-// `language` field today, so this index does NOT query Sanity (the EN
-// procedures index would otherwise leak EN procedures into the PL list).
-// Each category renders an empty state until PL procedures are authored
-// and the schema gains a locale filter.
+// Per-procedure PL pages live at `/pl/zabiegi/[slug]/`. Each category fills
+// from `getAllProcedureSummaries('pl')`; empty categories fall back to the
+// "in preparation" line so the page reads cleanly while the catalogue grows.
 import SiteLayout from '@/layouts/SiteLayout.astro';
 import SectionMasthead from '@/components/SectionMasthead.astro';
+import { getAllProcedureSummaries, type ProcedureSummary } from '@/lib/sanity';
 import { generateBreadcrumb } from '@/lib/schema';
 
 const siteUrl = (
@@ -26,7 +24,14 @@ const siteUrl = (
 ).replace(/\/$/, '');
 const canonicalUrl = `${siteUrl}/pl/zabiegi/`;
 
-const CATEGORIES = [
+const procedures = await getAllProcedureSummaries('pl');
+
+const CATEGORIES: {
+  value: ProcedureSummary['category'];
+  anchor: string;
+  label: string;
+  blurb: string;
+}[] = [
   {
     value: 'hand-surgery',
     anchor: 'chirurgia-reki',
@@ -50,13 +55,23 @@ const CATEGORIES = [
   },
 ];
 
+const grouped = CATEGORIES.map((c) => ({
+  ...c,
+  items: procedures.filter((p) => p.category === c.value),
+}));
+
 const collectionJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'CollectionPage',
   name: 'Zabiegi — Mateusz Gładysz, lek.',
   url: canonicalUrl,
   inLanguage: 'pl-PL',
-  hasPart: [],
+  hasPart: procedures.map((p) => ({
+    '@type': 'MedicalProcedure',
+    name: p.title,
+    url: `${siteUrl}/pl/zabiegi/${p.slug.current}/`,
+    description: p.summary,
+  })),
 };
 
 const breadcrumbJsonLd = generateBreadcrumb([
@@ -83,7 +98,7 @@ const breadcrumbJsonLd = generateBreadcrumb([
 
   <section class="proc-index">
     <div class="proc-index-inner">
-      {CATEGORIES.map((cat) => (
+      {grouped.map((cat) => (
         <section
           class="cat-section"
           id={cat.anchor}
@@ -94,7 +109,20 @@ const breadcrumbJsonLd = generateBreadcrumb([
             <p class="cat-blurb">{cat.blurb}</p>
           </header>
 
-          <p class="empty">W przygotowaniu. Pierwsze strony w tej kategorii są w opracowaniu.</p>
+          {cat.items.length > 0 ? (
+            <ol class="proc-list">
+              {cat.items.map((p) => (
+                <li class="proc-card">
+                  <a href={`/pl/zabiegi/${p.slug.current}/`} class="proc-card-link">
+                    <h3 class="card-title">{p.title}</h3>
+                    <p class="card-summary">{p.summary}</p>
+                  </a>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p class="empty">W przygotowaniu. Pierwsze strony w tej kategorii są w opracowaniu.</p>
+          )}
         </section>
       ))}
     </div>
@@ -161,5 +189,56 @@ const breadcrumbJsonLd = generateBreadcrumb([
     color: var(--ink-3);
     max-width: 60ch;
     margin: 0;
+  }
+
+  .proc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 32px;
+  }
+
+  .proc-card {
+    border-top: 1px solid var(--rule);
+    padding-top: 28px;
+  }
+
+  .proc-card-link {
+    display: grid;
+    gap: 12px;
+    text-decoration: none;
+    color: inherit;
+    grid-template-columns: 1fr;
+    max-width: 760px;
+  }
+
+  .proc-card-link:hover .card-title {
+    color: var(--accent);
+  }
+
+  .proc-card-link:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 6px;
+  }
+
+  .card-title {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(22px, 2.2vw, 28px);
+    line-height: 1.2;
+    color: var(--ink);
+    margin: 0;
+    letter-spacing: -0.012em;
+    transition: color 0.15s ease;
+  }
+
+  .card-summary {
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    margin: 0;
+    max-width: 60ch;
   }
 </style>

@@ -17,7 +17,14 @@ import type {
   PortableTextBlock,
   GlossarySummary,
   SanityGlossaryTermFull,
+  FaqItem,
 } from './sanity';
+
+type Locale = 'en' | 'pl';
+const LANG_TAG: Record<Locale, 'en-NZ' | 'pl-PL'> = {
+  en: 'en-NZ',
+  pl: 'pl-PL',
+};
 
 const SITE_URL = (
   import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com'
@@ -90,6 +97,9 @@ interface ArticleSchemaInput {
   references: SanityRefDoc[];
   url: string; // canonical URL of the article
   authorName?: string;
+  // Defaults to the article's `language` field; falls back to 'en' when the
+  // doc predates the field. EN/PL pages can also override explicitly.
+  locale?: Locale;
   // Pre-resolved hero image data — caller computes the URL via Sanity's
   // image-url builder (the schema module deliberately doesn't import it
   // to keep this generator pure / framework-agnostic). Width/height are
@@ -108,6 +118,7 @@ export function generateArticleSchema({
   references,
   url,
   authorName = 'Mateusz Gładysz',
+  locale,
   heroImage,
 }: ArticleSchemaInput) {
   const isPatientFacing = article.audience === 'patient';
@@ -120,13 +131,15 @@ export function generateArticleSchema({
     article.excerpt ||
     blocksToPlainText(article.body, { maxChars: 200 });
 
+  const resolvedLocale = locale ?? article.language ?? 'en';
+
   return {
     '@context': 'https://schema.org',
     '@type': articleType,
     headline: article.title,
     name: article.title,
     description,
-    inLanguage: 'en-NZ',
+    inLanguage: LANG_TAG[resolvedLocale],
     url,
     mainEntityOfPage: { '@type': 'WebPage', '@id': url },
     datePublished: article.publishedDate,
@@ -174,6 +187,7 @@ interface ProcedureSchemaInput {
   references: SanityRefDoc[];
   url: string;
   authorName?: string;
+  locale?: Locale;
   heroImage?: {
     url: string;
     width: number;
@@ -187,12 +201,15 @@ export function generateProcedureSchema({
   references,
   url,
   authorName = 'Mateusz Gładysz',
+  locale,
   heroImage,
 }: ProcedureSchemaInput) {
   const description =
     procedure.seoDescription ||
     procedure.summary ||
     blocksToPlainText(procedure.indications, { maxChars: 200 });
+
+  const resolvedLocale = locale ?? procedure.language ?? 'en';
 
   return {
     '@context': 'https://schema.org',
@@ -203,7 +220,7 @@ export function generateProcedureSchema({
     url,
     mainEntityOfPage: { '@type': 'WebPage', '@id': url },
     dateModified: procedure.lastUpdated,
-    inLanguage: 'en-NZ',
+    inLanguage: LANG_TAG[resolvedLocale],
     bodyLocation: blocksToPlainText(procedure.anatomy, { maxChars: 240 }),
     preparation: blocksToPlainText(procedure.positioning, { maxChars: 240 }),
     followup: blocksToPlainText(procedure.aftercare, { maxChars: 300 }),
@@ -378,5 +395,130 @@ export function generateDefinedTermSchema({
       ? { alternateName: term.synonyms }
       : {}),
     termCode: term.slug.current,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// MedicalCondition JSON-LD
+//
+// Companion entity for procedure pages — surfaces the condition treated by
+// the procedure with ICD-10 code, signs, treatments, and differential
+// diagnoses. Per the PL CTS SEO spec §2.2 (`zespol-ciesni-nadgarstka`,
+// G56.0). Authored explicitly by the page template; not derived from a
+// Sanity field. Multiple JSON-LD blocks coexist via SiteLayout's `jsonLd`
+// array prop, so this sits alongside MedicalProcedure + BreadcrumbList +
+// FAQPage on the same page.
+// ---------------------------------------------------------------------------
+
+interface MedicalConditionInput {
+  url: string;
+  locale: Locale;
+  name: string;
+  alternateName?: string[];
+  description: string;
+  icd10?: string;
+  icd9?: string;
+  signOrSymptom?: string[];
+  possibleTreatment?: string[];
+  differentialDiagnosis?: string[];
+  epidemiology?: string;
+  relevantSpecialty?: string[];
+}
+
+export function generateMedicalConditionSchema({
+  url,
+  locale,
+  name,
+  alternateName,
+  description,
+  icd10,
+  icd9,
+  signOrSymptom,
+  possibleTreatment,
+  differentialDiagnosis,
+  epidemiology,
+  relevantSpecialty,
+}: MedicalConditionInput) {
+  const codes: object[] = [];
+  if (icd10)
+    codes.push({
+      '@type': 'MedicalCode',
+      codeValue: icd10,
+      codingSystem: 'ICD-10',
+    });
+  if (icd9)
+    codes.push({
+      '@type': 'MedicalCode',
+      codeValue: icd9,
+      codingSystem: 'ICD-9-CM',
+    });
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'MedicalCondition',
+    name,
+    description,
+    url,
+    inLanguage: LANG_TAG[locale],
+    ...(alternateName && alternateName.length > 0 ? { alternateName } : {}),
+    ...(codes.length > 0 ? { code: codes.length === 1 ? codes[0] : codes } : {}),
+    ...(signOrSymptom && signOrSymptom.length > 0
+      ? {
+          signOrSymptom: signOrSymptom.map((s) => ({
+            '@type': 'MedicalSignOrSymptom',
+            name: s,
+          })),
+        }
+      : {}),
+    ...(possibleTreatment && possibleTreatment.length > 0
+      ? {
+          possibleTreatment: possibleTreatment.map((t) => ({
+            '@type': 'MedicalTherapy',
+            name: t,
+          })),
+        }
+      : {}),
+    ...(differentialDiagnosis && differentialDiagnosis.length > 0
+      ? {
+          differentialDiagnosis: differentialDiagnosis.map((d) => ({
+            '@type': 'DDxElement',
+            distinguishingSign: { '@type': 'MedicalSignOrSymptom', name: d },
+          })),
+        }
+      : {}),
+    ...(epidemiology ? { epidemiology } : {}),
+    ...(relevantSpecialty && relevantSpecialty.length > 0
+      ? { relevantSpecialty }
+      : {}),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// FAQPage JSON-LD
+//
+// Emitted on procedure pages whose Sanity doc has `faq[]` populated. Each
+// FaqItem becomes a Question/Answer pair; the answer is derived from the
+// portable-text `answer` field via plaintext extraction (search engines
+// don't render the rich formatting in rich snippets, so plaintext is
+// sufficient and avoids escaping issues).
+// ---------------------------------------------------------------------------
+
+export function generateFaqPageSchema(
+  faq: FaqItem[],
+  url: string,
+  locale: Locale,
+) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    url,
+    inLanguage: LANG_TAG[locale],
+    mainEntity: faq.map((item) => ({
+      '@type': 'Question',
+      name: item.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: blocksToPlainText(item.answer, { maxChars: 1200 }),
+      },
+    })),
   };
 }

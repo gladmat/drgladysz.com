@@ -18,7 +18,7 @@ const siteUrl = (
 ).replace(/\/$/, '');
 const canonicalUrl = `${siteUrl}/en/procedures/`;
 
-const procedures = await getAllProcedureSummaries();
+const procedures = await getAllProcedureSummaries('en');
 
 const CATEGORIES: {
   value: ProcedureSummary['category'];
