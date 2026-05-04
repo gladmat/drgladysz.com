@@ -42,9 +42,11 @@ const client = createClient({
   useCdn: false,
 });
 
+// Source markdown archived 2026-05-04 after first publish; idempotent
+// re-runs resolve from the archive location.
 const SOURCE_PATH = resolve(
   __dirname,
-  '../../01-brand-system/inbox/drgladysz-glossary-pl-cts-procedure-v1_1.md',
+  '../../01-brand-system/inbox/_archive/2026-05-04-pl-cts-package/drgladysz-glossary-pl-cts-procedure-v1_1.md',
 );
 
 interface GlossaryEntry {

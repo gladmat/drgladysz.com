@@ -54,9 +54,11 @@ const client = createClient({
   useCdn: false,
 });
 
+// Source markdown was archived after first publish (2026-05-04); scripts kept
+// idempotent so re-seeds resolve from the archive location.
 const SOURCE_PATH = resolve(
   __dirname,
-  '../../01-brand-system/inbox/drgladysz-procedure-otwarte-odbarczenie-kanalu-nadgarstka-pl-draft-v1_1.md',
+  '../../01-brand-system/inbox/_archive/2026-05-04-pl-cts-package/drgladysz-procedure-otwarte-odbarczenie-kanalu-nadgarstka-pl-draft-v1_1.md',
 );
 
 const SLUG = 'zespol-ciesni-nadgarstka';
@@ -344,8 +346,11 @@ interface Block {
 interface CalloutBlock {
   _type: 'callout';
   _key: string;
-  kind: 'info' | 'warning' | 'pearl';
-  body: Block[];
+  // Schema fields per studio/schemas/callout.ts: `type` + `content` (NOT
+  // `kind` + `body`).
+  type: 'info' | 'warning' | 'pearl';
+  title?: string;
+  content: Block[];
 }
 type ContentBlock = Block | CalloutBlock;
 
@@ -562,22 +567,25 @@ function parseSection(rawLines: string[], ctx: ResolverContext): ContentBlock[] 
         i++;
       }
       const text = calloutLines.join(' ').trim();
-      // Detect kind by leading bold word
-      let kind: CalloutBlock['kind'] = 'info';
+      let type: CalloutBlock['type'] = 'info';
+      let title: string | undefined;
       let body = text;
       const m = text.match(/^\*\*([^.]+)\.\*\*\s*(.*)$/);
       if (m) {
-        const word = m[1].toLowerCase();
-        if (word.includes('uwaga')) kind = 'warning';
-        else if (word.includes('punkt')) kind = 'pearl';
-        else if (word.includes('konwencja')) kind = 'info';
+        const label = m[1];
+        const word = label.toLowerCase();
+        if (word.includes('uwaga')) type = 'warning';
+        else if (word.includes('punkt')) type = 'pearl';
+        else if (word.includes('konwencja')) type = 'info';
+        title = label;
         body = m[2];
       }
       blocks.push({
         _type: 'callout',
         _key: k(),
-        kind,
-        body: [richBlock(body, {}, ctx)],
+        type,
+        ...(title ? { title } : {}),
+        content: [richBlock(body, {}, ctx)],
       });
       continue;
     }

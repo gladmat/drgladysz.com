@@ -46,7 +46,12 @@ const client = createClient({
 
 const AUTHOR_ID = '2cbd8bcc-fe62-4d80-8bd4-a1a345dcf472';
 
-const INBOX_DIR = resolve(__dirname, '../../01-brand-system/inbox');
+// Source markdowns moved to inbox archive 2026-05-04 after first publish;
+// scripts kept idempotent so future re-seeds resolve from the archive.
+const INBOX_DIR = resolve(
+  __dirname,
+  '../../01-brand-system/inbox/_archive/2026-05-04-pl-cts-package',
+);
 
 // =============================================================================
 //  Inline DSL tokenizer + Portable Text builder (same shape as
@@ -80,8 +85,12 @@ interface Block {
 interface CalloutBlock {
   _type: 'callout';
   _key: string;
-  kind: 'info' | 'warning' | 'pearl';
-  body: Block[];
+  // Schema fields per studio/schemas/callout.ts: `type` + `content` (NOT
+  // `kind` + `body` — earlier scripts had this wrong and produced empty
+  // callouts in production).
+  type: 'info' | 'warning' | 'pearl';
+  title?: string;
+  content: Block[];
 }
 type ContentBlock = Block | CalloutBlock;
 
@@ -310,20 +319,27 @@ function parseSection(rawLines: string[], ctx: ResolverContext): ContentBlock[] 
         i++;
       }
       const text = calloutLines.join(' ').trim();
-      let kind: CalloutBlock['kind'] = 'info';
+      let type: CalloutBlock['type'] = 'info';
+      let title: string | undefined;
       let body = text;
       const m = text.match(/^\*\*([^.]+)\.\*\*\s*(.*)$/);
       if (m) {
-        const word = m[1].toLowerCase();
-        if (word.includes('uwaga')) kind = 'warning';
-        else if (word.includes('punkt')) kind = 'pearl';
+        const label = m[1];
+        const word = label.toLowerCase();
+        if (word.includes('uwaga')) type = 'warning';
+        else if (word.includes('punkt')) type = 'pearl';
+        // Preserve the leading bold word as the callout title so the
+        // rendered card shows "Punkty kluczowe" / "Uwaga techniczna" rather
+        // than the generic "Note" / "Warning" label fallback.
+        title = label;
         body = m[2];
       }
       blocks.push({
         _type: 'callout',
         _key: k(),
-        kind,
-        body: [richBlock(body, {}, ctx)],
+        type,
+        ...(title ? { title } : {}),
+        content: [richBlock(body, {}, ctx)],
       });
       continue;
     }
