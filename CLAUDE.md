@@ -22,8 +22,8 @@ site/
 │   │                                  PublicationsTeaser, ArticlesTeaser, AboutSection
 │   ├── layouts/                       BaseLayout (head/meta/preload), SiteLayout (wraps + slots nav/footer)
 │   ├── lib/                           images.ts (manifest reference), image-config.ts (shared pipeline constants)
-│   └── pages/en/                      English routes — index.astro (Home), about.astro
-│                                       Polish routes (pages/pl/) pending native composition session
+│   └── pages/{en,pl}/                 Routes — EN: index, about, contact, blog/[slug], procedures/[slug], publications, credentials, legal pages
+│                                       PL: index (Strona główna), o-mnie, kontakt, legal pages, uprawnienia, slowniczek, kalkulatory (live since 2026-05-04)
 ├── studio/schemas/                    Sanity schemas — most are stubs until their build phase
 ├── astro.config.mjs                   Astro config — i18n, redirects, sitemap, Tailwind via Vite plugin
 ├── tailwind.config.ts                 JS config holding Aarau Graphite tokens (loaded via @config in globals.css)
@@ -31,7 +31,13 @@ site/
 └── .env.local                         (gitignored) Sanity project ID + tokens, Plausible domain, etc.
 ```
 
-`_handoff/content/*.md` is **locked at v1.6.2** (April 2026), aligned with brand spec **v1.8**. Do not paraphrase the wording. Canonical brand spec lives at `01-brand-system/drgladysz-brand-spec-for-claude-design-v1.8.md` (parent of `site/`); the canonical single-doc locked content lives at `01-brand-system/drgladysz-locked-content-home-and-about-v1.6.2.md`. The `_handoff/content/` files mirror the canonical with build-friendly per-page YAML frontmatter.
+`_handoff/content/*.md` is a build-time mirror with per-page YAML frontmatter. The canonical brand spec and locked prose live at `01-brand-system/` (parent of `site/`):
+
+- `01-brand-system/drgladysz-brand-spec-for-claude-design-v1.10.md` — design spec, decision log #1–#62
+- `01-brand-system/drgladysz-content-master-v1.0.md` — locked prose for the six operational pages (EN + PL home/about/contact), shared footer, meta/SEO/JSON-LD, photography placements, compliance audit
+- `01-brand-system/inbox/` — drop new content (procedure drafts, blog packages, MCQ batches, amendments) here; once published it gets merged into a canonical file and the inbox copy is deleted. See `inbox/README.md` for the workflow.
+
+Do not paraphrase locked wording.
 
 ---
 
@@ -54,7 +60,7 @@ site/
 **Phase 6/7/8 deferred work (content authoring, not infrastructure):**
 - Phase 6: WordPress migration — **scaphoid-fractures, extensor-tendon-injuries, and flexor-tendon-injuries-and-repair all live as of 2026-04-30** (FESSH-prep, peer audience; cumulative 88 references, 31 glossary terms, JAMA Key Points, italic standfirst, cross-link block at end of each, MedicalScholarlyArticle JSON-LD; no images yet). Still to author: the Polish post (zespol-ciesni-nadgarstka). See "Phase 6 — what shipped" + "Phase 6 update 2026-04-30" sections below.
 - Phase 7: 5 more procedure pages — author one per sub-specialty area at minimum (e.g. one reconstructive-microsurgery, one skin-cancer) so each category index isn't empty at launch.
-- Phase 8: Polish mirrors of all supporting pages (/pl/kontakt, /pl/uprawnienia, /pl/nota-prawna, /pl/polityka-prywatnosci, /pl/zastrzezenie-medyczne, /pl/publikacje) — pending Polish composition session.
+- Phase 8: ~~Polish mirrors of all supporting pages~~ ✅ /pl/, /pl/o-mnie, /pl/kontakt shipped 2026-05-04 (native composition per brand spec Decisions #39–#62; locked prose in `01-brand-system/drgladysz-content-master-v1.0.md`). PL legal pages already shipped via legal-pages-package. Still to author: /pl/publikacje (small archive), /pl/zabiegi (procedure index + per-procedure pages — drop drafts in `01-brand-system/inbox/`).
 - Phase 8: ~~Resend-backed contact form server endpoint~~ ✅ shipped 2026-05-02 alongside contact-page v1.0 lock. `/api/contact.ts` runs on Vercel SSR (`prerender = false`); rest of the site stays static. Form sends to `office@drgladysz.com` (env `CONTACT_FORM_TO_EMAIL`); rate-limit 5/hour/IP; honeypot; required Subject + Privacy-consent fields. See "Phase 8 update 2026-05-02" below.
 
 Tier 2 features (calculators, MCQ, glossary) ship **post-launch** in months 1-12.
