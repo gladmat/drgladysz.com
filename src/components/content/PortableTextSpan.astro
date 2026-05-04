@@ -40,10 +40,17 @@ interface Props {
   references: SanityRefDoc[];
   referenceIndex: Map<string, number>;
   glossaryTerms: SanityGlossaryTerm[];
+  locale?: 'en' | 'pl';
 }
 
-const { span, markDefs, references, referenceIndex, glossaryTerms } =
-  Astro.props;
+const {
+  span,
+  markDefs,
+  references,
+  referenceIndex,
+  glossaryTerms,
+  locale = 'en',
+} = Astro.props;
 const marks = span.marks ?? [];
 
 const ESCAPE_MAP: Record<string, string> = {
@@ -130,6 +137,7 @@ if (linkAnnotation && linkAnnotation.href && !glossaryData) {
     term={glossaryData.term}
     displayText={span.text}
     markKey={glossaryData.markKey}
+    locale={locale}
   />
 ) : (
   <Fragment set:html={inner} />

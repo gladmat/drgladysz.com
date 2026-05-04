@@ -285,31 +285,31 @@ const articleCategoryLabel: Record<string, string> = {
 
       <section id="indications" class="proc-section" aria-labelledby="h-indications">
         <h2 id="h-indications" class="proc-h"><span class="proc-num">1.</span> Wskazania</h2>
-        <PortableTextRenderer value={procedure.indications} references={references} glossaryTerms={glossaryTerms} />
+        <PortableTextRenderer value={procedure.indications} references={references} glossaryTerms={glossaryTerms} locale="pl" />
       </section>
 
       {hasContraindications && (
         <section id="contraindications" class="proc-section" aria-labelledby="h-contraind">
           <h2 id="h-contraind" class="proc-h"><span class="proc-num">2.</span> Przeciwwskazania</h2>
-          <PortableTextRenderer value={procedure.contraindications} references={references} glossaryTerms={glossaryTerms} />
+          <PortableTextRenderer value={procedure.contraindications} references={references} glossaryTerms={glossaryTerms} locale="pl" />
         </section>
       )}
 
       <section id="anatomy" class="proc-section" aria-labelledby="h-anatomy">
         <h2 id="h-anatomy" class="proc-h"><span class="proc-num">3.</span> Anatomia</h2>
-        <PortableTextRenderer value={procedure.anatomy} references={references} glossaryTerms={glossaryTerms} />
+        <PortableTextRenderer value={procedure.anatomy} references={references} glossaryTerms={glossaryTerms} locale="pl" />
       </section>
 
       {hasPositioning && (
         <section id="positioning" class="proc-section" aria-labelledby="h-pos">
           <h2 id="h-pos" class="proc-h"><span class="proc-num">4.</span> Pozycjonowanie pacjenta</h2>
-          <PortableTextRenderer value={procedure.positioning} references={references} glossaryTerms={glossaryTerms} />
+          <PortableTextRenderer value={procedure.positioning} references={references} glossaryTerms={glossaryTerms} locale="pl" />
         </section>
       )}
 
       <section id="approach" class="proc-section" aria-labelledby="h-approach">
         <h2 id="h-approach" class="proc-h"><span class="proc-num">5.</span> Dostęp operacyjny</h2>
-        <PortableTextRenderer value={procedure.approach} references={references} glossaryTerms={glossaryTerms} />
+        <PortableTextRenderer value={procedure.approach} references={references} glossaryTerms={glossaryTerms} locale="pl" />
       </section>
 
       <section id="key-steps" class="proc-section proc-steps" aria-labelledby="h-steps">
@@ -321,7 +321,7 @@ const articleCategoryLabel: Record<string, string> = {
                 <span class="step-num">{i + 1}.</span>
                 {step.title}
               </h3>
-              <PortableTextRenderer value={step.description} references={references} glossaryTerms={glossaryTerms} />
+              <PortableTextRenderer value={step.description} references={references} glossaryTerms={glossaryTerms} locale="pl" />
               {step.image && step.image.asset && (
                 <figure class="step-figure">
                   <img
@@ -353,23 +353,23 @@ const articleCategoryLabel: Record<string, string> = {
       {hasClosure && (
         <section id="closure" class="proc-section" aria-labelledby="h-closure">
           <h2 id="h-closure" class="proc-h"><span class="proc-num">7.</span> Zamknięcie</h2>
-          <PortableTextRenderer value={procedure.closure} references={references} glossaryTerms={glossaryTerms} />
+          <PortableTextRenderer value={procedure.closure} references={references} glossaryTerms={glossaryTerms} locale="pl" />
         </section>
       )}
 
       <section id="aftercare" class="proc-section" aria-labelledby="h-aftercare">
         <h2 id="h-aftercare" class="proc-h"><span class="proc-num">8.</span> Postępowanie pooperacyjne</h2>
-        <PortableTextRenderer value={procedure.aftercare} references={references} glossaryTerms={glossaryTerms} />
+        <PortableTextRenderer value={procedure.aftercare} references={references} glossaryTerms={glossaryTerms} locale="pl" />
       </section>
 
       <section id="complications" class="proc-section" aria-labelledby="h-comp">
         <h2 id="h-comp" class="proc-h"><span class="proc-num">9.</span> Powikłania</h2>
-        <PortableTextRenderer value={procedure.complications} references={references} glossaryTerms={glossaryTerms} />
+        <PortableTextRenderer value={procedure.complications} references={references} glossaryTerms={glossaryTerms} locale="pl" />
       </section>
 
       <section id="evidence" class="proc-section" aria-labelledby="h-evidence">
         <h2 id="h-evidence" class="proc-h"><span class="proc-num">10.</span> Dowody i piśmiennictwo</h2>
-        <PortableTextRenderer value={procedure.evidence} references={references} glossaryTerms={glossaryTerms} />
+        <PortableTextRenderer value={procedure.evidence} references={references} glossaryTerms={glossaryTerms} locale="pl" />
       </section>
 
       {hasPatientSummary && (
@@ -380,6 +380,7 @@ const articleCategoryLabel: Record<string, string> = {
               value={procedure.patientSummary}
               references={references}
               glossaryTerms={glossaryTerms}
+              locale="pl"
             />
           </div>
         </details>
@@ -397,6 +398,7 @@ const articleCategoryLabel: Record<string, string> = {
                     value={item.answer}
                     references={references}
                     glossaryTerms={glossaryTerms}
+                    locale="pl"
                   />
                 </div>
               </details>

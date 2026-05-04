@@ -31,9 +31,12 @@ interface Props {
   value: PortableTextBlock[] | undefined;
   references?: SanityRefDoc[];
   glossaryTerms?: SanityGlossaryTerm[];
+  // Drives glossary popover language (PL definitions vs EN). Default 'en'
+  // keeps existing /en/ routes working without modification.
+  locale?: 'en' | 'pl';
 }
 
-const { value, references = [], glossaryTerms = [] } = Astro.props;
+const { value, references = [], glossaryTerms = [], locale = 'en' } = Astro.props;
 const blocks = value ?? [];
 
 // Build reference-id -> index Map for fast Citation lookup. Indexes are 1-based.
@@ -98,6 +101,7 @@ function imageSrcSet(img: SanityImage) {
                   references={references}
                   referenceIndex={referenceIndex}
                   glossaryTerms={glossaryTerms}
+                  locale={locale}
                 />
               ) : null,
             )}
@@ -121,6 +125,7 @@ function imageSrcSet(img: SanityImage) {
           value={content}
           references={references}
           glossaryTerms={glossaryTerms}
+          locale={locale}
         />
       </Callout>
     );
@@ -155,6 +160,7 @@ function imageSrcSet(img: SanityImage) {
         references={references}
         referenceIndex={referenceIndex}
         glossaryTerms={glossaryTerms}
+        locale={locale}
       />
     ) : null,
   );
