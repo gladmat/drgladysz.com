@@ -43,7 +43,7 @@ if (!slug) throw new Error('Missing slug param');
 
 const calc = await getCalculatorBySlug(slug, 'en');
 if (!calc) {
-  return Astro.redirect('/en/calculators');
+  return Astro.redirect('/en/calculators/');
 }
 
 const allBlocks = [
@@ -121,7 +121,7 @@ const pageDescription = calc.seoDescription || calc.shortDescription;
   <article class="calc-shell">
     <header class="calc-header">
       <p class="calc-kicker">
-        <a href="/en/calculators">Calculators</a>
+        <a href="/en/calculators/">Calculators</a>
         <span aria-hidden="true">·</span>
         <span>{calc.componentName}</span>
       </p>

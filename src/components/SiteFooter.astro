@@ -29,6 +29,7 @@ const t = locale === 'pl'
       navAbout: 'O mnie',
       navProcedures: 'Zabiegi',
       navPublications: 'Publikacje',
+      navBlog: 'Baza wiedzy',
       navCalculators: 'Kalkulatory',
       navGlossary: 'Słowniczek',
       navLearn: 'Przygotowanie do FEBHS (po angielsku)',
@@ -57,6 +58,7 @@ const t = locale === 'pl'
       navAbout: 'About',
       navProcedures: 'Procedures',
       navPublications: 'Publications',
+      navBlog: 'Knowledge base',
       navCalculators: 'Calculators',
       navGlossary: 'Glossary',
       navLearn: 'FEBHS prep',
@@ -81,25 +83,27 @@ const navLinks: { href: string; label: string; external?: boolean }[] =
   locale === 'pl'
     ? [
         { href: '/pl/', label: t.navHome },
-        { href: '/pl/o-mnie', label: t.navAbout },
-        { href: '/pl/zabiegi', label: t.navProcedures },
-        { href: '/pl/publikacje', label: t.navPublications },
-        { href: '/pl/kalkulatory', label: t.navCalculators },
-        { href: '/pl/slowniczek', label: t.navGlossary },
+        { href: '/pl/o-mnie/', label: t.navAbout },
+        { href: '/pl/zabiegi/', label: t.navProcedures },
+        { href: '/pl/publikacje/', label: t.navPublications },
+        { href: '/pl/blog/', label: t.navBlog },
+        { href: '/pl/kalkulatory/', label: t.navCalculators },
+        { href: '/pl/slowniczek/', label: t.navGlossary },
         { href: 'https://learn.drgladysz.com', label: t.navLearn, external: true },
-        { href: '/pl/kontakt', label: t.navContact },
-        { href: '/pl/uprawnienia', label: t.navCredentials },
+        { href: '/pl/kontakt/', label: t.navContact },
+        { href: '/pl/uprawnienia/', label: t.navCredentials },
       ]
     : [
         { href: '/en/', label: t.navHome },
-        { href: '/en/about', label: t.navAbout },
-        { href: '/en/procedures', label: t.navProcedures },
-        { href: '/en/publications', label: t.navPublications },
-        { href: '/en/calculators', label: t.navCalculators },
-        { href: '/en/glossary', label: t.navGlossary },
+        { href: '/en/about/', label: t.navAbout },
+        { href: '/en/procedures/', label: t.navProcedures },
+        { href: '/en/publications/', label: t.navPublications },
+        { href: '/en/blog/', label: t.navBlog },
+        { href: '/en/calculators/', label: t.navCalculators },
+        { href: '/en/glossary/', label: t.navGlossary },
         { href: 'https://learn.drgladysz.com', label: t.navLearn, external: true },
-        { href: '/en/contact', label: t.navContact },
-        { href: '/en/credentials', label: t.navCredentials },
+        { href: '/en/contact/', label: t.navContact },
+        { href: '/en/credentials/', label: t.navCredentials },
       ];
 
 // Locked link order from footer-config.json: Imprint → Privacy → Disclaimer
@@ -108,18 +112,18 @@ const navLinks: { href: string; label: string; external?: boolean }[] =
 // duplication explicit.
 const legalLinks = locale === 'pl'
   ? [
-      { href: '/pl/nota-prawna', label: t.navImprint },
-      { href: '/pl/polityka-prywatnosci', label: t.navPrivacy },
-      { href: '/pl/zastrzezenie-medyczne', label: t.navDisclaimer },
-      { href: '/pl/zgoda', label: t.navConsent },
-      { href: '/pl/uprawnienia', label: t.navCredentials },
+      { href: '/pl/nota-prawna/', label: t.navImprint },
+      { href: '/pl/polityka-prywatnosci/', label: t.navPrivacy },
+      { href: '/pl/zastrzezenie-medyczne/', label: t.navDisclaimer },
+      { href: '/pl/zgoda/', label: t.navConsent },
+      { href: '/pl/uprawnienia/', label: t.navCredentials },
     ]
   : [
-      { href: '/en/imprint', label: t.navImprint },
-      { href: '/en/privacy', label: t.navPrivacy },
-      { href: '/en/disclaimer', label: t.navDisclaimer },
-      { href: '/en/consent', label: t.navConsent },
-      { href: '/en/credentials', label: t.navCredentials },
+      { href: '/en/imprint/', label: t.navImprint },
+      { href: '/en/privacy/', label: t.navPrivacy },
+      { href: '/en/disclaimer/', label: t.navDisclaimer },
+      { href: '/en/consent/', label: t.navConsent },
+      { href: '/en/credentials/', label: t.navCredentials },
     ];
 
 const year = new Date().getFullYear();
@@ -138,7 +142,7 @@ const year = new Date().getFullYear();
             Mateusz Gładysz<br />
             MD, FEBOPRAS, FEBHS<br />
             {locale === 'pl'
-              ? 'Konsultant chirurgii plastycznej i ręki'
+              ? 'Konsultant chirurgii plastycznej i chirurgii ręki'
               : 'Consultant Plastic and Hand Surgeon'}
           </p>
           <p>

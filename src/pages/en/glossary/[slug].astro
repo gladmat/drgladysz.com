@@ -37,7 +37,7 @@ if (!slug) throw new Error('Missing slug param');
 const term = await getGlossaryTermBySlug(slug);
 if (!term) {
   // No matching glossary term — fall back to the index.
-  return Astro.redirect('/en/glossary');
+  return Astro.redirect('/en/glossary/');
 }
 
 const CATEGORY_LABELS: Record<SanityGlossaryTermFull['category'], string> = {
@@ -105,7 +105,7 @@ function fmtDate(d?: string) {
   <article class="glossary-shell">
     <header class="glossary-header">
       <p class="kicker">
-        <a href="/en/glossary">Glossary</a>
+        <a href="/en/glossary/">Glossary</a>
         <span aria-hidden="true">·</span>
         <span>{CATEGORY_LABELS[term.category]}</span>
       </p>
@@ -218,7 +218,7 @@ function fmtDate(d?: string) {
       )}
 
       <p class="back-link">
-        <a href="/en/glossary">&larr; Back to glossary</a>
+        <a href="/en/glossary/">&larr; Back to glossary</a>
       </p>
     </div>
   </article>

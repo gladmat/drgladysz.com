@@ -33,10 +33,16 @@ const {
   alternateUrl,
   canonical,
   ogImage,
-  ogImageAlt = 'Surgical instrument tray — Mateusz Gładysz, MD',
+  ogImageAlt: explicitOgImageAlt,
   jsonLd,
   heroPreload,
 } = Astro.props;
+
+const ogImageAlt =
+  explicitOgImageAlt ??
+  (locale === 'pl'
+    ? 'Taca z narzędziami chirurgicznymi — Mateusz Gładysz'
+    : 'Surgical instrument tray — Mateusz Gładysz, MD');
 
 // Trim long descriptions for meta only — the visible body of glossary /
 // article / procedure pages still renders the full text. SEO snippet limit
@@ -116,7 +122,7 @@ if (heroPreload) {
   
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="Mateusz Gładysz, MD" />
+  <meta property="og:site_name" content={locale === 'pl' ? 'Mateusz Gładysz' : 'Mateusz Gładysz, MD'} />
   <meta property="og:title" content={fullTitle} />
   <meta property="og:description" content={description} />
   <meta property="og:url" content={canonicalUrl} />
@@ -126,6 +132,9 @@ if (heroPreload) {
   {ogImageHeight && <meta property="og:image:height" content={String(ogImageHeight)} />}
   <meta property="og:image:type" content="image/jpeg" />
   <meta property="og:locale" content={langCode.replace('-', '_')} />
+  {alternateUrl && (
+    <meta property="og:locale:alternate" content={altLangCode.replace('-', '_')} />
+  )}
 
   <!-- Twitter card -->
   <meta name="twitter:card" content="summary_large_image" />

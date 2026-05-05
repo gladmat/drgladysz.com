@@ -33,7 +33,7 @@ if (!slug) throw new Error('Missing slug param');
 
 const procedure = await getProcedureBySlug(slug, 'en');
 if (!procedure) {
-  return Astro.redirect('/en/procedures');
+  return Astro.redirect('/en/procedures/');
 }
 
 // Pull references in document order across all sections that may contain
@@ -161,7 +161,7 @@ const articleCategoryLabel: Record<string, string> = {
   <article class="procedure-shell">
     <header class="procedure-header">
       <p class="procedure-kicker">
-        <a href="/en/procedures">Procedures</a>
+        <a href="/en/procedures/">Procedures</a>
         <span aria-hidden="true">·</span>
         <span>{categoryLabels[procedure.category] ?? procedure.category}</span>
       </p>

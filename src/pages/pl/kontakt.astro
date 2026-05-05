@@ -38,7 +38,7 @@ const contactPageJsonLd = generateContactPageSchema({
 ---
 <SiteLayout
   title="Kontakt — Mateusz Gładysz, lek."
-  description="Formy kontaktu i ścieżki skierowań w Nowej Zelandii. Korespondencja zawodowa, akademicka, medialna oraz w sprawie wystąpień i podcastów przez formularz lub adres office@drgladysz.com."
+  description="Formy kontaktu i ścieżki skierowań w Nowej Zelandii. Korespondencja zawodowa, akademicka i medialna przez formularz lub office@drgladysz.com."
   locale="pl"
   alternateUrl="/en/contact/"
   canonical={canonicalUrl}
@@ -175,7 +175,7 @@ const contactPageJsonLd = generateContactPageSchema({
             aria-required="true"
           />
           <label for="contact-consent">
-            Wyrażam zgodę na przetwarzanie danych osobowych przesłanych w formularzu w celu udzielenia odpowiedzi na zapytanie. Zapoznałem(am) się z <a href="/pl/polityka-prywatnosci/">Polityką prywatności</a>.
+            Wyrażam zgodę na przetwarzanie danych osobowych przesłanych w formularzu w celu udzielenia odpowiedzi na zapytanie. Potwierdzam zapoznanie się z <a href="/pl/polityka-prywatnosci/">Polityką prywatności</a>.
           </label>
         </div>
         <button type="submit" class="contact-submit">
@@ -215,7 +215,7 @@ const contactPageJsonLd = generateContactPageSchema({
               });
               const result = await response.json();
               if (result.ok) {
-                status.textContent = 'Wiadomość została wysłana. Odpowiedź zostanie przesłana mailem.';
+                status.textContent = 'Wiadomość została wysłana. Odpowiedź zostanie przesłana na podany adres.';
                 status.className = 'form-status is-success';
                 form.reset();
               } else {

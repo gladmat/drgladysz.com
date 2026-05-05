@@ -36,7 +36,7 @@ if (!slug) throw new Error('Missing slug param');
 
 const term = await getGlossaryTermBySlug(slug);
 if (!term) {
-  return Astro.redirect('/pl/slowniczek');
+  return Astro.redirect('/pl/slowniczek/');
 }
 
 const CATEGORY_LABELS_PL: Record<SanityGlossaryTermFull['category'], string> = {
@@ -81,7 +81,16 @@ const siteUrl = (
   import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com'
 ).replace(/\/$/, '');
 const canonicalUrl = `${siteUrl}/pl/slowniczek/${slug}/`;
-const indexUrl = `${siteUrl}/pl/slowniczek`;
+const indexUrl = `${siteUrl}/pl/slowniczek/`;
+
+// PL→EN slug map for hreflang. Glossary slugs are currently identical
+// across locales (single-doc-bilingual schema). Add an entry here only if
+// a future PL term is published with a slug that differs from its EN
+// counterpart — otherwise the fallback `slug` keeps the contract stable.
+const PL_TO_EN_SLUG: Record<string, string> = {
+  // 'polski-slug': 'english-slug',
+};
+const enSlug = PL_TO_EN_SLUG[slug] ?? slug;
 
 const definedTermJsonLd = generateDefinedTermSchema({
   term,
@@ -114,14 +123,14 @@ function fmtDate(d?: string) {
   title={`${capFirst(displayTerm)} — Słowniczek — Mateusz Gładysz, MD`}
   description={displayShortDef}
   locale="pl"
-  alternateUrl={`/en/glossary/${slug}`}
+  alternateUrl={`/en/glossary/${enSlug}/`}
   canonical={canonicalUrl}
   jsonLd={[definedTermJsonLd, breadcrumbJsonLd]}
 >
   <article class="glossary-shell">
     <header class="glossary-header">
       <p class="kicker">
-        <a href="/pl/slowniczek">Słowniczek</a>
+        <a href="/pl/slowniczek/">Słowniczek</a>
         <span aria-hidden="true">·</span>
         <span>{CATEGORY_LABELS_PL[term.category]}</span>
       </p>
@@ -286,7 +295,7 @@ function fmtDate(d?: string) {
       )}
 
       <p class="back-link">
-        <a href="/pl/slowniczek">&larr; Wróć do słowniczka</a>
+        <a href="/pl/slowniczek/">&larr; Wróć do słowniczka</a>
       </p>
     </div>
   </article>

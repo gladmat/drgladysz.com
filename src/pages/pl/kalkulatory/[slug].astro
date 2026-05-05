@@ -30,7 +30,7 @@ if (!slug) throw new Error('Missing slug param');
 
 const calc = await getCalculatorBySlug(slug, 'pl');
 if (!calc) {
-  return Astro.redirect('/pl/kalkulatory');
+  return Astro.redirect('/pl/kalkulatory/');
 }
 
 const allBlocks = [
@@ -57,6 +57,15 @@ const siteUrl = (
   import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com'
 ).replace(/\/$/, '');
 const canonicalUrl = `${siteUrl}/pl/kalkulatory/${slug}/`;
+
+// PL→EN slug map for hreflang. Calculator slugs are currently identical
+// across locales (separate-doc-per-locale schema with shared slug). Add an
+// entry here only if a future PL calculator is published with a slug that
+// differs from its EN counterpart.
+const PL_TO_EN_SLUG: Record<string, string> = {
+  // 'polski-slug': 'english-slug',
+};
+const enSlug = PL_TO_EN_SLUG[slug] ?? slug;
 
 const calculatorJsonLd = {
   '@context': 'https://schema.org',
@@ -86,7 +95,7 @@ const calculatorJsonLd = {
 
 const breadcrumbJsonLd = generateBreadcrumb([
   { name: 'Strona główna', url: `${siteUrl}/pl/` },
-  { name: 'Kalkulatory', url: `${siteUrl}/pl/kalkulatory` },
+  { name: 'Kalkulatory', url: `${siteUrl}/pl/kalkulatory/` },
   { name: calc.name, url: canonicalUrl },
 ]);
 
@@ -97,14 +106,14 @@ const pageDescription = calc.seoDescription || calc.shortDescription;
   title={pageTitle}
   description={pageDescription}
   locale="pl"
-  alternateUrl={`/en/calculators/${slug}`}
+  alternateUrl={`/en/calculators/${enSlug}/`}
   canonical={canonicalUrl}
   jsonLd={[calculatorJsonLd, breadcrumbJsonLd]}
 >
   <article class="calc-shell">
     <header class="calc-header">
       <p class="calc-kicker">
-        <a href="/pl/kalkulatory">Kalkulatory</a>
+        <a href="/pl/kalkulatory/">Kalkulatory</a>
         <span aria-hidden="true">·</span>
         <span>{calc.componentName}</span>
       </p>

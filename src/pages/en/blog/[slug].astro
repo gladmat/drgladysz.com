@@ -42,7 +42,7 @@ if (!slug) throw new Error('Missing slug param');
 const article = await getArticleBySlug(slug, 'en');
 if (!article) {
   // Sanity returned no doc with this slug — let Astro 404 handle it.
-  return Astro.redirect('/en/blog');
+  return Astro.redirect('/en/blog/');
 }
 
 // Collect citation references in document order, then load.
@@ -169,7 +169,7 @@ const procedureCategoryLabel: Record<string, string> = {
   <article class="article-shell">
     <header class="article-header">
       <p class="article-kicker">
-        <a href="/en/blog">Knowledge base</a>
+        <a href="/en/blog/">Knowledge base</a>
         <span aria-hidden="true">·</span>
         <span>{categoryLabel[article.category] ?? article.category}</span>
       </p>
