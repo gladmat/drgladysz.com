@@ -38,6 +38,10 @@ if (!article) {
 const PL_TO_EN_SLUG: Record<string, string> = {
   'zespol-ciesni-nadgarstka': 'carpal-tunnel-syndrome',
   'zespol-ciesni-nadgarstka-przeglad-kliniczny': 'carpal-tunnel-syndrome-fessh-prep',
+  'choroba-dupuytrena': 'dupuytrens-disease-patient-guide',
+  // 'choroba-dupuytrena-leczenie-operacyjne' has no direct EN counterpart —
+  // the PL piece is a clinical-decision-framework expert article, the closest
+  // EN piece is the FESSH-prep article (different audience/angle). No pairing.
 };
 const enSlug = PL_TO_EN_SLUG[slug];
 const alternateUrl = enSlug ? `/en/blog/${enSlug}/` : undefined;

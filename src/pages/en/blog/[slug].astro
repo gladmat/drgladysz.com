@@ -45,6 +45,21 @@ if (!article) {
   return Astro.redirect('/en/blog/');
 }
 
+// EN→PL slug map for hreflang (alternateUrl). Authored explicitly so the
+// reverse direction is obvious; falls back to none (no alternate emitted) for
+// EN-only articles. Update this when adding new EN articles that have a PL
+// counterpart. (Mirror of the PL→EN map at pl/blog/[slug].astro.)
+const EN_TO_PL_SLUG: Record<string, string> = {
+  'carpal-tunnel-syndrome': 'zespol-ciesni-nadgarstka',
+  'carpal-tunnel-syndrome-fessh-prep': 'zespol-ciesni-nadgarstka-przeglad-kliniczny',
+  'dupuytrens-disease-patient-guide': 'choroba-dupuytrena',
+  // 'dupuytrens-disease-fessh-prep' has no direct PL counterpart — the PL
+  // package's expert article is operative-treatment focused (Decision-tree-
+  // for-method-choice angle), different audience/angle from FESSH-prep.
+};
+const plSlug = EN_TO_PL_SLUG[slug];
+const alternateUrl = plSlug ? `/pl/blog/${plSlug}/` : undefined;
+
 // Collect citation references in document order, then load.
 const citationOrder = extractCitationOrderFromBlocks([article.body]);
 const referencesUnsorted = await getReferencesByIds(citationOrder);
@@ -164,6 +179,7 @@ const procedureCategoryLabel: Record<string, string> = {
   description={article.seoDescription || article.excerpt}
   locale="en"
   canonical={canonicalUrl}
+  alternateUrl={alternateUrl}
   jsonLd={[articleJsonLd, breadcrumbJsonLd]}
 >
   <article class="article-shell">

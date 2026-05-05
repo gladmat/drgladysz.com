@@ -47,11 +47,19 @@ export const fesshMcqMetadata = defineType({
         'Date the question was first published. Set once on first publish; never edited after. Renders in the per-question footer as part of the audit trail.',
     }),
     defineField({
-      name: 'lastClinicallyReviewed',
+      name: 'lastReviewedDate',
       title: 'Last reviewed',
       type: 'date',
       description:
-        'Date the clinical content was last verified against current literature, or the date a confirmed erratum correction was applied. Renders in the per-question footer.',
+        'Date the clinical content was last verified against current literature, or the date a confirmed erratum correction was applied. Renders in the per-question footer. (Renamed from `lastClinicallyReviewed` 2026-05-05 — the old field is retained `hidden: true` for back-compat with previously seeded docs and is migrated away by `audit-fix-fessh-mcq-metadata-migration.ts`.)',
+    }),
+    defineField({
+      name: 'lastClinicallyReviewed',
+      title: 'Last reviewed (DEPRECATED — renamed to `lastReviewedDate`)',
+      type: 'date',
+      description:
+        'DEPRECATED 2026-05-05. Renamed to `lastReviewedDate`. Retained `hidden: true` so previously seeded docs remain valid against the schema; renderer reads `lastReviewedDate ?? lastClinicallyReviewed`. Migrated by `audit-fix-fessh-mcq-metadata-migration.ts`.',
+      hidden: true,
     }),
     defineField({
       name: 'version',
@@ -135,31 +143,6 @@ export const fesshMcqMetadata = defineType({
       type: 'text',
       rows: 3,
       description: 'Internal audit trail. Never rendered on the live site.',
-    }),
-    // === DEPRECATED — retained for backward-compat with previously seeded data ===
-    defineField({
-      name: 'peerReviewed',
-      title: 'Peer reviewed (DEPRECATED — Decision #34)',
-      type: 'boolean',
-      initialValue: false,
-      description:
-        'DEPRECATED under Decision #34 (single-author / community-corrected operating model). Do not populate on new questions; do not surface in rendered copy. Retained only so previously seeded docs remain valid against the schema.',
-      hidden: true,
-    }),
-    defineField({
-      name: 'peerReviewer',
-      title: 'Peer reviewer (DEPRECATED)',
-      type: 'string',
-      description:
-        'DEPRECATED under Decision #34. Authoring is single-author by Mateusz Gładysz; the term "peer reviewer" has specific meaning that does not apply.',
-      hidden: true,
-    }),
-    defineField({
-      name: 'peerReviewDate',
-      title: 'Peer review date (DEPRECATED)',
-      type: 'date',
-      description: 'DEPRECATED under Decision #34.',
-      hidden: true,
     }),
   ],
 });

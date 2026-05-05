@@ -42,6 +42,8 @@ if (!procedure) {
 // PL→EN slug map for hreflang. Update this when adding new PL procedures.
 const PL_TO_EN_SLUG: Record<string, string> = {
   'zespol-ciesni-nadgarstka': 'open-carpal-tunnel-release',
+  'fasciektomia-ograniczona': 'limited-fasciectomy',
+  'aponeurotomia-iglowa-przezskorna': 'percutaneous-needle-fasciotomy',
 };
 const enSlug = PL_TO_EN_SLUG[slug];
 const alternateUrl = enSlug ? `/en/procedures/${enSlug}/` : undefined;

@@ -36,6 +36,15 @@ if (!procedure) {
   return Astro.redirect('/en/procedures/');
 }
 
+// EN→PL slug map for hreflang. (Mirror of the PL→EN map at pl/zabiegi/[slug].astro.)
+const EN_TO_PL_SLUG: Record<string, string> = {
+  'open-carpal-tunnel-release': 'zespol-ciesni-nadgarstka',
+  'limited-fasciectomy': 'fasciektomia-ograniczona',
+  'percutaneous-needle-fasciotomy': 'aponeurotomia-iglowa-przezskorna',
+};
+const plSlug = EN_TO_PL_SLUG[slug];
+const alternateUrl = plSlug ? `/pl/zabiegi/${plSlug}/` : undefined;
+
 // Pull references in document order across all sections that may contain
 // citations. Order: indications → contraindications → anatomy → positioning →
 // approach → keySteps[].description → closure → aftercare → complications →
@@ -156,6 +165,7 @@ const articleCategoryLabel: Record<string, string> = {
   description={procedure.seoDescription || procedure.summary}
   locale="en"
   canonical={canonicalUrl}
+  alternateUrl={alternateUrl}
   jsonLd={[procedureJsonLd, breadcrumbJsonLd]}
 >
   <article class="procedure-shell">

@@ -636,7 +636,12 @@ function parseInlineBibliographySection(body: string): RefYaml[] {
 
 function parseVancouverEntry(citationKey: number, raw: string): RefYaml | null {
   const text = raw.replace(/\s+/g, ' ').replace(/\.\s*$/, '');
-  const parts = text.split(/\.\s+(?=[A-ZŁŚŻŹĆĄĘĆ"„])/u);
+  // Split on ". " before a capital letter, opening quote, OR an italic-marker
+  // asterisk (`*Journal Name*` is the Vancouver convention used in the
+  // aponeurotomia inline bibliography). Without `*` in the lookahead the title
+  // and journal would not be split apart, baking the journal/year into the
+  // title field — caught by the post-seed audit on 2026-05-05.
+  const parts = text.split(/\.\s+(?=[A-ZŁŚŻŹĆĄĘĆ"„*])/u);
   if (parts.length < 2) return null;
   const authorsRaw = parts[0];
   const authors = authorsRaw
