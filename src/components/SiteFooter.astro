@@ -91,7 +91,6 @@ const navLinks: { href: string; label: string; external?: boolean }[] =
         { href: '/pl/slowniczek/', label: t.navGlossary },
         { href: 'https://learn.drgladysz.com', label: t.navLearn, external: true },
         { href: '/pl/kontakt/', label: t.navContact },
-        { href: '/pl/uprawnienia/', label: t.navCredentials },
       ]
     : [
         { href: '/en/', label: t.navHome },
@@ -103,13 +102,11 @@ const navLinks: { href: string; label: string; external?: boolean }[] =
         { href: '/en/glossary/', label: t.navGlossary },
         { href: 'https://learn.drgladysz.com', label: t.navLearn, external: true },
         { href: '/en/contact/', label: t.navContact },
-        { href: '/en/credentials/', label: t.navCredentials },
       ];
 
-// Locked link order from footer-config.json: Imprint → Privacy → Disclaimer
-// → Consent → Credentials. Credentials appears here even though it's also
-// in `navLinks` above — `_meta/README.md` "Footer integration" makes the
-// duplication explicit.
+// Locked link order from `01-brand-system/legal-pages-package/_meta/footer-config.json`:
+// Imprint → Privacy → Disclaimer → Consent → Credentials. Credentials lives
+// only here (legal column 4 per brand spec §11), not in `navLinks` above.
 const legalLinks = locale === 'pl'
   ? [
       { href: '/pl/nota-prawna/', label: t.navImprint },
