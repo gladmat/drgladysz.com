@@ -12,8 +12,7 @@
 // publish. Use the live API for build-time freshness; switch to `useCdn: true`
 // only if Sanity's per-build read costs become an issue.
 import { createClient, type ClientConfig } from '@sanity/client';
-import imageUrlBuilder from '@sanity/image-url';
-import type { SanityImageSource } from '@sanity/image-url/lib/types/types';
+import { createImageUrlBuilder, type SanityImageSource } from '@sanity/image-url';
 
 const projectId = import.meta.env.PUBLIC_SANITY_PROJECT_ID || 'kwp48q91';
 const dataset = import.meta.env.PUBLIC_SANITY_DATASET || 'production';
@@ -30,7 +29,7 @@ const config: ClientConfig = {
 
 export const sanityClient = createClient(config);
 
-const builder = imageUrlBuilder({ projectId, dataset });
+const builder = createImageUrlBuilder({ projectId, dataset });
 export function urlForImage(source: SanityImageSource) {
   return builder.image(source);
 }
