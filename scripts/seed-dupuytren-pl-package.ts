@@ -267,6 +267,21 @@ function stripAuthoringNotes(body: string): string {
   return body.slice(0, idx).trimEnd();
 }
 
+function stripInlineBibliographySection(body: string): string {
+  // The PL expert article body has an inline `## Piśmiennictwo` Vancouver
+  // list — the same content the [slug].astro template will render as a
+  // `<Bibliography>` from the citation marks. The procedure-page parser
+  // already skips this section via the `inPismienn` flag in
+  // `buildProcedureDoc`, but the article path didn't strip it. Result was
+  // bibliography rendered twice on the live page; caught by audit
+  // 2026-05-05.
+  const marker = /^##\s+Piśmiennictwo\s*$/m;
+  const m = body.match(marker);
+  if (!m) return body;
+  const idx = body.indexOf(m[0]);
+  return body.slice(0, idx).trimEnd();
+}
+
 // ============================================================================
 // Inline tokeniser (PL DSL)
 // ============================================================================
@@ -1401,7 +1416,9 @@ async function main() {
   const allUnmatchedGloss = new Map<string, Set<string>>();
   for (const piece of parsedPieces) {
     resetKeys();
-    const stripped = stripBodyTitle(stripAuthoringNotes(piece.body));
+    const stripped = stripBodyTitle(
+      stripInlineBibliographySection(stripAuthoringNotes(piece.body)),
+    );
     const unmatchedGloss = new Set<string>();
     const ctx: ResolveCtx = {
       glossaryTermPolishToId,

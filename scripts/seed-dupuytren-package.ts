@@ -225,6 +225,20 @@ function parseFrontmatter(md: string): { frontmatter: Record<string, unknown>; b
   return { frontmatter, body };
 }
 
+function stripInlineReferencesSection(body: string): string {
+  // Some article bodies (notably the EN FESSH-prep) ship with an inline
+  // `## References` Vancouver list — the same content the [slug].astro
+  // template will render as a `<Bibliography>` from the citation marks.
+  // Strip the inline section so the bibliography only renders once.
+  // Caught by audit on 2026-05-05 after the FESSH-prep bibliography
+  // appeared twice on the live page.
+  const marker = /^##\s+References\s*$/m;
+  const m = body.match(marker);
+  if (!m) return body;
+  const idx = body.indexOf(m[0]);
+  return body.slice(0, idx).trimEnd();
+}
+
 function extractCitationMappingTable(body: string): {
   bodyWithoutTable: string;
   mapping: Map<number, string>;
@@ -1261,7 +1275,8 @@ async function main() {
     resetKeys();
     const md = readFileSync(resolve(PACKAGE_DIR, piece.file), 'utf8');
     const { frontmatter, body } = parseFrontmatter(md);
-    const { bodyWithoutTable, mapping } = extractCitationMappingTable(body);
+    const bodyMinusRefs = stripInlineReferencesSection(body);
+    const { bodyWithoutTable, mapping } = extractCitationMappingTable(bodyMinusRefs);
     const stripped = stripBodyTitle(bodyWithoutTable);
 
     const ctx: ResolveCtx = {
