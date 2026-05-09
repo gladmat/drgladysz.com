@@ -23,14 +23,29 @@ import type { SanityRefDoc } from './sanity';
 // Author name parsing
 // ---------------------------------------------------------------------------
 
+// Generation suffixes recognised at the end of an author entry. These must be
+// peeled off before initials detection — "Steyers CM 3rd" otherwise mis-parses
+// because "3rd" fails the all-caps initials test and the fallback swaps tokens.
+const SUFFIX_RE = /^(Jr|Sr|II|III|IV|V|2nd|3rd|4th|5th)\.?$/;
+
+// Sentinel literal that some seed scripts stored as a final author entry. The
+// renderer treats truncation as its own job, so we filter these out.
+const ET_AL_RE = /^et\s*al\.?$/i;
+
 /**
  * Parses "Smith JK" → { family: "Smith", given: "JK" }.
  * Supports compound surnames with hyphens ("Müller-Vahl JK") and particles
- * ("van der Berg JK" → family "van der Berg", given "JK"). Heuristic: the
- * given name is the trailing token of mostly-uppercase ≤ 4 chars (initials).
- * Everything before that is the family name.
+ * ("van der Berg JK" → family "van der Berg", given "JK"). Trailing generation
+ * suffixes ("Steyers CM 3rd", "Wolfe SW Jr") are returned in `suffix`.
+ * Corporate or non-conforming entries ("British Society for Surgery of the
+ * Hand") fall through to the safe path: the entire string is kept as `family`
+ * with no token swap.
  */
-export function parseAuthorName(raw: string): { family: string; given: string } {
+export function parseAuthorName(raw: string): {
+  family: string;
+  given: string;
+  suffix?: string;
+} {
   const trimmed = raw.trim();
   if (!trimmed) return { family: '', given: '' };
 
@@ -39,36 +54,58 @@ export function parseAuthorName(raw: string): { family: string; given: string } 
     return { family: tokens[0], given: '' };
   }
 
-  const last = tokens[tokens.length - 1];
+  // Peel a trailing generation suffix if present.
+  let suffix: string | undefined;
+  let working = tokens;
+  if (SUFFIX_RE.test(tokens[tokens.length - 1])) {
+    suffix = tokens[tokens.length - 1];
+    working = tokens.slice(0, -1);
+    if (working.length === 1) {
+      return { family: working[0], given: '', suffix };
+    }
+  }
+
+  const candidate = working[working.length - 1];
   const looksLikeInitials =
-    last.length <= 4 && last === last.toUpperCase() && /^[A-Z.]+$/.test(last);
+    candidate.length <= 4 &&
+    candidate === candidate.toUpperCase() &&
+    /^[A-Z.]+$/.test(candidate);
 
   if (looksLikeInitials) {
     return {
-      family: tokens.slice(0, -1).join(' '),
-      given: last,
+      family: working.slice(0, -1).join(' '),
+      given: candidate,
+      suffix,
     };
   }
-  // Fallback: treat first token as given, rest as family.
+  // Corporate-author / non-conforming fallback: keep the whole string as the
+  // family name. Avoids mangling "British Society for Surgery of the Hand"
+  // into "Society for Surgery of the Hand British".
   return {
-    family: tokens.slice(1).join(' '),
-    given: tokens[0],
+    family: working.join(' '),
+    given: '',
+    suffix,
   };
 }
 
 /**
  * ICMJE / Vancouver author-list rule: list up to six authors, then "et al."
- * Each author is rendered as "Family Initials" (no comma, run-together initials).
+ * Each author is rendered as "Family Initials Suffix" (no comma, run-together
+ * initials). Stored literal "et al." sentinels are filtered before counting,
+ * and trigger truncation if present even when the visible list is ≤ 6.
  */
 export function formatAuthorList(authors: string[]): string {
   if (authors.length === 0) return '';
-  const visible = authors.slice(0, 6);
+  const cleaned = authors.filter((a) => !ET_AL_RE.test(a.trim()));
+  const sentinelTruncated = cleaned.length < authors.length;
+  const visible = cleaned.slice(0, 6);
   const rendered = visible.map((a) => {
-    const { family, given } = parseAuthorName(a);
+    const { family, given, suffix } = parseAuthorName(a);
     const initials = given.replace(/\./g, '').replace(/\s+/g, '');
-    return initials ? `${family} ${initials}` : family;
+    const base = initials ? `${family} ${initials}` : family;
+    return suffix ? `${base} ${suffix}` : base;
   });
-  const tail = authors.length > 6 ? ', et al' : '';
+  const tail = sentinelTruncated || cleaned.length > 6 ? ', et al' : '';
   return rendered.join(', ') + tail;
 }
 
@@ -206,18 +243,20 @@ export function formatVancouver(
  * 3+ → "Smith JK et al."
  */
 export function formatShortRef(ref: SanityRefDoc): string {
-  const authors = ref.authors;
+  const cleaned = ref.authors.filter((a) => !ET_AL_RE.test(a.trim()));
+  const sentinelTruncated = cleaned.length < ref.authors.length;
+  const renderOne = (raw: string): string => {
+    const { family, given, suffix } = parseAuthorName(raw);
+    const head = given ? `${family} ${given}` : family;
+    return suffix ? `${head} ${suffix}` : head;
+  };
   let authorPart = '';
-  if (authors.length === 1) {
-    const { family, given } = parseAuthorName(authors[0]);
-    authorPart = given ? `${family} ${given}` : family;
-  } else if (authors.length === 2) {
-    const a = parseAuthorName(authors[0]);
-    const b = parseAuthorName(authors[1]);
-    authorPart = `${a.family} ${a.given}, ${b.family} ${b.given}`.trim();
-  } else if (authors.length >= 3) {
-    const { family, given } = parseAuthorName(authors[0]);
-    authorPart = given ? `${family} ${given} et al.` : `${family} et al.`;
+  if (cleaned.length === 1 && !sentinelTruncated) {
+    authorPart = renderOne(cleaned[0]);
+  } else if (cleaned.length === 2 && !sentinelTruncated) {
+    authorPart = `${renderOne(cleaned[0])}, ${renderOne(cleaned[1])}`;
+  } else if (cleaned.length >= 1) {
+    authorPart = `${renderOne(cleaned[0])} et al.`;
   }
 
   let citation = `${ref.year}`;
@@ -237,10 +276,12 @@ export function formatShortRef(ref: SanityRefDoc): string {
  * useful where a title-style chip is preferred over a numbered superscript.
  */
 export function formatAuthorYear(ref: SanityRefDoc): string {
-  const first = ref.authors[0];
+  const cleaned = ref.authors.filter((a) => !ET_AL_RE.test(a.trim()));
+  const first = cleaned[0];
   if (!first) return `${ref.year}`;
   const { family } = parseAuthorName(first);
-  const tail = ref.authors.length > 1 ? ' et al.' : '';
+  const sentinelTruncated = cleaned.length < ref.authors.length;
+  const tail = sentinelTruncated || cleaned.length > 1 ? ' et al.' : '';
   return `${family}${tail} ${ref.year}`;
 }
 
