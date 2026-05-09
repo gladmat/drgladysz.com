@@ -1,6 +1,6 @@
 # drgladysz.com — Claude Code project notes
 
-Personal-brand-and-content website for **Mateusz Gładysz, MD, FEBOPRAS, FEBHS** — Consultant Plastic and Hand Surgeon. Target launch September 2026. Stack: **Astro 6 + Sanity 4 + Tailwind 4 + Vercel**, TypeScript strict, Preact for islands.
+Personal-brand-and-content website for **Mateusz Gładysz, MD, FEBOPRAS, FEBHS** — Consultant Plastic and Hand Surgeon. **Live since 2026-05-02** (launch brought forward from September 2026). Stack: **Astro 6 + Sanity 4 + Tailwind 4 + Vercel**, TypeScript strict, Preact for islands.
 
 ---
 
@@ -54,8 +54,9 @@ Do not paraphrase locked wording.
 | 6 | Content infrastructure — blog index | ✅ done | (uncommitted) |
 | 7 | Procedure pages — index + category anchors | ✅ done (infra) | (uncommitted) |
 | 8 | Supporting pages (/contact, /credentials, /imprint, /privacy, /disclaimer, /publications) | ✅ done | (uncommitted) |
-| 9 | **Pre-launch QA (compliance, perf, a11y)** | **⬜ NEXT** | — |
-| 10 | Production cutover (DNS at Zenbox, monitor 404s, decommission WP after 30 days) | ⬜ | — |
+| 9 | Pre-launch QA (compliance, perf, a11y) | ✅ done | shipped 2026-05-03 (full B+H+M audit + 18 fixes) |
+| 10 | Production cutover (DNS at Zenbox, monitor 404s, decommission WP) | ✅ done | DNS flipped 2026-05-02; Resend verified, Contact v1.0 + office@ live |
+| post-launch | Bilingual content rolling — CTS PL (2026-05-04), Dupuytren EN+PL (2026-05-05), free-flap mixed-audience EN+PL (2026-05-09→10) | ongoing | see "Recent shipped content" below |
 
 **Phase 6/7/8 deferred work (content authoring, not infrastructure):**
 - Phase 6: WordPress migration — **scaphoid-fractures, extensor-tendon-injuries, and flexor-tendon-injuries-and-repair all live as of 2026-04-30** (FESSH-prep, peer audience; cumulative 88 references, 31 glossary terms, JAMA Key Points, italic standfirst, cross-link block at end of each, MedicalScholarlyArticle JSON-LD; no images yet). Still to author: the Polish post (zespol-ciesni-nadgarstka). See "Phase 6 — what shipped" + "Phase 6 update 2026-04-30" sections below.
@@ -84,6 +85,7 @@ These are non-obvious things prior sessions tripped on. Do not redo:
 - **Readonly arrays don't cross into `<Picture>` props.** `IMAGE_WIDTHS` and `IMAGE_FORMATS` in `src/lib/image-config.ts` are `as const` (good for narrow typing), but `<Picture>` typings expect mutable arrays. At every call site spread them: `widths={[...IMAGE_WIDTHS]}`, `formats={[...IMAGE_FORMATS]}`. Forgetting this is a type error at build time, not runtime.
 - **Article package YAML quirks.** Glossary root key is sometimes `glossaryTerms` (camelCase, scaphoid + flexor) and sometimes `glossary_terms` (snake, extensor); references `authors` is sometimes a block list and sometimes a single comma-separated string (flexor). `scripts/import-article.ts` normalises both shapes. Future package authors should expect either.
 - **Sanity write token env name.** Local `.env.local` convention is `SANITY_API_DEVELOPER_TOKEN` (read+write); legacy `SANITY_API_WRITE_TOKEN` is also accepted by the seed scripts. Revoke at sanity.io/manage immediately after a seed run (see open item #1).
+- **Node 24 required for ad-hoc TS scripts.** All `scripts/*.ts` use `node --experimental-strip-types` which lands in Node 22.6+. Default `nvm use 20` fails with "bad option: --experimental-strip-types". Run `source ~/.nvm/nvm.sh && nvm use 24` once per shell before any seed/import/audit-fix script. Session-local; not persistent across shells.
 - **Security hook false-positive on RegExp `.exec` calls.** The PreToolUse Write hook regex-matches the substring `.exec(` and fires on `RegExp.prototype` matching calls thinking they're shell-execution APIs. Use `someString.match(regex)` instead in scripts you're writing — same semantics for our token-pattern matching, no hook trigger.
 
 ---
@@ -102,7 +104,7 @@ These are non-obvious things prior sessions tripped on. Do not redo:
 | `procedurePage` | ✅ full (Phase 5 — AO Surgery Reference 10-section structure) |
 | `bibReference` | ✅ full (Phase 5 — Vancouver/AMA fields, was `reference`) |
 | `callout` | ✅ shared object type (info / warning / pearl) |
-| `glossaryTerm` | ✅ full (`shortDefinition` cap raised 400→450 on 2026-04-30 to fit medical-precision terms like `bowstringing`) |
+| `glossaryTerm` | ✅ full (`shortDefinition` cap raised 400→450 on 2026-04-30; `shortDefinitionPolish` + `fullDefinitionPolish` wired into `import-article.ts` 2026-05-10 — single-doc-bilingual; PL packages PATCH overlapping EN docs and CREATE new EN-slug docs for PL-introduced concepts) |
 | `calculator` | ✅ full (Tier 2 infrastructure built 2026-04-29 — schema, page shells, QuickDASH widget. PRWE/Boston/MHQ/Mayo deferred until validation paper review per calculator) |
 | **FESSH MCQ schemas** | ✅ moved to `learn/` sub-app (2026-04-29 evening). The earlier `mcqQuestion` schema was removed entirely — FESSH MCQ uses a different format (5 T/F statements per question, not single-answer multiple-choice). New schemas: `fesshReference`, `fesshMcq`, `fesshStatement`, `fesshMcqMetadata`, `fesshMockExam` — all live here in `studio/schemas/` but consumed by the `learn/` Astro project. See `learn/CLAUDE.md` and `01-brand-system/decisions-v1.10.md`. |
 
@@ -110,6 +112,9 @@ These are non-obvious things prior sessions tripped on. Do not redo:
 - **`useCdn: false`** on the Sanity client (`src/lib/sanity.ts`). Sanity's CDN can serve stale results for a few minutes after a publish, which during builds means a freshly published doc may be invisible to `getStaticPaths` even though it's queryable elsewhere. Build-time freshness > CDN read perf.
 - **Schema deploy:** the schema needs to be deployed for the Sanity MCP `get_schema` tool to work and for any deploy-time schema validation. Run `npx sanity@latest schema deploy` from the local Studio after `sanity login`. Skipped this session because deploy needs interactive CLI auth; documents were created via MCP regardless. Studio reads schema from local files, so the editing UI is unaffected.
 - Sanity ecosystem at **v5** (deployed 2026-05-04 to `drgladysz-cms.sanity.studio`). `sanity` and `@sanity/vision` pinned to `^5.21.0`; `@sanity/client` at `^7.0.0`; `react` and `react-dom` at `^19.2.2` as direct deps (peers of sanity v5). Auto-updates enabled in `sanity.cli.ts` so editors get patch + minor releases on demand without redeploying — major bumps with host-side migrations still need a manual rebuild.
+- **Generic article-package import pipeline supports `language` field.** `scripts/import-article.ts` (extended 2026-05-10) reads `language: 'en'|'pl'` from `03-article-metadata.yaml`, defaults to `'en'` when absent. PL packages must set `language: pl` explicitly. Bilingual glossary support: `shortDefinitionPolish` and `fullDefinitionPolish` fields handled in `buildGlossaryTerm()` (450-char cap on the PL short-def too). Replaces the per-package bespoke seed scripts from Phase 6.
+- **Bulk-seed retry wrapper.** `scripts/seed-article.ts` wraps every Sanity call in `withRetry()` (4 attempts, exponential backoff 0.5s/1s/2s); covers ECONNRESET / ETIMEDOUT / socket-timeout / 429 / 502-504. All Sanity ops in this script are idempotent (createOrReplace, set/unset patches), so retries are always safe. Re-use this pattern for any new bulk-seed script — bulk-write loads against Sanity hit transient connection drops without it.
+- **Bilingual seed order matters.** When seeding an EN+PL pair (e.g., free-tissue-transfer + wolne-platy), run EN first, PL second. PL clobbers the overlapping glossary docs to add `termPolish`/`shortDefinitionPolish`/`fullDefinitionPolish`. Re-running EN strips the PL fields → must re-run PL after any EN re-seed. Documented in each PL package's `01-readme.md`.
 
 ---
 
@@ -119,6 +124,8 @@ These are non-obvious things prior sessions tripped on. Do not redo:
 - **Polish content is independently composed** — never machine-translated from English. Awaiting native Polish composition session for Home, About, all procedure pages.
 - **Polish slugs** (from brand spec §11): `/pl/o-mnie`, `/pl/zabiegi`, `/pl/publikacje`, `/pl/kontakt`, `/pl/uprawnienia`, `/pl/nota-prawna`, `/pl/polityka-prywatnosci`, `/pl/zastrzezenie-medyczne`.
 - **FESSH-prep articles are English-only.** Articles with `category: fessh-prep` (currently scaphoid-fractures, extensor-tendon-injuries, flexor-tendon-injuries-and-repair) never get Polish translations — the FESSH Diploma exam is English-language, so a Polish version has no audience. This matches the `learn.drgladysz.com` MCQ sub-app convention. Other categories (`patient`, `expert`, `news`) follow the standard EN/PL mirror rule.
+- **PL chrome on content components must opt-in.** `<KeyPoints>` defaults to English labels ("Key Points / Question / Findings / Meaning"); pass `locale="pl"` on PL routes for "Kluczowe punkty / Pytanie / Ustalenia / Znaczenie". `<Bibliography>` defaults to "References" heading; pass `heading="Piśmiennictwo"` on PL routes. Currently wired on `/pl/blog/[slug]`, `/pl/zabiegi/[slug]`, `/pl/kalkulatory/[slug]` (2026-05-10). New PL routes MUST do the same — content stays Polish but chrome silently stays English otherwise.
+- **Cross-language hreflang slug maps are hand-edited.** EN→PL pairing for blog articles lives in `src/pages/en/blog/[slug].astro` (`EN_TO_PL_SLUG` const); PL→EN mirror in `src/pages/pl/blog/[slug].astro` (`PL_TO_EN_SLUG`). Both must be updated when a new EN/PL pair ships, otherwise the language switcher chip silently doesn't render. Same pattern likely needed for procedures + calculators when their first EN/PL pairs ship.
 
 ---
 
@@ -432,6 +439,14 @@ The site cut over to production on 2026-05-02 (Phase 10 done, ahead of formal Ph
 - Pre-existing type error fixed: `src/pages/en/procedures/[slug].astro:296` was passing `glossaryTerms` to `<Bibliography>` (the component doesn't accept that prop). Removed.
 - Sanity counts after drop+cleanup: bibReference 153 (107 → +46 net new), glossaryTerm 69 (60 → +9), article 5 (4 → +1; patient placeholder replaced in-place), fesshMcq published 15 (11 → +4), fesshReference 81 (55 → +26). Site build: 165 pages. Learn build: 32 pages.
 - Procedure page schema gap (known limitation): `procedurePage` schema has no `relatedArticles` field. The cleanup script's `backfill-octr-related.ts` writes the field anyway via `client.patch().set()`, so the data is on the doc, but the procedure template doesn't render it. Article→procedure direction (which the article template DOES render) shows correctly. Add `relatedArticles` to the procedure schema and template in a future session.
+
+## Recent shipped content (rolling, post-launch)
+
+- **2026-05-04** — PL CTS package (procedure + 2 articles + 37 PL glossary translations); first PL operational content drop.
+- **2026-05-05** — Dupuytren EN + PL packages (4 EN + 4 PL docs, 14 glossary docs patched bilingual).
+- **2026-05-09→10** — Free-flap bilingual overview (`/en/blog/free-tissue-transfer/` + `/pl/blog/wolne-platy/`) — first **mixed-audience overview pair**. 47 EN + 30 PL refs; 25 fully-bilingual glossary docs (single-doc-bilingual with EN-canonical slugs). Locked structural pattern as **Decision #63** (audience-framing intro at top + `## A final note` / `## Nota końcowa` h2 closing); companion doc at `01-brand-system/drgladysz-brand-spec-amendment-v1_10-mixed-audience-overview.md`. Same drop wired PL chrome localization on `<KeyPoints>` + `<Bibliography>` and added `withRetry()` to `seed-article.ts`.
+
+Sanity counts after free-flap launch: ~13 articles, ~210 bibReferences, ~94 glossaryTerms (25 fully bilingual via free-flap + 37 PL-translated via CTS).
 
 ## Phase 9 starting context (next session)
 
