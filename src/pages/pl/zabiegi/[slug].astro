@@ -259,6 +259,7 @@ const articleCategoryLabel: Record<string, string> = {
           question={procedure.keyPoints.question}
           findings={procedure.keyPoints.findings}
           meaning={procedure.keyPoints.meaning}
+          locale="pl"
           findingsLabel="Wskazania i przebieg"
           meaningLabel="Znaczenie kliniczne"
         />
@@ -409,7 +410,7 @@ const articleCategoryLabel: Record<string, string> = {
         </section>
       )}
 
-      <Bibliography references={references} />
+      <Bibliography references={references} heading="Piśmiennictwo" />
 
       {hasRelated && (
         <aside class="proc-related" aria-labelledby="related-heading">

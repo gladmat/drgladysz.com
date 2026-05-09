@@ -42,6 +42,7 @@ const PL_TO_EN_SLUG: Record<string, string> = {
   // 'choroba-dupuytrena-leczenie-operacyjne' has no direct EN counterpart —
   // the PL piece is a clinical-decision-framework expert article, the closest
   // EN piece is the FESSH-prep article (different audience/angle). No pairing.
+  'wolne-platy': 'free-tissue-transfer',
 };
 const enSlug = PL_TO_EN_SLUG[slug];
 const alternateUrl = enSlug ? `/en/blog/${enSlug}/` : undefined;
@@ -199,6 +200,7 @@ const procedureCategoryLabel: Record<string, string> = {
           question={article.keyPoints.question}
           findings={article.keyPoints.findings}
           meaning={article.keyPoints.meaning}
+          locale="pl"
         />
       )}
 
@@ -211,7 +213,7 @@ const procedureCategoryLabel: Record<string, string> = {
         />
       </div>
 
-      <Bibliography references={references} />
+      <Bibliography references={references} heading="Piśmiennictwo" />
 
       {hasRelated && (
         <aside class="article-related" aria-labelledby="related-heading">

@@ -13,13 +13,19 @@ interface Props {
   findings?: string;
   meaning?: string;
   /**
+   * Locale drives default label translations. Explicit `findingsLabel` /
+   * `meaningLabel` props override the locale default (procedure pages do this
+   * to swap "Findings" → "Indications" / "Wskazania i przebieg").
+   */
+  locale?: 'en' | 'pl';
+  /**
    * Whether the third line is "Meaning" (typical article) or "Clinical relevance"
-   * (procedure pages). Defaults to "Meaning".
+   * (procedure pages). Defaults derive from locale.
    */
   meaningLabel?: string;
   /**
    * Whether the second line is "Findings" (typical article) or "Indications"
-   * (procedure pages). Defaults to "Findings".
+   * (procedure pages). Defaults derive from locale.
    */
   findingsLabel?: string;
 }
@@ -28,31 +34,51 @@ const {
   question,
   findings,
   meaning,
-  meaningLabel = 'Meaning',
-  findingsLabel = 'Findings',
+  locale = 'en',
+  meaningLabel,
+  findingsLabel,
 } = Astro.props;
+
+const labels = locale === 'pl'
+  ? {
+      heading: 'Kluczowe punkty',
+      ariaLabel: 'Kluczowe punkty',
+      question: 'Pytanie',
+      findings: 'Ustalenia',
+      meaning: 'Znaczenie',
+    }
+  : {
+      heading: 'Key Points',
+      ariaLabel: 'Key points',
+      question: 'Question',
+      findings: 'Findings',
+      meaning: 'Meaning',
+    };
+
+const resolvedFindingsLabel = findingsLabel ?? labels.findings;
+const resolvedMeaningLabel = meaningLabel ?? labels.meaning;
 
 const hasContent = Boolean(question || findings || meaning);
 ---
 {hasContent && (
-  <aside class="keypoints" aria-label="Key points">
-    <h2 class="keypoints-heading">Key Points</h2>
+  <aside class="keypoints" aria-label={labels.ariaLabel}>
+    <h2 class="keypoints-heading">{labels.heading}</h2>
     <dl class="keypoints-list">
       {question && (
         <div class="kp-row">
-          <dt>Question</dt>
+          <dt>{labels.question}</dt>
           <dd>{question}</dd>
         </div>
       )}
       {findings && (
         <div class="kp-row">
-          <dt>{findingsLabel}</dt>
+          <dt>{resolvedFindingsLabel}</dt>
           <dd>{findings}</dd>
         </div>
       )}
       {meaning && (
         <div class="kp-row">
-          <dt>{meaningLabel}</dt>
+          <dt>{resolvedMeaningLabel}</dt>
           <dd>{meaning}</dd>
         </div>
       )}

@@ -60,6 +60,42 @@ const client = createClient({
   token: TOKEN,
 });
 
+// Wrap a Sanity API call so transient socket errors retry with backoff.
+// The bulk-seed pattern (50+ rapid writes) can drop connections under load,
+// returning ECONNRESET / ETIMEDOUT / ENOTFOUND from undici. Each retry is
+// safe because every operation here is idempotent (createOrReplace, patch).
+async function withRetry<T>(label: string, op: () => Promise<T>): Promise<T> {
+  const transient = new Set([
+    'ECONNRESET',
+    'ETIMEDOUT',
+    'ENOTFOUND',
+    'EAI_AGAIN',
+    'ECONNREFUSED',
+    'EPIPE',
+  ]);
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    try {
+      return await op();
+    } catch (err) {
+      const e = err as NodeJS.ErrnoException & { message?: string };
+      const isTransient =
+        (e.code && transient.has(e.code)) ||
+        (e.message &&
+          /ECONNRESET|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|socket hang up|socket timed out|fetch failed|network|503|502|504|429/i.test(
+            e.message,
+          ));
+      if (!isTransient || attempt === 4) throw err;
+      const delayMs = 500 * 2 ** (attempt - 1); // 0.5s, 1s, 2s
+      process.stderr.write(
+        `  ↻ ${label} retry ${attempt}/3 after ${delayMs}ms (${e.code ?? e.message})\n`,
+      );
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+  }
+  throw lastErr;
+}
+
 const importPath = resolve(__dirname, `.${folder}-import.json`);
 const importJson = JSON.parse(readFileSync(importPath, 'utf8'));
 
@@ -70,7 +106,7 @@ async function seed(label: string, docs: Doc[]) {
   console.log(`\n→ Writing ${docs.length} ${label} document(s)…`);
   for (const doc of docs) {
     try {
-      await client.createOrReplace(doc);
+      await withRetry(doc._id, () => client.createOrReplace(doc));
       process.stdout.write(`  ✓ ${doc._id}\n`);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -87,14 +123,16 @@ async function patchAuthor() {
   const authorId = '2cbd8bcc-fe62-4d80-8bd4-a1a345dcf472';
   console.log(`\n→ Patching author doc ${authorId} (move title→credentials, fix role)…`);
   try {
-    await client
-      .patch(authorId)
-      .set({
-        credentials: 'MD, FEBOPRAS, FEBHS',
-        role: 'Consultant Plastic and Hand Surgeon',
-      })
-      .unset(['title'])
-      .commit();
+    await withRetry('author', () =>
+      client
+        .patch(authorId)
+        .set({
+          credentials: 'MD, FEBOPRAS, FEBHS',
+          role: 'Consultant Plastic and Hand Surgeon',
+        })
+        .unset(['title'])
+        .commit(),
+    );
     process.stdout.write('  ✓ author patched\n');
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -116,7 +154,7 @@ async function seedGlossary(docs: Doc[]) {
   });
   for (const doc of docsWithoutRelated) {
     try {
-      await client.createOrReplace(doc);
+      await withRetry(doc._id, () => client.createOrReplace(doc));
       process.stdout.write(`  ✓ ${doc._id}\n`);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -144,7 +182,9 @@ async function seedGlossary(docs: Doc[]) {
       // Nothing left to patch — unset the field so a previous run's stale
       // refs don't linger.
       try {
-        await client.patch(doc._id).unset(['relatedTerms']).commit();
+        await withRetry(`${doc._id}.relatedTerms.unset`, () =>
+          client.patch(doc._id).unset(['relatedTerms']).commit(),
+        );
         process.stdout.write(`  ✓ ${doc._id} (no related — unset)\n`);
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
@@ -154,7 +194,9 @@ async function seedGlossary(docs: Doc[]) {
       continue;
     }
     try {
-      await client.patch(doc._id).set({ relatedTerms: resolved }).commit();
+      await withRetry(`${doc._id}.relatedTerms`, () =>
+        client.patch(doc._id).set({ relatedTerms: resolved }).commit(),
+      );
       process.stdout.write(`  ✓ ${doc._id} (${resolved.length} related)\n`);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -174,9 +216,8 @@ async function filterExistingRefs(
 ): Promise<RefEntry[]> {
   if (refs.length === 0) return refs;
   const ids = refs.map((r) => r._ref);
-  const existing = await client.fetch<string[]>(
-    `*[_id in $ids]._id`,
-    { ids },
+  const existing = await withRetry('filterExistingRefs:fetch', () =>
+    client.fetch<string[]>(`*[_id in $ids]._id`, { ids }),
   );
   const existingSet = new Set(existing);
   const resolved: RefEntry[] = [];
@@ -189,9 +230,11 @@ async function filterExistingRefs(
       // Treat the unresolved `_ref` as `<refPrefix><slug>` and look up by
       // slug.current. Handles legacy Phase-5 docs seeded with UUID `_id`s.
       const slugCandidate = r._ref.replace(new RegExp(`^${fallback.refPrefix}`), '');
-      const liveId = await client.fetch<string | null>(
-        `*[_type == $type && slug.current == $slug][0]._id`,
-        { type: fallback.type, slug: slugCandidate },
+      const liveId = await withRetry('filterExistingRefs:slug-fallback', () =>
+        client.fetch<string | null>(
+          `*[_type == $type && slug.current == $slug][0]._id`,
+          { type: fallback.type, slug: slugCandidate },
+        ),
       );
       if (liveId) {
         resolved.push({ ...r, _ref: liveId });
@@ -235,7 +278,7 @@ async function seedArticles(docs: Doc[]) {
     }
 
     try {
-      await client.createOrReplace(article);
+      await withRetry(doc._id, () => client.createOrReplace(article));
       process.stdout.write(`  ✓ ${doc._id}\n`);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

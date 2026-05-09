@@ -529,7 +529,9 @@ type GlossYaml = {
     | 'other';
   synonyms?: string[];
   shortDefinition: string;
+  shortDefinitionPolish?: string;
   fullDefinition?: string;
+  fullDefinitionPolish?: string;
   relatedTerms?: string[];
   notesForMateusz?: string;
 };
@@ -587,6 +589,15 @@ function buildGlossaryTerm(g: GlossYaml) {
       `glossary ${g.slug} shortDefinition exceeds 450 chars (${shortDef.length})`,
     );
   }
+  let shortDefPolish: string | undefined;
+  if (isRealPolishValue(g.shortDefinitionPolish)) {
+    shortDefPolish = g.shortDefinitionPolish!.trim().replace(/\s+/g, ' ');
+    if (shortDefPolish.length > 450) {
+      throw new Error(
+        `glossary ${g.slug} shortDefinitionPolish exceeds 450 chars (${shortDefPolish.length})`,
+      );
+    }
+  }
   return {
     _id: glossaryDocId(g.slug),
     _type: 'glossaryTerm',
@@ -595,8 +606,17 @@ function buildGlossaryTerm(g: GlossYaml) {
     slug: { _type: 'slug', current: g.slug },
     category: g.category,
     shortDefinition: shortDef,
+    ...(shortDefPolish ? { shortDefinitionPolish: shortDefPolish } : {}),
     ...(g.fullDefinition
       ? { fullDefinition: textToBlocks(g.fullDefinition, glossaryDocId(g.slug)) }
+      : {}),
+    ...(isRealPolishValue(g.fullDefinitionPolish)
+      ? {
+          fullDefinitionPolish: textToBlocks(
+            g.fullDefinitionPolish!,
+            `${glossaryDocId(g.slug)}-pl`,
+          ),
+        }
       : {}),
     ...(g.synonyms && g.synonyms.length > 0 ? { synonyms: g.synonyms } : {}),
     ...(g.relatedTerms && g.relatedTerms.length > 0
@@ -616,6 +636,7 @@ type ArticleMetaYaml = {
   document_type: 'article';
   title: string;
   slug: string;
+  language?: 'en' | 'pl';
   category: 'patient' | 'expert' | 'fessh-prep' | 'news';
   audience: 'patient' | 'peer' | 'mixed';
   author: string;
@@ -696,6 +717,7 @@ function buildArticle(meta: ArticleMetaYaml, body: Block[]) {
     _type: 'article',
     title: meta.title,
     slug: { _type: 'slug', current: meta.slug },
+    language: meta.language ?? 'en',
     category: meta.category,
     audience: meta.audience,
     author: { _type: 'reference', _ref: authorRef },
