@@ -35,8 +35,13 @@ export default defineConfig({
         },
       },
       filter: (page) => {
+        // Allow only locale-prefixed canonical content URLs. Astro's sitemap
+        // otherwise also emits every redirect source from the `redirects:`
+        // block below (apex `/`, WP-era slugs, MCQ sub-app paths, etc.),
+        // which Google then flags as "Page with redirect" in the sitemap.
         const path = new URL(page).pathname;
-        if (path.startsWith('/studio/')) return false;
+        if (!path.startsWith('/en/') && !path.startsWith('/pl/')) return false;
+        if (path.startsWith('/en/learn') || path.startsWith('/pl/nauka')) return false;
         return true;
       },
     }),
