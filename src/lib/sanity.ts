@@ -423,7 +423,7 @@ function languageFilter(locale?: Locale): string {
 
 export async function getAllArticleSlugs(locale?: Locale): Promise<string[]> {
   return sanityClient.fetch<string[]>(
-    /* groq */ `*[_type == "article" && defined(slug.current)${languageFilter(locale)}].slug.current`,
+    /* groq */ `*[_type == "article" && defined(slug.current) && !(_id in path("drafts.**"))${languageFilter(locale)}].slug.current`,
   );
 }
 
@@ -486,7 +486,7 @@ export async function getArticleBySlug(
 
 export async function getAllProcedureSlugs(locale?: Locale): Promise<string[]> {
   return sanityClient.fetch<string[]>(
-    /* groq */ `*[_type == "procedurePage" && defined(slug.current)${languageFilter(locale)}].slug.current`,
+    /* groq */ `*[_type == "procedurePage" && defined(slug.current) && !(_id in path("drafts.**"))${languageFilter(locale)}].slug.current`,
   );
 }
 
@@ -535,7 +535,7 @@ export async function getAllGlossaryTerms(): Promise<GlossarySummary[]> {
 // emits both /en/ and /pl/ pages from the same slug list.
 export async function getAllGlossaryTermSlugs(): Promise<string[]> {
   return sanityClient.fetch<string[]>(
-    /* groq */ `*[_type == "glossaryTerm" && defined(slug.current)].slug.current`,
+    /* groq */ `*[_type == "glossaryTerm" && defined(slug.current) && !(_id in path("drafts.**"))].slug.current`,
   );
 }
 
@@ -579,7 +579,7 @@ export async function getAllCalculatorSlugsForLocale(
   locale: Locale,
 ): Promise<string[]> {
   return sanityClient.fetch<string[]>(
-    /* groq */ `*[_type == "calculator" && locale == $locale && defined(slug.current)].slug.current`,
+    /* groq */ `*[_type == "calculator" && locale == $locale && defined(slug.current) && !(_id in path("drafts.**"))].slug.current`,
     { locale },
   );
 }
