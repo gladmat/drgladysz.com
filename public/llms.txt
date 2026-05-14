@@ -1,0 +1,54 @@
+# Mateusz Gładysz, MD, FEBOPRAS, FEBHS
+
+> Consultant Plastic and Hand Surgeon based at Waikato Hospital, Hamilton, New Zealand. European double board-certified (FEBOPRAS — plastic, reconstructive and aesthetic surgery; FEBHS — hand surgery). Bilingual (English / Polish) medical resource on hand surgery, reconstructive microsurgery, and skin cancer surgery. Single-author site with rigorous primary-literature citations (Vancouver style; PubMed identifiers exposed in JSON-LD).
+
+## About
+
+- [About Mateusz Gładysz](https://drgladysz.com/en/about/): Education, training pathway (Warsaw → Zurich → Hannover → Perth → Aarau → Hamilton), research, languages.
+- [Credentials](https://drgladysz.com/en/credentials/): MD (Medical University of Warsaw), FEBOPRAS, FEBHS, MCNZ registration 93463, PWZ 2985148, Polish + International society memberships.
+- [Publications](https://drgladysz.com/en/publications/): Peer-reviewed publications (JMIR AI, European Burn Journal).
+
+## Knowledge base (English)
+
+- [Knowledge base index](https://drgladysz.com/en/blog/) — patient information, expert blog, FESSH-prep articles, news & commentary.
+- [Glossary](https://drgladysz.com/en/glossary/) — 129 indexed medical terms with short definitions and references; 92 with Polish counterparts.
+
+## Knowledge base (Polish)
+
+- [Baza wiedzy (PL)](https://drgladysz.com/pl/blog/) — informacje dla pacjentów, artykuły eksperckie, aktualności.
+- [Słowniczek (PL)](https://drgladysz.com/pl/slowniczek/) — terminologia medyczna polsko-angielska.
+
+## Procedures
+
+- [Procedures index (EN)](https://drgladysz.com/en/procedures/) — AO Surgery Reference 10-section structure (indications / anatomy / approach / key steps / aftercare / complications / evidence).
+- [Zabiegi (PL)](https://drgladysz.com/pl/zabiegi/)
+
+## Clinical calculators
+
+- [Calculators (EN)](https://drgladysz.com/en/calculators/) — QuickDASH and validated upper-limb patient-reported outcome instruments.
+- [Kalkulatory kliniczne (PL)](https://drgladysz.com/pl/kalkulatory/)
+
+## FESSH MCQ preparation (English only)
+
+- [learn.drgladysz.com](https://learn.drgladysz.com/) — single-author, literature-checked FESSH Diploma preparation. 5 True/False statements per question. Every published question carries an audit-trail block (Question ID / First published / Last reviewed / Version). Single-author resource — not peer-reviewed in the formal sense; integrity layer is the visible per-question errata mechanism plus citation-backed evidence.
+
+## Authoritative identity
+
+- ORCID: [0009-0009-2380-4056](https://orcid.org/0009-0009-2380-4056)
+- LinkedIn: [linkedin.com/in/mateuszgladysz](https://www.linkedin.com/in/mateuszgladysz)
+- Sanity Studio (private): drgladysz-cms.sanity.studio
+- GitHub: gladmat/drgladysz.com (private)
+
+## Usage policy
+
+Free to read, link to, and cite with attribution. Suggested citation format:
+
+> Gładysz M. [Article title]. drgladysz.com. [URL]. Accessed [date].
+
+AI engines and large language models may ingest the content for retrieval and citation, with attribution. The content is grounded in primary literature (PubMed-identified references in JSON-LD `citation` arrays) and structured for retrieval (MedicalScholarlyArticle, MedicalProcedure, MedicalCondition, DefinedTerm schemas).
+
+## Contact
+
+- [office@drgladysz.com](mailto:office@drgladysz.com) — public enquiries
+- [Contact form](https://drgladysz.com/en/contact/#form)
+- Languages: English, Polski, Deutsch
