@@ -1,0 +1,93 @@
+# Lighthouse CI on PR previews — fails the check if scores regress below
+# the thresholds in lighthouserc.json. See the audit's Phase L for context.
+#
+# Required setup (one-off):
+# - `LHCI_GITHUB_APP_TOKEN` is optional but recommended for richer PR comments.
+#   Install the Lighthouse CI GitHub App at https://github.com/apps/lighthouse-ci
+#   and add the token as a repository secret.
+# - Vercel must publish PR preview deployments (default for projects connected
+#   to GitHub). The Vercel bot comments the preview URL on each PR; the
+#   `patrickedqvist/wait-for-vercel-preview` step polls until it's available.
+#
+# Behaviour:
+# - Triggers on PR open / sync / reopen.
+# - Waits up to 8 minutes for the Vercel preview to be ready.
+# - Runs Lighthouse 3 times against / and a representative article + procedure.
+# - Asserts thresholds; fails the check on regression.
+#
+# Manual run: trigger the "Lighthouse CI" workflow from the Actions tab with
+# a `target_url` input to audit any deployed URL ad-hoc.
+#
+# Security: all dynamic inputs (workflow_dispatch text input, deployment URL)
+# are funnelled through `env:` variables and read in shell with `"$VAR"` to
+# avoid command injection. See
+# https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions
+
+name: Lighthouse CI
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: 'URL to audit (defaults to Vercel PR preview)'
+        required: false
+        default: ''
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Wait for Vercel preview
+        if: github.event_name == 'pull_request'
+        id: vercel
+        uses: patrickedqvist/wait-for-vercel-preview@v1.3.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          max_timeout: 480
+
+      - name: Resolve target URL
+        id: target
+        env:
+          INPUT_URL: ${{ github.event.inputs.target_url }}
+          VERCEL_URL: ${{ steps.vercel.outputs.url }}
+        run: |
+          set -euo pipefail
+          if [ -n "$INPUT_URL" ]; then
+            CHOSEN="$INPUT_URL"
+          else
+            CHOSEN="$VERCEL_URL"
+          fi
+          # Allow only http(s) URLs with safe characters — defence in depth
+          # against shell metacharacters in workflow_dispatch input.
+          if ! printf '%s' "$CHOSEN" | grep -Eq '^https?://[A-Za-z0-9.-]+(:[0-9]+)?(/[A-Za-z0-9._~/-]*)?$'; then
+            echo "::error::Invalid target URL: $CHOSEN"
+            exit 1
+          fi
+          echo "url=$CHOSEN" >> "$GITHUB_OUTPUT"
+
+      - name: Install Lighthouse CI
+        run: npm install --no-save @lhci/cli@^0.14.0
+
+      - name: Run Lighthouse CI
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+          BASE: ${{ steps.target.outputs.url }}
+        run: |
+          set -euo pipefail
+          npx lhci autorun \
+            --config=./lighthouserc.json \
+            --collect.url="$BASE/en/" \
+            --collect.url="$BASE/en/blog/scaphoid-fractures/" \
+            --collect.url="$BASE/en/procedures/open-carpal-tunnel-release/" \
+            --collect.url="$BASE/pl/zabiegi/zespol-ciesni-nadgarstka/"
