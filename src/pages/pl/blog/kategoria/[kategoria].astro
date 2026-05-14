@@ -1,0 +1,246 @@
+---
+// src/pages/pl/blog/kategoria/[kategoria].astro
+//
+// Polski odpowiednik /en/blog/category/[category]/. Listuje artykuły w danej
+// kategorii. Slugi polskie różnią się od angielskich; mapa poniżej tłumaczy
+// PL slug → wartość kategorii Sanity (która jest angielska).
+import SiteLayout from '@/layouts/SiteLayout.astro';
+import SectionMasthead from '@/components/SectionMasthead.astro';
+import Breadcrumb from '@/components/Breadcrumb.astro';
+import { getAllArticleSummaries, type ArticleSummary } from '@/lib/sanity';
+import { generateBreadcrumb } from '@/lib/schema';
+
+type Category = ArticleSummary['category'];
+
+const CATEGORY_META: Record<Category, {
+  plSlug: string;
+  label: string;
+  description: string;
+  blurb: string;
+}> = {
+  patient: {
+    plSlug: 'pacjent',
+    label: 'Informacje dla pacjentów',
+    description:
+      'Przewodniki dla pacjentów: częste schorzenia ręki, jak przebiega diagnostyka, kiedy konieczne jest leczenie operacyjne, jak wygląda rekonwalescencja.',
+    blurb:
+      'Przewodniki dla pacjentów po częstych schorzeniach ręki i kończyny górnej — czym są, jak są diagnozowane, kiedy wskazana jest operacja i jak wygląda rekonwalescencja.',
+  },
+  expert: {
+    plSlug: 'ekspert',
+    label: 'Artykuły eksperckie',
+    description:
+      'Technika chirurgiczna, przeglądy dowodów i wybór metody leczenia — adresowane do środowiska lekarskiego.',
+    blurb:
+      'Technika chirurgiczna, przeglądy dowodów i wybór metody leczenia w chirurgii ręki, mikrochirurgii rekonstrukcyjnej i chirurgii nowotworów skóry — adresowane do środowiska lekarskiego.',
+  },
+  'fessh-prep': {
+    plSlug: 'fessh-prep',
+    label: 'Przygotowanie do FESSH',
+    description: 'Notatki i materiały do egzaminu FESSH Diploma.',
+    blurb: 'Strukturalne notatki i materiały referencyjne do przygotowania do egzaminu FESSH Diploma.',
+  },
+  news: {
+    plSlug: 'aktualnosci',
+    label: 'Aktualności i komentarze',
+    description: 'Konferencje, spotkania i bieżące wydarzenia w dziedzinie.',
+    blurb:
+      'Notatki z konferencji, spotkań i bieżących wydarzeń w chirurgii ręki, mikrochirurgii i chirurgii nowotworów skóry.',
+  },
+};
+
+const PL_TO_CATEGORY: Record<string, Category> = Object.fromEntries(
+  Object.entries(CATEGORY_META).map(([cat, meta]) => [meta.plSlug, cat as Category]),
+);
+
+export async function getStaticPaths() {
+  return Object.values({
+    patient: 'pacjent',
+    expert: 'ekspert',
+    'fessh-prep': 'fessh-prep',
+    news: 'aktualnosci',
+  }).map((kategoria) => ({ params: { kategoria } }));
+}
+
+const { kategoria } = Astro.params as { kategoria: string };
+const category = PL_TO_CATEGORY[kategoria];
+if (!category) return Astro.redirect('/pl/blog/');
+const meta = CATEGORY_META[category];
+
+const articles = await getAllArticleSummaries('pl');
+const items = articles
+  .filter((a) => a.category === category)
+  .sort((a, b) =>
+    new Date(b.publishedDate).getTime() - new Date(a.publishedDate).getTime(),
+  );
+
+const siteUrl = (
+  import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com'
+).replace(/\/$/, '');
+const canonicalUrl = `${siteUrl}/pl/blog/kategoria/${kategoria}/`;
+const alternateUrl = `/en/blog/category/${category}/`;
+
+const collectionJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  '@id': canonicalUrl,
+  name: `${meta.label} — Mateusz Gładysz`,
+  description: meta.description,
+  url: canonicalUrl,
+  inLanguage: 'pl-PL',
+  isPartOf: { '@id': `${siteUrl}/#website` },
+  hasPart: items.map((a) => ({
+    '@type': 'Article',
+    headline: a.title,
+    url: `${siteUrl}/pl/blog/${a.slug.current}/`,
+    datePublished: a.publishedDate,
+    description: a.excerpt,
+  })),
+};
+
+const breadcrumbJsonLd = generateBreadcrumb([
+  { name: 'Strona główna', url: `${siteUrl}/pl/` },
+  { name: 'Baza wiedzy', url: `${siteUrl}/pl/blog/` },
+  { name: meta.label, url: canonicalUrl },
+]);
+
+function fmtDate(d?: string) {
+  if (!d) return '';
+  return new Date(d).toLocaleDateString('pl-PL', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+---
+<SiteLayout
+  title={`${meta.label} — Mateusz Gładysz`}
+  description={meta.description}
+  locale="pl"
+  alternateUrl={alternateUrl}
+  canonical={canonicalUrl}
+  jsonLd={[collectionJsonLd, breadcrumbJsonLd]}
+>
+  <section class="index-masthead-shell">
+    <Breadcrumb items={[
+      { name: 'Strona główna', url: '/pl/' },
+      { name: 'Baza wiedzy', url: '/pl/blog/' },
+      { name: meta.label },
+    ]} />
+    <SectionMasthead
+      label="Baza wiedzy"
+      heading={meta.label}
+      headingTag="h1"
+      standfirst={meta.blurb}
+    />
+  </section>
+
+  <section class="blog-index">
+    <div class="blog-index-inner">
+      {items.length === 0 ? (
+        <div class="empty">
+          <p>W tej kategorii nie ma jeszcze artykułów. Zajrzyj wkrótce, lub przejdź do <a href="/pl/blog/">pełnej bazy wiedzy</a>.</p>
+        </div>
+      ) : (
+        <ol class="article-list">
+          {items.map((article) => (
+            <li class="article-card">
+              <a href={`/pl/blog/${article.slug.current}/`} class="article-card-link">
+                <p class="card-meta">
+                  <time datetime={article.publishedDate}>{fmtDate(article.publishedDate)}</time>
+                  {article.lastUpdated && article.lastUpdated !== article.publishedDate && (
+                    <>
+                      <span aria-hidden="true">·</span>
+                      <span class="card-updated">Aktualizacja: {fmtDate(article.lastUpdated)}</span>
+                    </>
+                  )}
+                </p>
+                <h2 class="card-title">{article.title}</h2>
+                <p class="card-excerpt">{article.excerpt}</p>
+              </a>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  </section>
+</SiteLayout>
+
+<style>
+  .index-masthead-shell {
+    padding: clamp(56px, 8vw, 120px) clamp(20px, 5vw, 80px) 0;
+    max-width: 1320px;
+    margin: 0 auto;
+  }
+  .blog-index {
+    padding: clamp(40px, 6vw, 80px) 0 120px;
+  }
+  .blog-index-inner {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding-inline: clamp(20px, 5vw, 80px);
+  }
+  .empty {
+    max-width: 60ch;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 18px;
+    color: var(--ink-2);
+  }
+  .empty a {
+    color: var(--accent);
+    border-bottom: 1px solid var(--accent);
+    text-decoration: none;
+  }
+  .article-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0;
+  }
+  .article-card {
+    border-top: 1px solid var(--rule);
+    padding: 32px 0;
+  }
+  .article-card:last-child {
+    border-bottom: 1px solid var(--rule);
+  }
+  .article-card-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+  }
+  .article-card-link:hover .card-title {
+    color: var(--accent);
+  }
+  .card-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 0 0 12px;
+  }
+  .card-title {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(24px, 2.6vw, 32px);
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin: 0 0 12px;
+    transition: color 0.15s ease;
+  }
+  .card-excerpt {
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    max-width: 65ch;
+    margin: 0;
+  }
+</style>

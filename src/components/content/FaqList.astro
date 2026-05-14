@@ -1,0 +1,128 @@
+---
+// src/components/content/FaqList.astro
+//
+// Visible FAQ section rendered on article pages with authored `faq[]`. The
+// matching FAQPage JSON-LD is emitted by the page template via
+// generateFaqPageSchema() — Google requires the FAQ content to be visible
+// on the page (not hidden) for the rich-result enhancement to fire.
+//
+// Uses native <details>/<summary> for keyboard-accessible expand/collapse;
+// closed-by-default keeps the article's main flow uncluttered. Each <summary>
+// is the question (h3-equivalent semantically). The answer renders as
+// PortableText via the shared renderer so glossary marks + citations still
+// resolve to popovers/sidenotes inside answers.
+import type { FaqItem, SanityRefDoc, SanityGlossaryTerm } from '@/lib/sanity';
+import PortableTextRenderer from './PortableTextRenderer.astro';
+
+interface Props {
+  faq: FaqItem[];
+  references?: SanityRefDoc[];
+  glossaryTerms?: SanityGlossaryTerm[];
+  locale?: 'en' | 'pl';
+  heading?: string;
+}
+
+const {
+  faq,
+  references = [],
+  glossaryTerms = [],
+  locale = 'en',
+  heading,
+} = Astro.props;
+
+const sectionHeading =
+  heading ?? (locale === 'pl' ? 'Najczęstsze pytania' : 'Frequently asked questions');
+---
+
+<section class="faq" aria-labelledby="faq-heading">
+  <h2 id="faq-heading" class="faq-heading">{sectionHeading}</h2>
+  <dl>
+    {faq.map((item, i) => (
+      <div class="faq-item">
+        <dt>
+          <details name="faq-list" open={i === 0}>
+            <summary>{item.question}</summary>
+            <dd>
+              <PortableTextRenderer
+                value={item.answer}
+                references={references}
+                glossaryTerms={glossaryTerms}
+                locale={locale}
+              />
+            </dd>
+          </details>
+        </dt>
+      </div>
+    ))}
+  </dl>
+</section>
+
+<style>
+  .faq {
+    margin-top: clamp(48px, 6vw, 80px);
+    padding-top: 32px;
+    border-top: 1px solid var(--rule);
+  }
+  .faq-heading {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 0 0 24px;
+  }
+  .faq dl {
+    margin: 0;
+    padding: 0;
+  }
+  .faq-item {
+    border-top: 1px solid color-mix(in oklab, var(--ink-3) 30%, transparent);
+  }
+  .faq-item:last-child {
+    border-bottom: 1px solid color-mix(in oklab, var(--ink-3) 30%, transparent);
+  }
+  .faq dt {
+    margin: 0;
+  }
+  .faq details {
+    padding: 16px 0;
+  }
+  .faq summary {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(18px, 1.6vw, 22px);
+    line-height: 1.35;
+    color: var(--ink);
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+  }
+  .faq summary::-webkit-details-marker {
+    display: none;
+  }
+  .faq summary::after {
+    content: '+';
+    font-family: var(--mono);
+    font-size: 18px;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+  .faq details[open] > summary::after {
+    content: '−';
+  }
+  .faq summary:hover {
+    color: var(--accent);
+  }
+  .faq dd {
+    margin: 16px 0 8px;
+    padding: 0;
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.65;
+    color: var(--ink-2);
+    max-width: 65ch;
+  }
+</style>

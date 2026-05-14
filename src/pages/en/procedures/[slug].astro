@@ -12,6 +12,7 @@ import SiteLayout from '@/layouts/SiteLayout.astro';
 import KeyPoints from '@/components/content/KeyPoints.astro';
 import Bibliography from '@/components/content/Bibliography.astro';
 import PortableTextRenderer from '@/components/content/PortableTextRenderer.astro';
+import Breadcrumb from '@/components/Breadcrumb.astro';
 import {
   getAllProcedureSlugs,
   getProcedureBySlug,
@@ -36,14 +37,12 @@ if (!procedure) {
   return Astro.redirect('/en/procedures/');
 }
 
-// EN→PL slug map for hreflang. (Mirror of the PL→EN map at pl/zabiegi/[slug].astro.)
-const EN_TO_PL_SLUG: Record<string, string> = {
-  'open-carpal-tunnel-release': 'zespol-ciesni-nadgarstka',
-  'limited-fasciectomy': 'fasciektomia-ograniczona',
-  'percutaneous-needle-fasciotomy': 'aponeurotomia-iglowa-przezskorna',
-};
-const plSlug = EN_TO_PL_SLUG[slug];
-const alternateUrl = plSlug ? `/pl/zabiegi/${plSlug}/` : undefined;
+// Cross-language slug from Sanity `crossLanguageRef` (projected by
+// PROCEDURE_PROJECTION). Replaces the hand-edited EN_TO_PL_SLUG map.
+const alternateUrl =
+  procedure.crossLanguageSlug && procedure.crossLanguageLanguage === 'pl'
+    ? `/pl/zabiegi/${procedure.crossLanguageSlug}/`
+    : undefined;
 
 // Pull references in document order across all sections that may contain
 // citations. Order: indications → contraindications → anatomy → positioning →
@@ -166,15 +165,24 @@ const articleCategoryLabel: Record<string, string> = {
   locale="en"
   canonical={canonicalUrl}
   alternateUrl={alternateUrl}
+  ogType="article"
+  ogArticle={{
+    publishedTime: new Date(procedure.lastUpdated).toISOString(),
+    modifiedTime: new Date(procedure.lastUpdated).toISOString(),
+    section: categoryLabels[procedure.category],
+    author: `${siteUrl}/en/about/`,
+    tag: procedure.seoKeywords,
+  }}
   jsonLd={[procedureJsonLd, breadcrumbJsonLd]}
 >
   <article class="procedure-shell">
     <header class="procedure-header">
-      <p class="procedure-kicker">
-        <a href="/en/procedures/">Procedures</a>
-        <span aria-hidden="true">·</span>
-        <span>{categoryLabels[procedure.category] ?? procedure.category}</span>
-      </p>
+      <Breadcrumb items={[
+        { name: 'Home', url: '/en/' },
+        { name: 'Procedures', url: '/en/procedures/' },
+        { name: categoryLabels[procedure.category] ?? procedure.category, url: `/en/procedures/#${procedure.category}` },
+        { name: procedure.title },
+      ]} />
       <h1 class="procedure-title">{procedure.title}</h1>
       {procedure.summary && (
         <p class="procedure-summary">{procedure.summary}</p>

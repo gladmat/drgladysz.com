@@ -8,6 +8,8 @@ import SiteLayout from '@/layouts/SiteLayout.astro';
 import KeyPoints from '@/components/content/KeyPoints.astro';
 import Bibliography from '@/components/content/Bibliography.astro';
 import PortableTextRenderer from '@/components/content/PortableTextRenderer.astro';
+import FaqList from '@/components/content/FaqList.astro';
+import Breadcrumb from '@/components/Breadcrumb.astro';
 import {
   getAllArticleSlugs,
   getArticleBySlug,
@@ -17,7 +19,11 @@ import {
   extractGlossaryOrderFromBlocks,
   urlForImage,
 } from '@/lib/sanity';
-import { generateArticleSchema, generateBreadcrumb } from '@/lib/schema';
+import {
+  generateArticleSchema,
+  generateBreadcrumb,
+  generateFaqPageSchema,
+} from '@/lib/schema';
 
 export async function getStaticPaths() {
   const slugs = await getAllArticleSlugs('pl');
@@ -32,20 +38,13 @@ if (!article) {
   return Astro.redirect('/pl/blog/');
 }
 
-// PL→EN slug map for hreflang (alternateUrl). Authored explicitly so the
-// reverse direction is obvious; falls back to none (no alternate emitted) for
-// PL-only articles. Update this when adding new PL articles.
-const PL_TO_EN_SLUG: Record<string, string> = {
-  'zespol-ciesni-nadgarstka': 'carpal-tunnel-syndrome',
-  'zespol-ciesni-nadgarstka-przeglad-kliniczny': 'carpal-tunnel-syndrome-fessh-prep',
-  'choroba-dupuytrena': 'dupuytrens-disease-patient-guide',
-  // 'choroba-dupuytrena-leczenie-operacyjne' has no direct EN counterpart —
-  // the PL piece is a clinical-decision-framework expert article, the closest
-  // EN piece is the FESSH-prep article (different audience/angle). No pairing.
-  'wolne-platy': 'free-tissue-transfer',
-};
-const enSlug = PL_TO_EN_SLUG[slug];
-const alternateUrl = enSlug ? `/en/blog/${enSlug}/` : undefined;
+// Cross-language slug is resolved at build time via the article's
+// `crossLanguageRef` Sanity field (projected by ARTICLE_PROJECTION). Replaces
+// the hand-edited PL_TO_EN_SLUG map that lived here previously.
+const alternateUrl =
+  article.crossLanguageSlug && article.crossLanguageLanguage === 'en'
+    ? `/en/blog/${article.crossLanguageSlug}/`
+    : undefined;
 
 const citationOrder = extractCitationOrderFromBlocks([article.body]);
 const referencesUnsorted = await getReferencesByIds(citationOrder);
@@ -83,6 +82,11 @@ const breadcrumbJsonLd = generateBreadcrumb([
   { name: 'Baza wiedzy', url: `${siteUrl}/pl/blog/` },
   { name: article.title, url: canonicalUrl },
 ]);
+
+const faqJsonLd =
+  article.faq && article.faq.length > 0
+    ? generateFaqPageSchema(article.faq, canonicalUrl, 'pl')
+    : null;
 
 const publishedDateLabel = new Date(article.publishedDate).toLocaleDateString(
   'pl-PL',
@@ -156,15 +160,31 @@ const procedureCategoryLabel: Record<string, string> = {
   locale="pl"
   alternateUrl={alternateUrl}
   canonical={canonicalUrl}
-  jsonLd={[articleJsonLd, breadcrumbJsonLd]}
+  ogType="article"
+  ogArticle={{
+    publishedTime: new Date(article.publishedDate).toISOString(),
+    modifiedTime: article.lastUpdated
+      ? new Date(article.lastUpdated).toISOString()
+      : undefined,
+    section: categoryLabel[article.category],
+    author: `${siteUrl}/pl/o-mnie/`,
+    tag: article.seoKeywords,
+  }}
+  jsonLd={[articleJsonLd, breadcrumbJsonLd, ...(faqJsonLd ? [faqJsonLd] : [])]}
 >
   <article class="article-shell">
     <header class="article-header">
-      <p class="article-kicker">
-        <a href="/pl/blog/">Baza wiedzy</a>
-        <span aria-hidden="true">·</span>
-        <span>{categoryLabel[article.category] ?? article.category}</span>
-      </p>
+      <Breadcrumb items={[
+        { name: 'Strona główna', url: '/pl/' },
+        { name: 'Baza wiedzy', url: '/pl/blog/' },
+        { name: categoryLabel[article.category] ?? article.category, url: `/pl/blog/kategoria/${({
+          patient: 'pacjent',
+          expert: 'ekspert',
+          'fessh-prep': 'fessh-prep',
+          news: 'aktualnosci',
+        } as const)[article.category]}/` },
+        { name: article.title },
+      ]} />
       <h1 class="article-title">{article.title}</h1>
       {authorByline && <p class="article-byline">{authorByline}</p>}
       {standfirstText && <p class="article-standfirst">{standfirstText}</p>}
@@ -214,6 +234,15 @@ const procedureCategoryLabel: Record<string, string> = {
       </div>
 
       <Bibliography references={references} heading="Piśmiennictwo" />
+
+      {article.faq && article.faq.length > 0 && (
+        <FaqList
+          faq={article.faq}
+          references={references}
+          glossaryTerms={glossaryTerms}
+          locale="pl"
+        />
+      )}
 
       {hasRelated && (
         <aside class="article-related" aria-labelledby="related-heading">

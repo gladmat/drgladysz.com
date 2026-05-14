@@ -10,6 +10,7 @@ import SiteLayout from '@/layouts/SiteLayout.astro';
 import KeyPoints from '@/components/content/KeyPoints.astro';
 import Bibliography from '@/components/content/Bibliography.astro';
 import PortableTextRenderer from '@/components/content/PortableTextRenderer.astro';
+import Breadcrumb from '@/components/Breadcrumb.astro';
 import {
   getAllProcedureSlugs,
   getProcedureBySlug,
@@ -39,14 +40,12 @@ if (!procedure) {
   return Astro.redirect('/pl/zabiegi/');
 }
 
-// PL→EN slug map for hreflang. Update this when adding new PL procedures.
-const PL_TO_EN_SLUG: Record<string, string> = {
-  'zespol-ciesni-nadgarstka': 'open-carpal-tunnel-release',
-  'fasciektomia-ograniczona': 'limited-fasciectomy',
-  'aponeurotomia-iglowa-przezskorna': 'percutaneous-needle-fasciotomy',
-};
-const enSlug = PL_TO_EN_SLUG[slug];
-const alternateUrl = enSlug ? `/en/procedures/${enSlug}/` : undefined;
+// Cross-language slug from Sanity `crossLanguageRef` (projected by
+// PROCEDURE_PROJECTION). Replaces the hand-edited PL_TO_EN_SLUG map.
+const alternateUrl =
+  procedure.crossLanguageSlug && procedure.crossLanguageLanguage === 'en'
+    ? `/en/procedures/${procedure.crossLanguageSlug}/`
+    : undefined;
 
 // MedicalCondition pairing — currently only one PL procedure (CTS) but
 // authored as a slug-keyed map so future procedures (Dupuytren, trigger
@@ -220,15 +219,24 @@ const articleCategoryLabel: Record<string, string> = {
   locale="pl"
   alternateUrl={alternateUrl}
   canonical={canonicalUrl}
+  ogType="article"
+  ogArticle={{
+    publishedTime: new Date(procedure.lastUpdated).toISOString(),
+    modifiedTime: new Date(procedure.lastUpdated).toISOString(),
+    section: categoryLabels[procedure.category],
+    author: `${siteUrl}/pl/o-mnie/`,
+    tag: procedure.seoKeywords,
+  }}
   jsonLd={jsonLdBlocks}
 >
   <article class="procedure-shell">
     <header class="procedure-header">
-      <p class="procedure-kicker">
-        <a href="/pl/zabiegi/">Zabiegi</a>
-        <span aria-hidden="true">·</span>
-        <span>{categoryLabels[procedure.category] ?? procedure.category}</span>
-      </p>
+      <Breadcrumb items={[
+        { name: 'Strona główna', url: '/pl/' },
+        { name: 'Zabiegi', url: '/pl/zabiegi/' },
+        { name: categoryLabels[procedure.category] ?? procedure.category, url: `/pl/zabiegi/#${procedure.category}` },
+        { name: procedure.title },
+      ]} />
       <h1 class="procedure-title">{procedure.title}</h1>
       {procedure.summary && (
         <p class="procedure-summary">{procedure.summary}</p>

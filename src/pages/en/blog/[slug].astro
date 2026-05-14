@@ -20,6 +20,8 @@ import SiteLayout from '@/layouts/SiteLayout.astro';
 import KeyPoints from '@/components/content/KeyPoints.astro';
 import Bibliography from '@/components/content/Bibliography.astro';
 import PortableTextRenderer from '@/components/content/PortableTextRenderer.astro';
+import FaqList from '@/components/content/FaqList.astro';
+import Breadcrumb from '@/components/Breadcrumb.astro';
 import {
   getAllArticleSlugs,
   getArticleBySlug,
@@ -29,7 +31,11 @@ import {
   extractGlossaryOrderFromBlocks,
   urlForImage,
 } from '@/lib/sanity';
-import { generateArticleSchema, generateBreadcrumb } from '@/lib/schema';
+import {
+  generateArticleSchema,
+  generateBreadcrumb,
+  generateFaqPageSchema,
+} from '@/lib/schema';
 
 export async function getStaticPaths() {
   const slugs = await getAllArticleSlugs('en');
@@ -45,21 +51,15 @@ if (!article) {
   return Astro.redirect('/en/blog/');
 }
 
-// EN→PL slug map for hreflang (alternateUrl). Authored explicitly so the
-// reverse direction is obvious; falls back to none (no alternate emitted) for
-// EN-only articles. Update this when adding new EN articles that have a PL
-// counterpart. (Mirror of the PL→EN map at pl/blog/[slug].astro.)
-const EN_TO_PL_SLUG: Record<string, string> = {
-  'carpal-tunnel-syndrome': 'zespol-ciesni-nadgarstka',
-  'carpal-tunnel-syndrome-fessh-prep': 'zespol-ciesni-nadgarstka-przeglad-kliniczny',
-  'dupuytrens-disease-patient-guide': 'choroba-dupuytrena',
-  // 'dupuytrens-disease-fessh-prep' has no direct PL counterpart — the PL
-  // package's expert article is operative-treatment focused (Decision-tree-
-  // for-method-choice angle), different audience/angle from FESSH-prep.
-  'free-tissue-transfer': 'wolne-platy',
-};
-const plSlug = EN_TO_PL_SLUG[slug];
-const alternateUrl = plSlug ? `/pl/blog/${plSlug}/` : undefined;
+// Cross-language slug is resolved at build time via the article's
+// `crossLanguageRef` Sanity field (projected by ARTICLE_PROJECTION). Replaces
+// the hand-edited EN_TO_PL_SLUG map that lived here previously — any new
+// EN/PL pair just sets `crossLanguageRef` in Studio on both sides and the
+// hreflang + language-switcher wire up automatically.
+const alternateUrl =
+  article.crossLanguageSlug && article.crossLanguageLanguage === 'pl'
+    ? `/pl/blog/${article.crossLanguageSlug}/`
+    : undefined;
 
 // Collect citation references in document order, then load.
 const citationOrder = extractCitationOrderFromBlocks([article.body]);
@@ -102,6 +102,15 @@ const breadcrumbJsonLd = generateBreadcrumb([
   { name: 'Knowledge base', url: `${siteUrl}/en/blog/` },
   { name: article.title, url: canonicalUrl },
 ]);
+
+// FAQPage JSON-LD when the article has authored FAQ items. Eligibility for
+// the Google FAQ rich-results enhancement requires question/answer pairs
+// that are publicly visible on the page (not hidden) — the rendered FAQ
+// block below the bibliography satisfies that.
+const faqJsonLd =
+  article.faq && article.faq.length > 0
+    ? generateFaqPageSchema(article.faq, canonicalUrl, 'en')
+    : null;
 
 const publishedDateLabel = new Date(article.publishedDate).toLocaleDateString(
   'en-NZ',
@@ -181,15 +190,26 @@ const procedureCategoryLabel: Record<string, string> = {
   locale="en"
   canonical={canonicalUrl}
   alternateUrl={alternateUrl}
-  jsonLd={[articleJsonLd, breadcrumbJsonLd]}
+  ogType="article"
+  ogArticle={{
+    publishedTime: new Date(article.publishedDate).toISOString(),
+    modifiedTime: article.lastUpdated
+      ? new Date(article.lastUpdated).toISOString()
+      : undefined,
+    section: categoryLabel[article.category],
+    author: `${siteUrl}/en/about/`,
+    tag: article.seoKeywords,
+  }}
+  jsonLd={[articleJsonLd, breadcrumbJsonLd, ...(faqJsonLd ? [faqJsonLd] : [])]}
 >
   <article class="article-shell">
     <header class="article-header">
-      <p class="article-kicker">
-        <a href="/en/blog/">Knowledge base</a>
-        <span aria-hidden="true">·</span>
-        <span>{categoryLabel[article.category] ?? article.category}</span>
-      </p>
+      <Breadcrumb items={[
+        { name: 'Home', url: '/en/' },
+        { name: 'Knowledge base', url: '/en/blog/' },
+        { name: categoryLabel[article.category] ?? article.category, url: `/en/blog/category/${article.category}/` },
+        { name: article.title },
+      ]} />
       <h1 class="article-title">{article.title}</h1>
       {authorByline && <p class="article-byline">{authorByline}</p>}
       {standfirstText && <p class="article-standfirst">{standfirstText}</p>}
@@ -237,6 +257,15 @@ const procedureCategoryLabel: Record<string, string> = {
       </div>
 
       <Bibliography references={references} />
+
+      {article.faq && article.faq.length > 0 && (
+        <FaqList
+          faq={article.faq}
+          references={references}
+          glossaryTerms={glossaryTerms}
+          locale="en"
+        />
+      )}
 
       {hasRelated && (
         <aside class="article-related" aria-labelledby="related-heading">
