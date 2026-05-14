@@ -221,6 +221,86 @@ export const article = defineType({
       group: 'seo',
       validation: (Rule) => Rule.max(160),
     }),
+    defineField({
+      name: 'seoKeywords',
+      title: 'SEO keywords',
+      type: 'array',
+      of: [{ type: 'string' }],
+      group: 'seo',
+      description:
+        'Topical keyword phrases this article should rank for. Emitted as schema.org Article.keywords. Use 5–10 phrases; avoid stuffing.',
+    }),
+    defineField({
+      name: 'primaryCondition',
+      title: 'Primary medical condition',
+      type: 'object',
+      group: 'seo',
+      description:
+        'The MedicalCondition this article is principally about. Emitted as schema.org Article.about → MedicalCondition. Critical for AI-engine retrieval (ChatGPT/Perplexity/Claude weight this heavily for medical content).',
+      fields: [
+        {
+          name: 'name',
+          type: 'string',
+          title: 'Condition name (English)',
+          validation: (Rule) => Rule.required(),
+        },
+        {
+          name: 'alternateName',
+          type: 'array',
+          title: 'Alternate names / synonyms',
+          of: [{ type: 'string' }],
+        },
+        { name: 'icd10', type: 'string', title: 'ICD-10 code (e.g. G56.0)' },
+      ],
+    }),
+    defineField({
+      name: 'faq',
+      title: 'FAQ — common questions',
+      type: 'array',
+      group: 'content',
+      of: [
+        {
+          type: 'object',
+          fields: [
+            {
+              name: 'question',
+              type: 'string',
+              title: 'Question',
+              validation: (Rule) => Rule.required(),
+            },
+            {
+              name: 'answer',
+              type: 'array',
+              title: 'Answer',
+              of: [
+                {
+                  type: 'block',
+                  marks: {
+                    decorators: [
+                      { title: 'Bold', value: 'strong' },
+                      { title: 'Italic', value: 'em' },
+                    ],
+                  },
+                },
+              ],
+              validation: (Rule) => Rule.required(),
+            },
+          ],
+          preview: { select: { title: 'question' } },
+        },
+      ],
+      description:
+        'Common patient questions surfaced as schema.org FAQPage. Adds rich-results eligibility on Google. Use for patient articles with clear Q&A structure; skip for FESSH-prep / expert articles.',
+    }),
+    defineField({
+      name: 'crossLanguageRef',
+      title: 'Cross-language counterpart',
+      type: 'reference',
+      to: [{ type: 'article' }],
+      group: 'meta',
+      description:
+        'The EN article paired with this PL one (or vice versa). Drives hreflang + language-switcher chip. Must be in the other locale. Replaces hand-edited EN_TO_PL_SLUG / PL_TO_EN_SLUG maps in the page templates.',
+    }),
   ],
   preview: {
     select: {

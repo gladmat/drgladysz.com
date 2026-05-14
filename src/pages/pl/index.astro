@@ -108,26 +108,20 @@ const articles = [
 // jobTitle. honorificSuffix drops `MD` per Decision #40 (PL hero credentials
 // convention). knowsLanguage retains all three; medicalSpecialty in EN
 // per schema.org enum (the property values are not localised).
-const personJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'Physician',
-  '@id': 'https://drgladysz.com/#person',
-  name: 'Mateusz Gładysz',
-  honorificSuffix: 'FEBOPRAS, FEBHS',
+// MedicalBusiness + Physician — same entity as on /en/ but with PL locale
+// metadata. The English-language alumniOf names are deliberately kept on
+// the EN side; the PL home page uses Polish institutional names since
+// these appear in the rendered output too via the About page.
+import { generateMedicalBusinessSchema } from '@/lib/schema';
+
+const physicianJsonLd = {
+  ...generateMedicalBusinessSchema({ locale: 'pl' }),
+  // Polish presentation overrides — same @id so the entity merges.
   jobTitle: 'Konsultant chirurgii plastycznej i chirurgii ręki',
-  email: 'office@drgladysz.com',
-  url: 'https://drgladysz.com/pl/',
-  medicalSpecialty: ['PlasticSurgery'],
-  worksFor: { '@type': 'Hospital', name: 'Waikato Hospital' },
   alumniOf: [
     { '@type': 'CollegeOrUniversity', name: 'Warszawski Uniwersytet Medyczny' },
     { '@type': 'CollegeOrUniversity', name: 'Universitätsspital Zürich' },
     { '@type': 'CollegeOrUniversity', name: 'Medizinische Hochschule Hannover' },
-  ],
-  knowsLanguage: ['pl', 'en', 'de'],
-  sameAs: [
-    'https://orcid.org/0009-0009-2380-4056',
-    'https://www.linkedin.com/in/mateuszgladysz',
   ],
 };
 ---
@@ -137,7 +131,7 @@ const personJsonLd = {
   locale="pl"
   alternateUrl="/en/"
   heroPreload={{ src: img20, sizes: IMAGE_SIZES_HERO_SPLIT }}
-  jsonLd={personJsonLd}
+  jsonLd={physicianJsonLd}
 >
   <HomeHero
     photo={img20}

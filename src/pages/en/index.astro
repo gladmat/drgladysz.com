@@ -101,23 +101,18 @@ const articles = [
   },
 ];
 
-// JSON-LD: Person + Physician schema for the home page.
-// Boosts knowledge-graph signals and qualifies for richer SERP cards.
-const personJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'Physician',
-  name: 'Mateusz Gładysz',
-  honorificSuffix: 'MD, FEBOPRAS, FEBHS',
-  jobTitle: 'Consultant Plastic and Hand Surgeon',
-  email: 'office@drgladysz.com',
-  url: 'https://drgladysz.com/en/',
-  medicalSpecialty: ['PlasticSurgery'],
-  knowsLanguage: ['en', 'pl', 'de'],
-  sameAs: [
-    'https://orcid.org/0009-0009-2380-4056',
-    'https://www.linkedin.com/in/mateuszgladysz',
-  ],
-};
+// JSON-LD: MedicalBusiness + Physician schema for the home page.
+// Qualifies for Local Business rich-results enhancement and binds Mateusz
+// to a workLocation (Waikato Hospital), areaServed (Waikato Region NZ),
+// hasCredential (FEBOPRAS, FEBHS, MCNZ #93463, PWZ #2985148), and alumniOf
+// (Warsaw / Zurich / Hannover). See generateMedicalBusinessSchema in
+// src/lib/schema.ts. The lighter Person + Organization identity blocks are
+// emitted on every page via BaseLayout (generateSharedPersonSchema /
+// generateSharedOrganizationSchema) so this rich block can reference
+// @id="#organization" without breaking on non-home pages.
+import { generateMedicalBusinessSchema } from '@/lib/schema';
+
+const physicianJsonLd = generateMedicalBusinessSchema({ locale: 'en' });
 ---
 <SiteLayout
   title="Mateusz Gładysz, MD, FEBOPRAS, FEBHS — Consultant Plastic and Hand Surgeon"
@@ -125,7 +120,7 @@ const personJsonLd = {
   locale="en"
   alternateUrl="/pl/"
   heroPreload={{ src: img20, sizes: IMAGE_SIZES_HERO_SPLIT }}
-  jsonLd={personJsonLd}
+  jsonLd={physicianJsonLd}
 >
   <HomeHero
     photo={img20}

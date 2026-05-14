@@ -10,6 +10,14 @@ interface HeroPreload {
   widths?: number[];
 }
 
+interface OgArticle {
+  publishedTime: string;
+  modifiedTime?: string;
+  section?: string;
+  author?: string;
+  tag?: string[];
+}
+
 interface Props {
   title: string;
   description?: string;
@@ -17,6 +25,9 @@ interface Props {
   alternateUrl?: string;
   canonical?: string;
   ogImage?: string;
+  ogImageAlt?: string;
+  ogType?: 'website' | 'article';
+  ogArticle?: OgArticle;
   jsonLd?: Record<string, any> | Record<string, any>[];
   heroPreload?: HeroPreload;
 }

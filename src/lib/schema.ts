@@ -31,6 +31,11 @@ const SITE_URL = (
 ).replace(/\/$/, '');
 
 const PERSON_ID = `${SITE_URL}/#person`;
+const PHYSICIAN_ID = `${SITE_URL}/#physician`;
+const ORGANIZATION_ID = `${SITE_URL}/#organization`;
+const ORGANIZATION_NAME = 'Mateusz Gładysz, MD — Plastic & Hand Surgery';
+
+export { PERSON_ID, PHYSICIAN_ID, ORGANIZATION_ID, ORGANIZATION_NAME, SITE_URL };
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -62,6 +67,17 @@ function refToCitationItem(ref: SanityRefDoc) {
   // MedicalScholarlyArticle.citation. We use ScholarlyArticle for journal
   // articles (the dominant case); books/chapters get CreativeWork.
   const isJournal = !ref.pubType || ref.pubType === 'journal';
+
+  // Split pagination into start + end where present. Sanity stores pages as
+  // free text ("123-130", "e1-e8", "S12"). The split tolerates hyphen, en-dash,
+  // and em-dash separators.
+  let pageFields: { pageStart?: string; pageEnd?: string } = {};
+  if (ref.pages) {
+    const parts = ref.pages.split(/[-–—]/).map((s) => s.trim()).filter(Boolean);
+    if (parts.length >= 1) pageFields.pageStart = parts[0];
+    if (parts.length >= 2) pageFields.pageEnd = parts[1];
+  }
+
   return {
     '@type': isJournal ? 'ScholarlyArticle' : 'CreativeWork',
     name: ref.title,
@@ -84,7 +100,7 @@ function refToCitationItem(ref: SanityRefDoc) {
           ],
         }
       : {}),
-    ...(ref.pages ? { pageStart: ref.pages.split(/[-–]/)[0] } : {}),
+    ...pageFields,
   };
 }
 
@@ -113,6 +129,14 @@ interface ArticleSchemaInput {
   };
 }
 
+// Category → human label (also used as schema.org articleSection).
+const ARTICLE_SECTION_LABEL: Record<SanityArticle['category'], string> = {
+  patient: 'Patient information',
+  expert: 'Expert blog',
+  'fessh-prep': 'FESSH preparation',
+  news: 'News & commentary',
+};
+
 export function generateArticleSchema({
   article,
   references,
@@ -132,10 +156,37 @@ export function generateArticleSchema({
     blocksToPlainText(article.body, { maxChars: 200 });
 
   const resolvedLocale = locale ?? article.language ?? 'en';
+  const isFesshPrep = article.category === 'fessh-prep';
+
+  // Compute word count from the article body. Used as schema.org wordCount —
+  // a signal for content-depth assessments. Capped maxChars at 100k to avoid
+  // pathological cost on very long articles (none currently exceed ~50k chars).
+  const plainBody = blocksToPlainText(article.body, { maxChars: 100_000 });
+  const wordCount = plainBody.split(/\s+/).filter(Boolean).length;
+
+  // Publication date defaults to the article's publishedDate; modified date
+  // tracks editorial revisions. lastReviewed (separate field in schema.org)
+  // signals medical / clinical review, which Google's Quality Rater
+  // Guidelines explicitly favour for health content. The Sanity field is
+  // named `lastUpdated` but labelled "Last clinically reviewed" — same date
+  // serves both purposes.
+  const lastReviewed = article.lastUpdated || article.publishedDate;
 
   return {
     '@context': 'https://schema.org',
     '@type': articleType,
+    ...(isFesshPrep
+      ? {
+          additionalType: 'https://schema.org/LearningResource',
+          learningResourceType: 'article',
+          educationalLevel: 'PostGraduate',
+          educationalAlignment: {
+            '@type': 'AlignmentObject',
+            alignmentType: 'assesses',
+            targetName: 'FESSH Diploma curriculum',
+          },
+        }
+      : {}),
     headline: article.title,
     name: article.title,
     description,
@@ -143,16 +194,59 @@ export function generateArticleSchema({
     url,
     mainEntityOfPage: { '@type': 'WebPage', '@id': url },
     datePublished: article.publishedDate,
-    dateModified: article.lastUpdated || article.publishedDate,
+    dateModified: lastReviewed,
+    // Medical-content signal: distinct from dateModified semantically (this is
+    // the *clinical* review, not the *editorial* edit). For drgladysz.com the
+    // two are populated from the same Sanity field, but the JSON-LD exposes
+    // both because Google's QRG / AI engines weight them differently.
+    lastReviewed,
+    reviewedBy: {
+      '@type': 'Physician',
+      '@id': PERSON_ID,
+      name: authorName,
+    },
+    wordCount,
+    articleSection: ARTICLE_SECTION_LABEL[article.category],
+    ...(article.seoKeywords && article.seoKeywords.length > 0
+      ? { keywords: article.seoKeywords.join(', ') }
+      : {}),
+    ...(article.primaryCondition
+      ? {
+          about: {
+            '@type': 'MedicalCondition',
+            name: article.primaryCondition.name,
+            ...(article.primaryCondition.alternateName &&
+            article.primaryCondition.alternateName.length > 0
+              ? { alternateName: article.primaryCondition.alternateName }
+              : {}),
+            ...(article.primaryCondition.icd10
+              ? {
+                  code: {
+                    '@type': 'MedicalCode',
+                    codeValue: article.primaryCondition.icd10,
+                    codingSystem: 'ICD-10',
+                  },
+                }
+              : {}),
+          },
+        }
+      : {}),
     author: {
       '@type': 'Physician',
       '@id': PERSON_ID,
       name: authorName,
     },
     publisher: {
-      '@type': 'Person',
-      '@id': PERSON_ID,
-      name: authorName,
+      '@type': 'Organization',
+      '@id': ORGANIZATION_ID,
+      name: ORGANIZATION_NAME,
+      url: SITE_URL,
+      logo: {
+        '@type': 'ImageObject',
+        url: `${SITE_URL}/favicon-512.png`,
+        width: 512,
+        height: 512,
+      },
     },
     audience: {
       '@type': 'MedicalAudience',
@@ -210,6 +304,36 @@ export function generateProcedureSchema({
     blocksToPlainText(procedure.indications, { maxChars: 200 });
 
   const resolvedLocale = locale ?? procedure.language ?? 'en';
+  const lastReviewed = procedure.lastUpdated;
+
+  // Build the MedicalIndication, optionally pinned to a MedicalCondition with
+  // ICD-10 code. The condition linkage is the single strongest AI-engine
+  // retrieval signal for medical procedures: "what does X say about <ICD-10>"
+  // resolves via this binding.
+  const indicationBlock: Record<string, unknown> = {
+    '@type': 'MedicalIndication',
+    name: 'Indications',
+    description: blocksToPlainText(procedure.indications, { maxChars: 300 }),
+  };
+  if (procedure.primaryCondition) {
+    indicationBlock.healthCondition = {
+      '@type': 'MedicalCondition',
+      name: procedure.primaryCondition.name,
+      ...(procedure.primaryCondition.alternateName &&
+      procedure.primaryCondition.alternateName.length > 0
+        ? { alternateName: procedure.primaryCondition.alternateName }
+        : {}),
+      ...(procedure.primaryCondition.icd10
+        ? {
+            code: {
+              '@type': 'MedicalCode',
+              codeValue: procedure.primaryCondition.icd10,
+              codingSystem: 'ICD-10',
+            },
+          }
+        : {}),
+    };
+  }
 
   return {
     '@context': 'https://schema.org',
@@ -219,7 +343,13 @@ export function generateProcedureSchema({
     procedureType: 'SurgicalProcedure',
     url,
     mainEntityOfPage: { '@type': 'WebPage', '@id': url },
-    dateModified: procedure.lastUpdated,
+    dateModified: lastReviewed,
+    lastReviewed,
+    reviewedBy: {
+      '@type': 'Physician',
+      '@id': PERSON_ID,
+      name: authorName,
+    },
     inLanguage: LANG_TAG[resolvedLocale],
     bodyLocation: blocksToPlainText(procedure.anatomy, { maxChars: 240 }),
     preparation: blocksToPlainText(procedure.positioning, { maxChars: 240 }),
@@ -227,16 +357,27 @@ export function generateProcedureSchema({
     expectedPrognosis: blocksToPlainText(procedure.complications, {
       maxChars: 300,
     }),
-    indication: {
-      '@type': 'MedicalIndication',
-      name: 'Indications',
-      description: blocksToPlainText(procedure.indications, { maxChars: 300 }),
-    },
+    indication: indicationBlock,
     performedBy: {
       '@type': 'Physician',
       '@id': PERSON_ID,
       name: authorName,
     },
+    publisher: {
+      '@type': 'Organization',
+      '@id': ORGANIZATION_ID,
+      name: ORGANIZATION_NAME,
+      url: SITE_URL,
+      logo: {
+        '@type': 'ImageObject',
+        url: `${SITE_URL}/favicon-512.png`,
+        width: 512,
+        height: 512,
+      },
+    },
+    ...(procedure.seoKeywords && procedure.seoKeywords.length > 0
+      ? { keywords: procedure.seoKeywords.join(', ') }
+      : {}),
     audience: {
       '@type': 'MedicalAudience',
       audienceType:
@@ -520,5 +661,181 @@ export function generateFaqPageSchema(
         text: blocksToPlainText(item.answer, { maxChars: 1200 }),
       },
     })),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// MedicalBusiness + Physician JSON-LD (home page)
+//
+// Emitted on the EN home page (and optionally the PL home page) to qualify
+// for "Local Business" rich-results enhancement and to give AI engines a
+// single authoritative entity binding name → credentials → workLocation →
+// medical specialties → identifiers across registers.
+//
+// `@id` is `${SITE_URL}/#physician` — distinct from `#person` (which is the
+// lightweight identity block emitted on every page via BaseLayout) and
+// `#organization` (the publisher). The three entities are intentionally
+// separate: Person is the natural-language identity, Physician is the
+// professional / clinical entity, Organization is the publishing entity.
+// ---------------------------------------------------------------------------
+
+interface MedicalBusinessInput {
+  /** Optional locale override; affects `inLanguage` and alternateName. */
+  locale?: Locale;
+}
+
+export function generateMedicalBusinessSchema({
+  locale = 'en',
+}: MedicalBusinessInput = {}) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': ['MedicalBusiness', 'Physician'],
+    '@id': PHYSICIAN_ID,
+    name: 'Mateusz Gładysz, MD, FEBOPRAS, FEBHS',
+    alternateName: 'Dr Mateusz Gładysz',
+    url: SITE_URL,
+    inLanguage: LANG_TAG[locale],
+    image: `${SITE_URL}/og-default.jpg`,
+    medicalSpecialty: ['PlasticSurgery'],
+    knowsLanguage: ['en', 'pl', 'de'],
+    knowsAbout: [
+      'Hand surgery',
+      'Microsurgery',
+      'Reconstructive surgery',
+      'Plastic surgery',
+      'Skin cancer surgery',
+      'Melanoma surgery',
+      'Carpal tunnel syndrome',
+      'Dupuytren disease',
+      'Scaphoid fracture',
+      'Free flap reconstruction',
+    ],
+    hasCredential: [
+      {
+        '@type': 'EducationalOccupationalCredential',
+        credentialCategory: 'degree',
+        name: 'MD',
+        recognizedBy: {
+          '@type': 'Organization',
+          name: 'Medical University of Warsaw',
+        },
+      },
+      {
+        '@type': 'EducationalOccupationalCredential',
+        credentialCategory: 'certification',
+        name: 'FEBOPRAS',
+        recognizedBy: {
+          '@type': 'Organization',
+          name: 'UEMS — European Board of Plastic, Reconstructive and Aesthetic Surgery',
+        },
+      },
+      {
+        '@type': 'EducationalOccupationalCredential',
+        credentialCategory: 'certification',
+        name: 'FEBHS',
+        recognizedBy: {
+          '@type': 'Organization',
+          name: 'UEMS — European Board of Hand Surgery',
+        },
+      },
+      {
+        '@type': 'EducationalOccupationalCredential',
+        credentialCategory: 'registration',
+        name: 'MCNZ Registration',
+        identifier: '93463',
+        recognizedBy: {
+          '@type': 'Organization',
+          name: 'Medical Council of New Zealand',
+          url: 'https://www.mcnz.org.nz/',
+        },
+      },
+      {
+        '@type': 'EducationalOccupationalCredential',
+        credentialCategory: 'registration',
+        name: 'PWZ',
+        identifier: '2985148',
+        recognizedBy: {
+          '@type': 'Organization',
+          name: 'Naczelna Izba Lekarska — Okręgowa Izba Lekarska w Warszawie',
+        },
+      },
+    ],
+    areaServed: [
+      {
+        '@type': 'AdministrativeArea',
+        name: 'Waikato Region',
+        containedInPlace: { '@type': 'Country', name: 'New Zealand' },
+      },
+    ],
+    workLocation: {
+      '@type': 'Hospital',
+      name: 'Waikato Hospital',
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: 'Hamilton',
+        addressRegion: 'Waikato',
+        addressCountry: 'NZ',
+      },
+      parentOrganization: {
+        '@type': 'Organization',
+        name: 'Health New Zealand — Te Whatu Ora Waikato',
+      },
+    },
+    alumniOf: [
+      { '@type': 'CollegeOrUniversity', name: 'Medical University of Warsaw' },
+      { '@type': 'CollegeOrUniversity', name: 'University of Zurich' },
+      { '@type': 'CollegeOrUniversity', name: 'Hannover Medical School' },
+    ],
+    memberOf: [
+      { '@type': 'Organization', name: 'Polskie Towarzystwo Chirurgii Plastycznej, Rekonstrukcyjnej i Estetycznej' },
+      { '@type': 'Organization', name: 'Polskie Towarzystwo Chirurgii Ręki' },
+      { '@type': 'Organization', name: 'American Society for Surgery of the Hand (International Member)' },
+    ],
+    sameAs: [
+      'https://orcid.org/0009-0009-2380-4056',
+      'https://www.linkedin.com/in/mateuszgladysz',
+    ],
+    email: 'office@drgladysz.com',
+    parentOrganization: { '@id': ORGANIZATION_ID },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Shared identity blocks — emitted on every page via BaseLayout.
+//
+// Two minimal entities that downstream JSON-LD references (e.g. article
+// `author: { @id: #person }` or `publisher: { @id: #organization }`) resolve
+// against. Keeping them on every page means crawlers don't need to follow
+// `@id` cross-document — every page is self-contained.
+// ---------------------------------------------------------------------------
+
+export function generateSharedPersonSchema() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    '@id': PERSON_ID,
+    name: 'Mateusz Gładysz',
+    honorificSuffix: 'MD, FEBOPRAS, FEBHS',
+    url: `${SITE_URL}/en/about/`,
+    sameAs: [
+      'https://orcid.org/0009-0009-2380-4056',
+      'https://www.linkedin.com/in/mateuszgladysz',
+    ],
+  };
+}
+
+export function generateSharedOrganizationSchema() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    '@id': ORGANIZATION_ID,
+    name: ORGANIZATION_NAME,
+    url: SITE_URL,
+    logo: {
+      '@type': 'ImageObject',
+      url: `${SITE_URL}/favicon-512.png`,
+      width: 512,
+      height: 512,
+    },
   };
 }

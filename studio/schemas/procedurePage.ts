@@ -397,6 +397,47 @@ export const procedurePage = defineType({
       group: 'seo',
       validation: (Rule) => Rule.max(160),
     }),
+    defineField({
+      name: 'seoKeywords',
+      title: 'SEO keywords',
+      type: 'array',
+      of: [{ type: 'string' }],
+      group: 'seo',
+      description:
+        'Topical keyword phrases this procedure should rank for. Emitted as schema.org keywords. Use 5–10 phrases.',
+    }),
+    defineField({
+      name: 'primaryCondition',
+      title: 'Primary medical condition',
+      type: 'object',
+      group: 'seo',
+      description:
+        'The MedicalCondition this procedure treats. Emitted as schema.org MedicalProcedure.indication.healthCondition with ICD-10 code. Strong AI-engine retrieval signal.',
+      fields: [
+        {
+          name: 'name',
+          type: 'string',
+          title: 'Condition name (English)',
+          validation: (Rule) => Rule.required(),
+        },
+        {
+          name: 'alternateName',
+          type: 'array',
+          title: 'Alternate names / synonyms',
+          of: [{ type: 'string' }],
+        },
+        { name: 'icd10', type: 'string', title: 'ICD-10 code (e.g. G56.0)' },
+      ],
+    }),
+    defineField({
+      name: 'crossLanguageRef',
+      title: 'Cross-language counterpart',
+      type: 'reference',
+      to: [{ type: 'procedurePage' }],
+      group: 'meta',
+      description:
+        'The EN procedure paired with this PL one (or vice versa). Drives hreflang + language-switcher chip.',
+    }),
   ],
   preview: {
     select: {

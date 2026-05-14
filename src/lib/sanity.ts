@@ -215,6 +215,17 @@ export type SanityMCQQuestion = {
   reviewDate?: string;
 };
 
+export type AuthorAffiliation = {
+  name: string;
+  role?: string;
+  url?: string;
+};
+
+export type AuthorAlumniOf = {
+  name: string;
+  url?: string;
+};
+
 export type ArticleAuthor = {
   name: string;
   credentials?: string;
@@ -224,6 +235,15 @@ export type ArticleAuthor = {
   // they were stored in — defensive against the data quirk.
   title?: string;
   role?: string;
+  // E-E-A-T fields (added 2026-05-14). All optional — articles authored before
+  // these fields existed still resolve cleanly (null at the field level).
+  bio?: string;
+  orcid?: string;
+  linkedin?: string;
+  affiliations?: AuthorAffiliation[];
+  alumniOf?: AuthorAlumniOf[];
+  knowsAbout?: string[];
+  sameAs?: string[];
 };
 
 // Resolved sibling article shown in the "Related" block at the end of an
@@ -240,6 +260,18 @@ export type RelatedProcedureRef = {
   title: string;
   slug: { current: string };
   category: 'hand-surgery' | 'reconstructive-microsurgery' | 'skin-cancer';
+};
+
+export type MedicalConditionRef = {
+  name: string;
+  alternateName?: string[];
+  icd10?: string;
+};
+
+export type FaqItem = {
+  _key?: string;
+  question: string;
+  answer: PortableTextBlock[];
 };
 
 export type SanityArticle = {
@@ -266,6 +298,7 @@ export type SanityArticle = {
   heroImage?: SanityImage;
   keyPoints?: { question?: string; findings?: string; meaning?: string };
   body: PortableTextBlock[];
+  faq?: FaqItem[];
   // Sibling content surfaced at the bottom of the article. Skipped when both
   // arrays are empty. Unresolved references (target deleted) come back null
   // from GROQ; we filter those out at render time.
@@ -273,6 +306,13 @@ export type SanityArticle = {
   relatedProcedures?: (RelatedProcedureRef | null)[];
   seoTitle?: string;
   seoDescription?: string;
+  seoKeywords?: string[];
+  primaryCondition?: MedicalConditionRef;
+  // Slug of the EN/PL counterpart (resolved via crossLanguageRef in the
+  // projection). Drives hreflang + language-switcher; replaces the
+  // hand-edited EN_TO_PL_SLUG / PL_TO_EN_SLUG maps in page templates.
+  crossLanguageSlug?: string;
+  crossLanguageLanguage?: Locale;
 };
 
 export type ProcedureStep = {
@@ -282,12 +322,6 @@ export type ProcedureStep = {
   description: PortableTextBlock[];
   image?: SanityImage;
   pitfall?: string;
-};
-
-export type FaqItem = {
-  _key?: string;
-  question: string;
-  answer: PortableTextBlock[];
 };
 
 export type SanityProcedurePage = {
@@ -322,6 +356,10 @@ export type SanityProcedurePage = {
   relatedProcedures?: (RelatedProcedureRef | null)[];
   seoTitle?: string;
   seoDescription?: string;
+  seoKeywords?: string[];
+  primaryCondition?: MedicalConditionRef;
+  crossLanguageSlug?: string;
+  crossLanguageLanguage?: Locale;
 };
 
 // ---------------------------------------------------------------------------
@@ -338,14 +376,22 @@ const REFERENCE_PROJECTION = /* groq */ `{
 
 const ARTICLE_PROJECTION = /* groq */ `{
   _id, _type, title, slug, category, language, audience,
-  "author": author->{name, credentials, title, role},
+  "author": author->{
+    name, credentials, title, role,
+    bio, orcid, linkedin,
+    affiliations, alumniOf, knowsAbout, sameAs
+  },
   publishedDate, lastUpdated, excerpt, standfirst,
   heroImage,
   keyPoints,
   body,
+  faq,
   "relatedArticles": relatedArticles[]->{ _id, title, slug, category },
   "relatedProcedures": relatedProcedures[]->{ _id, title, slug, category },
-  seoTitle, seoDescription
+  seoTitle, seoDescription, seoKeywords,
+  primaryCondition,
+  "crossLanguageSlug": crossLanguageRef->slug.current,
+  "crossLanguageLanguage": crossLanguageRef->language
 }`;
 
 const GLOSSARY_PROJECTION = /* groq */ `{
@@ -405,7 +451,10 @@ const PROCEDURE_PROJECTION = /* groq */ `{
   faq,
   "relatedArticles": relatedArticles[]->{ _id, title, slug, category },
   "relatedProcedures": relatedProcedures[]->{ _id, title, slug, category },
-  seoTitle, seoDescription
+  seoTitle, seoDescription, seoKeywords,
+  primaryCondition,
+  "crossLanguageSlug": crossLanguageRef->slug.current,
+  "crossLanguageLanguage": crossLanguageRef->language
 }`;
 
 // Locale filter helper — keeps EN-era seeded docs (no language field) visible
