@@ -1,0 +1,248 @@
+---
+// src/pages/en/operation-notes/index.astro
+//
+// Operation-note templates index. Grouped by anatomical/clinical category
+// (skin & soft tissue → hand trauma → free flap), mirroring the blog
+// index's section pattern. Cards link to /en/operation-notes/[slug].
+//
+// EN-only by design (FESSH-prep convention) — Waikato Hospital deployment
+// environment operates in English-NZ; no `/pl/notatki-operacyjne/` mirror.
+// SiteLayout receives no `alternateUrl`; the language-switcher chip is
+// suppressed automatically. Brand-spec Decision #64.
+import SiteLayout from '@/layouts/SiteLayout.astro';
+import SectionMasthead from '@/components/SectionMasthead.astro';
+import OperationNoteDisclaimer from '@/components/content/OperationNoteDisclaimer.astro';
+import { generateBreadcrumb } from '@/lib/schema';
+import {
+  OPERATION_NOTE_TEMPLATES,
+  OPERATION_NOTE_CATEGORY_LABEL,
+  OPERATION_NOTE_CATEGORY_BLURB,
+  OPERATION_NOTE_CATEGORY_ORDER,
+} from '@/components/interactive/operation-notes/templates';
+
+const siteUrl = (
+  import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com'
+).replace(/\/$/, '');
+const canonicalUrl = `${siteUrl}/en/operation-notes/`;
+
+const grouped = OPERATION_NOTE_CATEGORY_ORDER.map((category) => ({
+  category,
+  label: OPERATION_NOTE_CATEGORY_LABEL[category],
+  blurb: OPERATION_NOTE_CATEGORY_BLURB[category],
+  items: OPERATION_NOTE_TEMPLATES.filter((t) => t.meta.category === category),
+})).filter((g) => g.items.length > 0);
+
+const collectionJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'Operation note templates — Mateusz Gładysz, MD',
+  url: canonicalUrl,
+  inLanguage: 'en-NZ',
+  description:
+    'Interactive form-builders that emit a Markdown operation note. NZ-context, RCS GSP 2014 / MCNZ aligned. No patient data is stored.',
+  hasPart: OPERATION_NOTE_TEMPLATES.map((t) => ({
+    '@type': 'WebApplication',
+    name: t.meta.title,
+    url: `${siteUrl}/en/operation-notes/${t.meta.slug}/`,
+    description: t.meta.indication,
+    applicationCategory: 'MedicalApplication',
+    audience: {
+      '@type': 'MedicalAudience',
+      audienceType: 'MedicalProfessional',
+    },
+  })),
+};
+
+const breadcrumbJsonLd = generateBreadcrumb([
+  { name: 'Home', url: `${siteUrl}/en/` },
+  { name: 'Operation notes', url: canonicalUrl },
+]);
+---
+<SiteLayout
+  title="Operation note templates — Mateusz Gładysz, MD"
+  description="English-language operation note templates for use at Waikato Hospital. Each tool emits a Markdown note from a short form. No patient data is stored."
+  locale="en"
+  canonical={canonicalUrl}
+  jsonLd={[collectionJsonLd, breadcrumbJsonLd]}
+>
+  <section class="index-masthead-shell">
+    <SectionMasthead
+      label="Operation notes"
+      heading="Operation note templates"
+      headingTag="h1"
+      standfirst="A small library of interactive form-builders for personal operative documentation. Each template emits a Markdown note structured to RCS Good Surgical Practice 2014 and MCNZ standards. No patient data is stored or transmitted; everything runs in your browser."
+    />
+  </section>
+
+  <section class="opnote-index">
+    <div class="opnote-index-inner">
+      <OperationNoteDisclaimer placement="index" />
+
+      {grouped.map((cat) => (
+        <section class="cat-section" aria-labelledby={`cat-${cat.category}`}>
+          <header class="cat-header">
+            <h2 id={`cat-${cat.category}`} class="cat-heading">{cat.label}</h2>
+            <p class="cat-blurb">{cat.blurb}</p>
+          </header>
+          <ol class="opnote-list">
+            {cat.items.map((t) => (
+              <li class="opnote-card">
+                <a href={`/en/operation-notes/${t.meta.slug}/`} class="opnote-card-link">
+                  <p class="card-meta">
+                    <span class="card-cat">Operation note</span>
+                    <span aria-hidden="true">·</span>
+                    <span class="card-version">v{t.meta.version}</span>
+                  </p>
+                  <h3 class="card-title">{t.meta.title}</h3>
+                  <p class="card-indication">{t.meta.indication}</p>
+                  <p class="card-emits"><span aria-hidden="true">Emits:</span> {t.meta.emits}</p>
+                </a>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ))}
+    </div>
+  </section>
+</SiteLayout>
+
+<style>
+  .index-masthead-shell {
+    padding: clamp(56px, 8vw, 120px) clamp(20px, 5vw, 80px) 0;
+    max-width: 1320px;
+    margin: 0 auto;
+  }
+
+  .opnote-index {
+    padding: clamp(40px, 6vw, 80px) 0 120px;
+  }
+
+  .opnote-index-inner {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding-inline: clamp(20px, 5vw, 80px);
+  }
+
+  .cat-section {
+    margin-bottom: clamp(56px, 8vw, 96px);
+    padding-top: 32px;
+    border-top: 1px solid var(--rule);
+  }
+
+  .cat-section:first-of-type {
+    border-top: none;
+    padding-top: 0;
+  }
+
+  .cat-header {
+    max-width: 720px;
+    margin-bottom: 40px;
+  }
+
+  .cat-heading {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(28px, 3vw, 40px);
+    line-height: 1.15;
+    color: var(--ink);
+    margin: 0 0 12px;
+    letter-spacing: -0.018em;
+  }
+
+  .cat-blurb {
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    margin: 0;
+    max-width: 60ch;
+  }
+
+  .opnote-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 32px;
+  }
+
+  .opnote-card {
+    border-top: 1px solid var(--rule);
+    padding-top: 28px;
+  }
+
+  .opnote-card-link {
+    display: grid;
+    gap: 10px;
+    text-decoration: none;
+    color: inherit;
+    max-width: 760px;
+  }
+
+  .opnote-card-link:hover .card-title {
+    color: var(--accent);
+  }
+
+  .opnote-card-link:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 6px;
+  }
+
+  .card-meta {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: var(--ink-3);
+    margin: 0;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: baseline;
+  }
+
+  .card-cat {
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  .card-version {
+    color: var(--ink-3);
+  }
+
+  .card-title {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(22px, 2.2vw, 28px);
+    line-height: 1.2;
+    color: var(--ink);
+    margin: 0;
+    letter-spacing: -0.012em;
+    transition: color 0.15s ease;
+  }
+
+  .card-indication {
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    margin: 0;
+    max-width: 60ch;
+  }
+
+  .card-emits {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--ink-3);
+    margin: 0;
+  }
+
+  .card-emits span {
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.10em;
+    font-size: 10px;
+    margin-right: 6px;
+  }
+</style>

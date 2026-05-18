@@ -32,6 +32,10 @@ const t = locale === 'pl'
       navBlog: 'Baza wiedzy',
       navCalculators: 'Kalkulatory',
       navGlossary: 'Słowniczek',
+      // EN-only feature on the main site; not surfaced in the PL footer
+      // (parity with other EN-only entries). Key is declared to keep the
+      // `t` object's key set consistent across locales for the type system.
+      navOperationNotes: 'Wzory protokołów operacyjnych',
       navLearn: 'Przygotowanie do FEBHS (po angielsku)',
       navContact: 'Kontakt',
       navCredentials: 'Uprawnienia',
@@ -61,6 +65,7 @@ const t = locale === 'pl'
       navBlog: 'Knowledge base',
       navCalculators: 'Calculators',
       navGlossary: 'Glossary',
+      navOperationNotes: 'Operation notes',
       navLearn: 'FEBHS prep',
       navContact: 'Contact',
       navCredentials: 'Credentials',
@@ -100,6 +105,7 @@ const navLinks: { href: string; label: string; external?: boolean }[] =
         { href: '/en/blog/', label: t.navBlog },
         { href: '/en/calculators/', label: t.navCalculators },
         { href: '/en/glossary/', label: t.navGlossary },
+        { href: '/en/operation-notes/', label: t.navOperationNotes },
         { href: 'https://learn.drgladysz.com', label: t.navLearn, external: true },
         { href: '/en/contact/', label: t.navContact },
       ];

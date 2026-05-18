@@ -1,0 +1,420 @@
+/* src/components/interactive/operation-notes/_shared/operation-notes.css
+ *
+ * Shared styles for all operation-note builders. Loaded once via the shell
+ * component (Vite dedupes if multiple templates ever appear on the same
+ * page). All values from brand tokens in globals.css.
+ *
+ * Layout: form left, output right (sticky on desktop ≥1024px); stacks
+ * on mobile with output below the form.
+ */
+
+.opnote-shell {
+  font-family: var(--sans);
+  color: var(--ink);
+  /* Reserve a min-height before hydration so the page doesn't shift when
+     the Preact island mounts. */
+  min-height: 640px;
+}
+
+.opnote-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+  margin: 0 0 clamp(40px, 6vw, 64px);
+}
+
+@media (min-width: 1024px) {
+  .opnote-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 48px;
+    align-items: start;
+  }
+}
+
+/* ---- Form column -------------------------------------------------------- */
+
+.opnote-form {
+  margin: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--rule);
+  padding: clamp(20px, 3vw, 32px);
+}
+
+.opnote-form-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 24px;
+  font-weight: 500;
+}
+
+.opnote-section {
+  border-top: 1px solid var(--rule);
+  padding-top: 24px;
+  margin-top: 24px;
+}
+
+.opnote-section:first-of-type {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+.opnote-section-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: 0 0 16px;
+  font-weight: 500;
+}
+
+.opnote-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+@media (min-width: 600px) {
+  .opnote-row.opnote-row-2 {
+    grid-template-columns: 1fr 1fr;
+  }
+  .opnote-row.opnote-row-3 {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+
+.opnote-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.opnote-field-label {
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.opnote-field-hint {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-style: italic;
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+
+.opnote-field-input,
+.opnote-field-select,
+.opnote-field-textarea {
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  padding: 8px 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.opnote-field-textarea {
+  min-height: 60px;
+  resize: vertical;
+  font-family: var(--sans);
+}
+
+.opnote-field-input:focus-visible,
+.opnote-field-select:focus-visible,
+.opnote-field-textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+
+/* Checkbox toggle — used for boolean conditional sections (tourniquet,
+   antibiotics, ACC). Styled as a small inline pill so it reads as a switch
+   rather than a form checkbox. */
+.opnote-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+}
+
+.opnote-toggle input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  margin: 0;
+  cursor: pointer;
+}
+
+.opnote-toggle-label {
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+/* Radio groups — for closure-type / fixation-method / type-of-procedure
+   toggles. Renders inline on desktop, stacks on mobile. */
+.opnote-radio-group {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 600px) {
+  .opnote-radio-group.opnote-radio-group-cols-2 {
+    grid-template-columns: 1fr 1fr;
+  }
+  .opnote-radio-group.opnote-radio-group-cols-3 {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+
+.opnote-radio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--rule);
+  background: var(--bg);
+  cursor: pointer;
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--ink);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.opnote-radio:hover {
+  border-color: var(--accent);
+}
+
+.opnote-radio:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--ink-on-dark);
+}
+
+.opnote-radio:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.opnote-radio input[type='radio'] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* Subsection container — appears when a toggle reveals nested fields
+   (e.g. tourniquet pressure/on/off when "tourniquet used" is checked). */
+.opnote-subsection {
+  margin-top: 12px;
+  padding: 16px;
+  background: var(--bg);
+  border-left: 2px solid var(--accent);
+}
+
+.opnote-subsection-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 12px;
+  font-weight: 500;
+}
+
+/* ---- Output column ------------------------------------------------------ */
+
+.opnote-output {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 1024px) {
+  .opnote-output {
+    position: sticky;
+    top: 24px;
+    max-height: calc(100vh - 48px);
+  }
+}
+
+.opnote-output-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.opnote-output-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0;
+  font-weight: 500;
+  flex-grow: 1;
+}
+
+.opnote-output-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.opnote-action {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--bg-card);
+  border: 1px solid var(--accent);
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.opnote-action:hover {
+  background: var(--accent);
+  color: var(--ink-on-dark);
+}
+
+.opnote-action:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.opnote-action--primary {
+  background: var(--accent);
+  color: var(--ink-on-dark);
+}
+
+.opnote-action--primary:hover {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.opnote-output-body {
+  background: var(--bg);
+  border: 1px solid var(--rule-strong);
+  padding: 20px;
+  overflow: auto;
+  flex-grow: 1;
+}
+
+@media (min-width: 1024px) {
+  .opnote-output-body {
+    max-height: calc(100vh - 180px);
+  }
+}
+
+.opnote-output-body pre {
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--ink);
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.opnote-output-footer {
+  margin-top: 12px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  text-align: center;
+}
+
+.opnote-copy-fallback {
+  margin-top: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--accent);
+}
+
+/* ---- Reset row at the bottom of the form ------------------------------- */
+
+.opnote-form-footer {
+  border-top: 1px solid var(--rule);
+  padding-top: 16px;
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.opnote-reset {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--ink-3);
+  padding: 4px 2px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.opnote-reset:hover,
+.opnote-reset:focus-visible {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.opnote-reset:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+/* ---- Print stylesheet --------------------------------------------------- */
+
+@media print {
+  .opnote-form,
+  .opnote-output-actions,
+  .opnote-output-footer,
+  .opnote-output-title,
+  .opnote-form-footer {
+    display: none !important;
+  }
+  .opnote-shell {
+    min-height: 0;
+  }
+  .opnote-layout {
+    display: block;
+  }
+  .opnote-output {
+    position: static !important;
+    max-height: none !important;
+  }
+  .opnote-output-body {
+    border: none;
+    padding: 0;
+    max-height: none !important;
+    overflow: visible;
+  }
+  .opnote-output-body pre {
+    font-size: 12pt;
+    font-family: Georgia, serif;
+  }
+}

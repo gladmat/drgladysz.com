@@ -1,0 +1,233 @@
+---
+// src/pages/en/operation-notes/[slug].astro
+//
+// Operation-note template detail page. Routes statically generated from the
+// hardcoded OPERATION_NOTE_TEMPLATES registry — not Sanity (operation-note
+// templates are static tools, no editorial workflow; brand-spec Decision #64).
+//
+// EN-only by design (FESSH-prep convention); no alternateUrl, switcher chip
+// is suppressed.
+//
+// Page structure:
+//   1. Breadcrumb (Home / Operation notes / [Title])
+//   2. Masthead (kicker / H1 / indication / version+last-reviewed strip)
+//   3. OperationNoteDisclaimer placement="page-top" (warning callout)
+//   4. Preact island (client:load) with form left, output right
+//   5. "What this template emits" static info block
+//
+// JSON-LD: WebApplication + applicationCategory: MedicalApplication, matching
+// calculator-suite convention.
+import SiteLayout from '@/layouts/SiteLayout.astro';
+import Breadcrumb from '@/components/Breadcrumb.astro';
+import OperationNoteDisclaimer from '@/components/content/OperationNoteDisclaimer.astro';
+import { generateBreadcrumb } from '@/lib/schema';
+import {
+  OPERATION_NOTE_TEMPLATES,
+  getOperationNoteBySlug,
+} from '@/components/interactive/operation-notes/templates';
+
+// Each template island must be imported by name on the route so that the
+// JSX reference is statically traceable for `client:load` hydration. Astro
+// does not support resolving an island component through a dynamic variable
+// (registry lookup, destructured prop, etc.) — see the explicit constraint
+// in the compiler error for `client:only`.
+import SkinLesionExcision from '@/components/interactive/operation-notes/SkinLesionExcision';
+import MelanomaWLE from '@/components/interactive/operation-notes/MelanomaWLE';
+import HandFractureFixation from '@/components/interactive/operation-notes/HandFractureFixation';
+import FlexorTendonRepair from '@/components/interactive/operation-notes/FlexorTendonRepair';
+import ExtensorTendonRepair from '@/components/interactive/operation-notes/ExtensorTendonRepair';
+import NerveRepair from '@/components/interactive/operation-notes/NerveRepair';
+import HandLacerationDebridement from '@/components/interactive/operation-notes/HandLacerationDebridement';
+import HandInfectionDrainage from '@/components/interactive/operation-notes/HandInfectionDrainage';
+import FreeFlapReconstruction from '@/components/interactive/operation-notes/FreeFlapReconstruction';
+
+export async function getStaticPaths() {
+  return OPERATION_NOTE_TEMPLATES.map((t) => ({
+    params: { slug: t.meta.slug },
+  }));
+}
+
+const { slug } = Astro.params;
+if (!slug) throw new Error('Missing slug param');
+
+const template = getOperationNoteBySlug(slug);
+if (!template) {
+  return Astro.redirect('/en/operation-notes/');
+}
+
+const { meta } = template;
+
+const siteUrl = (
+  import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com'
+).replace(/\/$/, '');
+const canonicalUrl = `${siteUrl}/en/operation-notes/${meta.slug}/`;
+
+const operationNoteJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  name: `${meta.title} — operation note template`,
+  url: canonicalUrl,
+  description: meta.indication,
+  applicationCategory: 'MedicalApplication',
+  operatingSystem: 'Any (web)',
+  inLanguage: 'en-NZ',
+  audience: {
+    '@type': 'MedicalAudience',
+    audienceType: 'MedicalProfessional',
+  },
+  isAccessibleForFree: true,
+  browserRequirements:
+    'Requires JavaScript and a modern browser supporting the Clipboard API',
+};
+
+const breadcrumbJsonLd = generateBreadcrumb([
+  { name: 'Home', url: `${siteUrl}/en/` },
+  { name: 'Operation notes', url: `${siteUrl}/en/operation-notes/` },
+  { name: meta.title, url: canonicalUrl },
+]);
+
+const lastReviewedLabel = new Date(meta.lastReviewed).toLocaleDateString(
+  'en-NZ',
+  { year: 'numeric', month: 'long', day: 'numeric' },
+);
+
+const pageTitle = `${meta.title} — Operation note template — Mateusz Gładysz, MD`;
+const pageDescription = `${meta.indication} Interactive Markdown-emitting template; no patient data is stored or transmitted.`;
+---
+<SiteLayout
+  title={pageTitle}
+  description={pageDescription}
+  locale="en"
+  canonical={canonicalUrl}
+  jsonLd={[operationNoteJsonLd, breadcrumbJsonLd]}
+>
+  <article class="opnote-page">
+    <header class="opnote-page-header">
+      <Breadcrumb items={[
+        { name: 'Home', url: '/en/' },
+        { name: 'Operation notes', url: '/en/operation-notes/' },
+        { name: meta.title },
+      ]} />
+      <p class="opnote-page-kicker">Operation note</p>
+      <h1 class="opnote-page-title">{meta.title}</h1>
+      <p class="opnote-page-indication">{meta.indication}</p>
+      <p class="opnote-page-meta">
+        <span>Last clinically reviewed <time datetime={meta.lastReviewed}>{lastReviewedLabel}</time></span>
+        <span aria-hidden="true">·</span>
+        <span>v{meta.version}</span>
+      </p>
+    </header>
+
+    <OperationNoteDisclaimer placement="page-top" />
+
+    <section class="opnote-builder" aria-labelledby="builder-heading">
+      <h2 id="builder-heading" class="opnote-builder-heading">Template builder</h2>
+      {slug === 'skin-lesion-excision' && <SkinLesionExcision client:load />}
+      {slug === 'melanoma-wide-local-excision-slnb' && <MelanomaWLE client:load />}
+      {slug === 'hand-fracture-fixation' && <HandFractureFixation client:load />}
+      {slug === 'flexor-tendon-repair' && <FlexorTendonRepair client:load />}
+      {slug === 'extensor-tendon-repair' && <ExtensorTendonRepair client:load />}
+      {slug === 'nerve-repair' && <NerveRepair client:load />}
+      {slug === 'hand-laceration-debridement' && <HandLacerationDebridement client:load />}
+      {slug === 'hand-infection-drainage' && <HandInfectionDrainage client:load />}
+      {slug === 'free-flap-reconstruction' && <FreeFlapReconstruction client:load />}
+    </section>
+
+    <section class="opnote-emits" aria-labelledby="emits-heading">
+      <h2 id="emits-heading" class="opnote-emits-heading">What this template emits</h2>
+      <p class="opnote-emits-body">{meta.emits}</p>
+    </section>
+  </article>
+</SiteLayout>
+
+<style>
+  .opnote-page {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: clamp(40px, 7vw, 96px) clamp(20px, 5vw, 80px) 120px;
+  }
+
+  .opnote-page-header {
+    margin-bottom: clamp(32px, 5vw, 48px);
+    max-width: 880px;
+  }
+
+  .opnote-page-kicker {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 16px 0 12px;
+    font-weight: 500;
+  }
+
+  .opnote-page-title {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(34px, 5vw, 56px);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin: 0 0 16px;
+  }
+
+  .opnote-page-indication {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(17px, 1.5vw, 20px);
+    line-height: 1.55;
+    color: var(--ink-2);
+    margin: 0 0 16px;
+    max-width: 64ch;
+  }
+
+  .opnote-page-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 0;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: baseline;
+  }
+
+  .opnote-builder {
+    margin-top: clamp(32px, 4vw, 48px);
+  }
+
+  /* Visually hide the H2 — the form + output panel are self-evident as the
+     primary content. Keep the heading in the DOM for screen-reader / outline
+     integrity (matches the calculator detail-page treatment). */
+  .opnote-builder-heading,
+  .opnote-emits-heading {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+    clip: rect(0 0 0 0);
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .opnote-emits {
+    margin-top: clamp(32px, 5vw, 48px);
+    max-width: 760px;
+  }
+
+  .opnote-emits-body {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: var(--ink-3);
+    margin: 0;
+    padding: 16px 20px;
+    background: var(--bg-card);
+    border-left: 2px solid var(--rule-strong);
+  }
+</style>

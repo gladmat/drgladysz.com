@@ -1,0 +1,69 @@
+---
+// src/components/content/OperationNoteDisclaimer.astro
+//
+// Operation-notes disclaimer block. Two static placements:
+//   index    — short orientation banner on /en/operation-notes/
+//   page-top — full warning callout above the form on a template page
+//
+// (A third placement — "output-footer", inside the rendered output panel —
+// is baked into OperationNoteShell.tsx because it lives inside the Preact
+// island. Not handled here.)
+//
+// Wording is LOCKED — drift requires a decision-log amendment per
+// Decision #64 (2026-05-19).
+
+import Callout from './Callout.astro';
+
+interface Props {
+  placement: 'index' | 'page-top';
+}
+
+const { placement } = Astro.props;
+---
+{placement === 'index' && (
+  <div class="opnote-disclaimer opnote-disclaimer--index">
+    <p>
+      <strong>Templates only — verify before pasting.</strong>
+      No patient data is stored or transmitted. You remain the author of, and
+      responsible for, the operation note.
+    </p>
+  </div>
+)}
+
+{placement === 'page-top' && (
+  <Callout type="warning" title="Template only — verify before pasting">
+    <p>
+      No patient data is entered, stored, or transmitted by this tool. The form
+      fields are kept in-memory only and are cleared if you reload the page.
+      The Markdown output is generated in your browser; copying or downloading
+      it is your action, not the site's.
+    </p>
+    <p>
+      <strong>You remain the author of the note</strong> and are responsible
+      for its clinical accuracy and completeness before use in any patient
+      record.
+    </p>
+  </Callout>
+)}
+
+<style>
+  .opnote-disclaimer--index {
+    margin: 0 0 56px;
+    padding: 20px 24px;
+    background: var(--bg-card);
+    border-left: 3px solid var(--accent);
+    max-width: 80ch;
+  }
+  .opnote-disclaimer--index p {
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--ink);
+    margin: 0;
+    max-width: none;
+  }
+  .opnote-disclaimer--index strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+</style>
