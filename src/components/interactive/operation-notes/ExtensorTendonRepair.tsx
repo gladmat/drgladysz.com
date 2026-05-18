@@ -8,15 +8,13 @@ import OperationNoteShell from './_shared/OperationNoteShell';
 import { joinSections, bullets, numbered } from './_shared/markdown';
 
 interface State {
-  patientName: string;
-  nhi: string;
-  dob: string;
   date: string;
   theatre: string;
   start: string;
   end: string;
   assistant: string;
   anaesthetist: string;
+  hasAnaesthetist: boolean;
   digit: string;
   zone: 'I' | 'II' | 'III' | 'IV' | 'V' | 'VI' | 'VII' | 'VIII';
   sagittalBandRepaired: boolean;
@@ -29,15 +27,13 @@ interface State {
 }
 
 const INITIAL_STATE: State = {
-  patientName: '[PATIENT NAME]',
-  nhi: '[NHI]',
-  dob: '[DD/MM/YYYY]',
   date: '[DD/MM/YYYY]',
   theatre: '[Theatre]',
   start: '[HH:MM]',
   end: '[HH:MM]',
   assistant: '[Registrar Dr ____]',
   anaesthetist: '[Dr ____]',
+  hasAnaesthetist: true,
   digit: '[DIGIT]',
   zone: 'V',
   sagittalBandRepaired: false,
@@ -76,12 +72,13 @@ function renderMarkdown(s: State): string {
   return joinSections(
     `# OPERATION NOTE — Extensor tendon repair`,
     [
-      `Patient: ${s.patientName}    NHI: ${s.nhi}    DOB: ${s.dob}`,
       `Date: ${s.date}    Theatre: ${s.theatre}    Acute`,
       `Start: ${s.start}    End: ${s.end}`,
       `Surgeon: Mateusz Gładysz, Consultant Plastic and Hand Surgeon`,
       `Assistant: ${s.assistant}`,
-      `Anaesthetist: ${s.anaesthetist}    Anaesthetic: Supraclavicular block`,
+      s.hasAnaesthetist
+        ? `Anaesthetist: ${s.anaesthetist}    Anaesthetic: Supraclavicular block`
+        : `Anaesthetic: Supraclavicular block`,
       `WHO Surgical Safety Checklist: Sign-in / Time-out / Sign-out — completed.`,
       `ACC45 #: ${s.acc45} — mechanism: ${s.accMechanism}.`,
     ].join('\n'),
@@ -148,24 +145,7 @@ function ExtensorTendonRepair() {
     >
       <div class="opnote-section">
         <p class="opnote-section-title">Header</p>
-        <div class="opnote-row opnote-row-2">
-          <label class="opnote-field">
-            <span class="opnote-field-label">Patient name</span>
-            <input class="opnote-field-input" type="text" value={state.patientName}
-              onInput={(e) => update('patientName', (e.currentTarget as HTMLInputElement).value)} />
-          </label>
-          <label class="opnote-field">
-            <span class="opnote-field-label">NHI</span>
-            <input class="opnote-field-input" type="text" value={state.nhi}
-              onInput={(e) => update('nhi', (e.currentTarget as HTMLInputElement).value)} />
-          </label>
-        </div>
-        <div class="opnote-row opnote-row-3">
-          <label class="opnote-field">
-            <span class="opnote-field-label">DOB</span>
-            <input class="opnote-field-input" type="text" value={state.dob}
-              onInput={(e) => update('dob', (e.currentTarget as HTMLInputElement).value)} />
-          </label>
+                <div class="opnote-row opnote-row-2">
           <label class="opnote-field">
             <span class="opnote-field-label">Date of op</span>
             <input class="opnote-field-input" type="text" value={state.date}
@@ -189,18 +169,23 @@ function ExtensorTendonRepair() {
               onInput={(e) => update('end', (e.currentTarget as HTMLInputElement).value)} />
           </label>
         </div>
-        <div class="opnote-row opnote-row-2">
-          <label class="opnote-field">
-            <span class="opnote-field-label">Assistant</span>
-            <input class="opnote-field-input" type="text" value={state.assistant}
-              onInput={(e) => update('assistant', (e.currentTarget as HTMLInputElement).value)} />
-          </label>
+        <label class="opnote-field">
+          <span class="opnote-field-label">Assistant</span>
+          <input class="opnote-field-input" type="text" value={state.assistant}
+            onInput={(e) => update('assistant', (e.currentTarget as HTMLInputElement).value)} />
+        </label>
+        <label class="opnote-toggle">
+          <input type="checkbox" checked={state.hasAnaesthetist}
+            onChange={(e) => update('hasAnaesthetist', (e.currentTarget as HTMLInputElement).checked)} />
+          <span class="opnote-toggle-label">Anaesthetist present (uncheck for purely local procedures)</span>
+        </label>
+        {state.hasAnaesthetist && (
           <label class="opnote-field">
             <span class="opnote-field-label">Anaesthetist</span>
             <input class="opnote-field-input" type="text" value={state.anaesthetist}
               onInput={(e) => update('anaesthetist', (e.currentTarget as HTMLInputElement).value)} />
           </label>
-        </div>
+        )}
       </div>
 
       <div class="opnote-section">

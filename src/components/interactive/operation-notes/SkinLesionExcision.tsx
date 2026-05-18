@@ -41,9 +41,6 @@ type FtsgDonor =
 type StsgDonor = 'Anterolateral thigh' | 'Buttock';
 
 interface State {
-  patientName: string;
-  nhi: string;
-  dob: string;
   date: string;
   theatre: string;
   start: string;
@@ -51,6 +48,7 @@ interface State {
   classification: 'Elective' | 'Acute';
   assistant: string;
   anaesthetist: string;
+  hasAnaesthetist: boolean;
   anaesthesiaType: AnaesthesiaType;
   site: string;
   size: string;
@@ -80,9 +78,6 @@ interface State {
 }
 
 const INITIAL_STATE: State = {
-  patientName: '[PATIENT NAME]',
-  nhi: '[NHI]',
-  dob: '[DD/MM/YYYY]',
   date: '[DD/MM/YYYY]',
   theatre: '[Theatre]',
   start: '[HH:MM]',
@@ -90,6 +85,7 @@ const INITIAL_STATE: State = {
   classification: 'Elective',
   assistant: '[Registrar Dr ____]',
   anaesthetist: '[Dr ____]',
+  hasAnaesthetist: false,
   anaesthesiaType: 'local',
   site: 'right cheek',
   size: '8',
@@ -219,12 +215,13 @@ function renderMarkdown(s: State): string {
   return joinSections(
     `# OPERATION NOTE — Skin lesion excision`,
     [
-      `Patient: ${s.patientName}    NHI: ${s.nhi}    DOB: ${s.dob}`,
       `Date: ${s.date}    Theatre: ${s.theatre}    ${s.classification}`,
       `Start: ${s.start}    End: ${s.end}`,
       `Surgeon: Mateusz Gładysz, Consultant Plastic and Hand Surgeon`,
       `Assistant: ${s.assistant}`,
-      `Anaesthetist: ${s.anaesthetist}    Anaesthetic: ${ANAESTHESIA_LABEL[s.anaesthesiaType]}`,
+      s.hasAnaesthetist
+        ? `Anaesthetist: ${s.anaesthetist}    Anaesthetic: ${ANAESTHESIA_LABEL[s.anaesthesiaType]}`
+        : `Anaesthetic: ${ANAESTHESIA_LABEL[s.anaesthesiaType]}`,
       `WHO Surgical Safety Checklist: Sign-in / Time-out / Sign-out — completed.`,
       ifSection(
         s.accClaim,
@@ -292,24 +289,7 @@ function SkinLesionExcision() {
     >
       <div class="opnote-section">
         <p class="opnote-section-title">Header</p>
-        <div class="opnote-row opnote-row-2">
-          <label class="opnote-field">
-            <span class="opnote-field-label">Patient name</span>
-            <input class="opnote-field-input" type="text" value={state.patientName}
-              onInput={(e) => update('patientName', (e.currentTarget as HTMLInputElement).value)} />
-          </label>
-          <label class="opnote-field">
-            <span class="opnote-field-label">NHI</span>
-            <input class="opnote-field-input" type="text" value={state.nhi}
-              onInput={(e) => update('nhi', (e.currentTarget as HTMLInputElement).value)} />
-          </label>
-        </div>
-        <div class="opnote-row opnote-row-3">
-          <label class="opnote-field">
-            <span class="opnote-field-label">DOB</span>
-            <input class="opnote-field-input" type="text" value={state.dob}
-              onInput={(e) => update('dob', (e.currentTarget as HTMLInputElement).value)} />
-          </label>
+                <div class="opnote-row opnote-row-2">
           <label class="opnote-field">
             <span class="opnote-field-label">Date of op</span>
             <input class="opnote-field-input" type="text" value={state.date}
@@ -341,18 +321,23 @@ function SkinLesionExcision() {
             </select>
           </label>
         </div>
-        <div class="opnote-row opnote-row-2">
-          <label class="opnote-field">
-            <span class="opnote-field-label">Assistant</span>
-            <input class="opnote-field-input" type="text" value={state.assistant}
-              onInput={(e) => update('assistant', (e.currentTarget as HTMLInputElement).value)} />
-          </label>
+        <label class="opnote-field">
+          <span class="opnote-field-label">Assistant</span>
+          <input class="opnote-field-input" type="text" value={state.assistant}
+            onInput={(e) => update('assistant', (e.currentTarget as HTMLInputElement).value)} />
+        </label>
+        <label class="opnote-toggle">
+          <input type="checkbox" checked={state.hasAnaesthetist}
+            onChange={(e) => update('hasAnaesthetist', (e.currentTarget as HTMLInputElement).checked)} />
+          <span class="opnote-toggle-label">Anaesthetist present (uncheck for purely local procedures)</span>
+        </label>
+        {state.hasAnaesthetist && (
           <label class="opnote-field">
             <span class="opnote-field-label">Anaesthetist</span>
             <input class="opnote-field-input" type="text" value={state.anaesthetist}
               onInput={(e) => update('anaesthetist', (e.currentTarget as HTMLInputElement).value)} />
           </label>
-        </div>
+        )}
         <div class="opnote-field">
           <span class="opnote-field-label">Anaesthesia type</span>
           <div class="opnote-radio-group opnote-radio-group-cols-3" role="radiogroup" aria-label="Anaesthesia type">
