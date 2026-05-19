@@ -5,11 +5,10 @@
 
 import { useState, useCallback } from 'preact/hooks';
 import OperationNoteShell from './_shared/OperationNoteShell';
-import { joinSections, bullets, numbered } from './_shared/markdown';
+import { joinSections, bullets, numbered, todayNZ } from './_shared/markdown';
 
 interface State {
   date: string;
-  theatre: string;
   assistant: string;
   hasAssistant: boolean;
   anaesthetist: string;
@@ -27,7 +26,6 @@ interface State {
 
 const INITIAL_STATE: State = {
   date: '[DD/MM/YYYY]',
-  theatre: '[Theatre]',
   assistant: '[Registrar Dr ____]',
   hasAssistant: true,
   anaesthetist: '[Dr ____]',
@@ -70,7 +68,7 @@ function renderMarkdown(s: State): string {
   return joinSections(
     `# OPERATION NOTE — Extensor tendon repair`,
     [
-      `Date: ${s.date}    Theatre: ${s.theatre}    Acute`,
+      `Date: ${s.date}Acute`,
       `Surgeon: Mateusz Gładysz, Consultant Plastic and Hand Surgeon`,
       s.hasAssistant && `Assistant: ${s.assistant}`,
       s.hasAnaesthetist
@@ -124,14 +122,18 @@ function renderMarkdown(s: State): string {
 }
 
 function ExtensorTendonRepair() {
-  const [state, setState] = useState<State>(INITIAL_STATE);
+  const [state, setState] = useState<State>(() => ({
+    ...INITIAL_STATE,
+    date: todayNZ(),
+    signatureDate: todayNZ(),
+  }));
   const update = useCallback(
     <K extends keyof State>(key: K, value: State[K]) => {
       setState((prev) => ({ ...prev, [key]: value }));
     },
     [],
   );
-  const reset = useCallback(() => setState(INITIAL_STATE), []);
+  const reset = useCallback(() => setState({ ...INITIAL_STATE, date: todayNZ(), signatureDate: todayNZ() }), []);
 
   return (
     <OperationNoteShell
@@ -142,18 +144,11 @@ function ExtensorTendonRepair() {
     >
       <div class="opnote-section">
         <p class="opnote-section-title">Header</p>
-                <div class="opnote-row opnote-row-2">
-          <label class="opnote-field">
+                          <label class="opnote-field">
             <span class="opnote-field-label">Date of op</span>
             <input class="opnote-field-input" type="text" value={state.date}
               onInput={(e) => update('date', (e.currentTarget as HTMLInputElement).value)} />
           </label>
-          <label class="opnote-field">
-            <span class="opnote-field-label">Theatre</span>
-            <input class="opnote-field-input" type="text" value={state.theatre}
-              onInput={(e) => update('theatre', (e.currentTarget as HTMLInputElement).value)} />
-          </label>
-        </div>
         <label class="opnote-toggle">
           <input type="checkbox" checked={state.hasAssistant}
             onChange={(e) => update('hasAssistant', (e.currentTarget as HTMLInputElement).checked)} />

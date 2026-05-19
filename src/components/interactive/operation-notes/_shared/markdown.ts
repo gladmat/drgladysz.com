@@ -36,3 +36,15 @@ export function ifSection(
   if (!guard) return '';
   return typeof content === 'function' ? content() : content;
 }
+
+// Today's date as DD/MM/YYYY (NZ format). Evaluated client-side at island
+// mount time, so it reflects when the user opens the page — not the build
+// time. Used as the default value for the operative date + signature date
+// fields. User can still type to override.
+export function todayNZ(): string {
+  const d = new Date();
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+}
