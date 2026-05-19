@@ -6,6 +6,14 @@
 // Closure-type toggle morphs the procedure, consent risks, and post-op plan
 // (covers the A1–A4 variants in the locked brief: direct / FTSG / STSG /
 // local flap).
+//
+// Multi-lesion: the form holds a lesions[] array. Adding a lesion appends a
+// fresh default-bracketed entry. Output adapts:
+//   - 1 lesion  → single procedure block, no "Lesion N" prefixes
+//   - 2+ lesions → per-lesion subsections in Diagnosis / Procedure / Findings /
+//                  Specimens; shared anaesthesia / tourniquet / antibiotics /
+//                  EBL / post-op kept at case level
+// Consent risks are the union of closure-specific risks across all lesions.
 
 import { useState, useCallback } from 'preact/hooks';
 import OperationNoteShell from './_shared/OperationNoteShell';
@@ -40,16 +48,7 @@ type FtsgDonor =
 
 type StsgDonor = 'Anterolateral thigh' | 'Buttock';
 
-interface State {
-  date: string;
-  theatre: string;
-  start: string;
-  end: string;
-  classification: 'Elective' | 'Acute';
-  assistant: string;
-  anaesthetist: string;
-  hasAnaesthetist: boolean;
-  anaesthesiaType: AnaesthesiaType;
+interface Lesion {
   site: string;
   size: string;
   pathology: Pathology;
@@ -61,13 +60,26 @@ interface State {
   stsgMeshed: boolean;
   stsgNPWT: boolean;
   flapType: FlapType;
+  specimenOrientation: string;
+}
+
+interface State {
+  date: string;
+  theatre: string;
+  start: string;
+  end: string;
+  classification: 'Elective' | 'Acute';
+  assistant: string;
+  anaesthetist: string;
+  hasAnaesthetist: boolean;
+  anaesthesiaType: AnaesthesiaType;
+  lesions: Lesion[];
   tourniquetUsed: boolean;
   tourniquetPressure: string;
   tourniquetOn: string;
   tourniquetOff: string;
   antibioticsGiven: boolean;
   antibioticDrug: string;
-  specimenOrientation: string;
   ebl: string;
   accClaim: boolean;
   acc45: string;
@@ -77,16 +89,7 @@ interface State {
   signatureDate: string;
 }
 
-const INITIAL_STATE: State = {
-  date: '[DD/MM/YYYY]',
-  theatre: '[Theatre]',
-  start: '[HH:MM]',
-  end: '[HH:MM]',
-  classification: 'Elective',
-  assistant: '[Registrar Dr ____]',
-  anaesthetist: '[Dr ____]',
-  hasAnaesthetist: false,
-  anaesthesiaType: 'local',
+const DEFAULT_FIRST_LESION: Lesion = {
   site: 'right cheek',
   size: '8',
   pathology: 'BCC',
@@ -98,13 +101,41 @@ const INITIAL_STATE: State = {
   stsgMeshed: false,
   stsgNPWT: false,
   flapType: 'Rhomboid (Limberg)',
+  specimenOrientation: 'short = superior, long = lateral',
+};
+
+const NEW_LESION: Lesion = {
+  site: '[site]',
+  size: '[size]',
+  pathology: 'BCC',
+  margin: '[margin]',
+  closureType: 'direct',
+  ftsgDonor: 'Pre-auricular',
+  stsgDonor: 'Anterolateral thigh',
+  stsgThickness: '0.010',
+  stsgMeshed: false,
+  stsgNPWT: false,
+  flapType: 'Rhomboid (Limberg)',
+  specimenOrientation: 'short = superior, long = lateral',
+};
+
+const INITIAL_STATE: State = {
+  date: '[DD/MM/YYYY]',
+  theatre: '[Theatre]',
+  start: '[HH:MM]',
+  end: '[HH:MM]',
+  classification: 'Elective',
+  assistant: '[Registrar Dr ____]',
+  anaesthetist: '[Dr ____]',
+  hasAnaesthetist: false,
+  anaesthesiaType: 'local',
+  lesions: [DEFAULT_FIRST_LESION],
   tourniquetUsed: false,
   tourniquetPressure: '250',
   tourniquetOn: '[HH:MM]',
   tourniquetOff: '[HH:MM]',
   antibioticsGiven: false,
   antibioticDrug: 'Cefazolin 2 g IV at induction',
-  specimenOrientation: 'short = superior, long = lateral',
   ebl: '<5 mL',
   accClaim: false,
   acc45: '[#########]',
@@ -139,21 +170,36 @@ const CLOSURE_PLAN_LABEL: Record<ClosureType, string> = {
   flap: 'local flap reconstruction',
 };
 
-const CLOSURE_EXTRA_RISKS: Record<ClosureType, string> = {
+// Closure-specific consent risk additions, keyed by closure type. Multi-lesion
+// renders the union (no duplicates) across all lesion closure types.
+const CLOSURE_RISKS_BY_TYPE: Record<ClosureType, string> = {
   direct: '',
-  ftsg: ', graft failure, donor-site scar, pigmentary mismatch',
-  stsg: ', graft failure, donor-site pain and slow healing 14–21 d, mesh pattern visible if meshed',
-  flap: ', flap necrosis, trapdoor deformity, dog-ear, pincushioning',
+  ftsg: 'graft failure, donor-site scar, pigmentary mismatch',
+  stsg: 'graft failure, donor-site pain and slow healing 14–21 d, mesh pattern visible if meshed',
+  flap: 'flap necrosis, trapdoor deformity, dog-ear, pincushioning',
 };
 
-function procedureSteps(s: State): string[] {
+function unionClosureRisks(lesions: Lesion[]): string {
+  const seen = new Set<string>();
+  const parts: string[] = [];
+  for (const l of lesions) {
+    const r = CLOSURE_RISKS_BY_TYPE[l.closureType];
+    if (r && !seen.has(r)) {
+      seen.add(r);
+      parts.push(r);
+    }
+  }
+  return parts.length > 0 ? ', ' + parts.join(', ') : '';
+}
+
+function lesionProcedureSteps(l: Lesion): string[] {
   const common = [
-    `Lesion marked with ${s.margin} mm clinical margin; ${s.closureType === 'direct' ? 'ellipse oriented along RSTL with ~3:1 length-to-width ratio' : 'orientation along RSTL'}.`,
-    `Skin incised with #15 blade; ${s.closureType === 'direct' ? 'ellipse excised en bloc to deep subcutis' : 'lesion excised en bloc to deep subcutis'}.`,
-    `Orientation suture placed: ${s.specimenOrientation}. Specimen sent in formalin for histology.`,
+    `Lesion marked with ${l.margin} mm clinical margin; ${l.closureType === 'direct' ? 'ellipse oriented along RSTL with ~3:1 length-to-width ratio' : 'orientation along RSTL'}.`,
+    `Skin incised with #15 blade; ${l.closureType === 'direct' ? 'ellipse excised en bloc to deep subcutis' : 'lesion excised en bloc to deep subcutis'}.`,
+    `Orientation suture placed: ${l.specimenOrientation}. Specimen sent in formalin for histology.`,
     `Haemostasis: bipolar diathermy; wound irrigated with normal saline.`,
   ];
-  switch (s.closureType) {
+  switch (l.closureType) {
     case 'direct':
       return [
         ...common,
@@ -163,21 +209,21 @@ function procedureSteps(s: State): string[] {
     case 'ftsg':
       return [
         ...common,
-        `Defect templated; donor site: ${s.ftsgDonor}.`,
+        `Defect templated; donor site: ${l.ftsgDonor}.`,
         `FTSG harvested, defatted, inset with 5-0 nylon interrupted; tie-over bolster placed (Jelonet + saline-soaked cotton wool + 4-0 silk anchor sutures).`,
         `Donor closed primarily: 4-0 Monocryl deep dermal; 5-0 nylon skin.`,
       ];
     case 'stsg':
       return [
         ...common,
-        `STSG harvested from ${s.stsgDonor} with Zimmer dermatome at ${s.stsgThickness} inch.`,
-        `Graft ${s.stsgMeshed ? 'meshed 1:1.5 with mesher' : 'left as sheet, fenestrated'}; inset with skin staples; ${s.stsgNPWT ? 'NPWT at -75 mmHg' : 'tie-over bolster'} for 5–7 days.`,
+        `STSG harvested from ${l.stsgDonor} with Zimmer dermatome at ${l.stsgThickness} inch.`,
+        `Graft ${l.stsgMeshed ? 'meshed 1:1.5 with mesher' : 'left as sheet, fenestrated'}; inset with skin staples; ${l.stsgNPWT ? 'NPWT at -75 mmHg' : 'tie-over bolster'} for 5–7 days.`,
         `Donor site dressed with Mepitel One + Mepore.`,
       ];
     case 'flap':
       return [
         ...common,
-        `${s.flapType} flap designed, elevated in subcutaneous plane, transposed / advanced to defect.`,
+        `${l.flapType} flap designed, elevated in subcutaneous plane, transposed / advanced to defect.`,
         `Donor closed primarily; flap inset with 4-0 Monocryl deep dermal and 5-0 nylon skin.`,
       ];
   }
@@ -188,30 +234,72 @@ function postOpPlan(s: State): string[] {
     `Keep dressing dry 48 h; elevate where applicable.`,
     `Analgesia: regular paracetamol; ibuprofen PRN.`,
   ];
-  if (s.closureType === 'ftsg') {
-    lines.push(`Tie-over bolster down at 7 days.`);
-  }
-  if (s.closureType === 'stsg') {
+  const anyFtsg = s.lesions.some((l) => l.closureType === 'ftsg');
+  const anyStsg = s.lesions.some((l) => l.closureType === 'stsg');
+  const anyStsgNpwt = s.lesions.some(
+    (l) => l.closureType === 'stsg' && l.stsgNPWT,
+  );
+  if (anyFtsg) lines.push(`Tie-over bolster down at 7 days.`);
+  if (anyStsg)
     lines.push(
-      `${s.stsgNPWT ? 'NPWT' : 'Bolster'} down at 5–7 days; donor occlusive dressing until saturated.`,
+      `${anyStsgNpwt ? 'NPWT' : 'Bolster'} down at 5–7 days; donor occlusive dressing until saturated.`,
     );
-  }
   lines.push(`Sutures out: face 5–7 days; trunk/limb 10–14 days.`);
   lines.push(`Histology review at clinic.`);
   lines.push(`Follow-up: ${s.followUp}.`);
   if (s.accClaim) lines.push(`ACC claim ${s.acc45} lodged.`);
   if (s.extraNotes) lines.push(s.extraNotes);
-  if (
-    s.pathology === 'BCC' ||
-    s.pathology === 'SCC' ||
-    s.pathology === 'SCC in situ (Bowen)'
-  ) {
-    lines.push(`GP letter to be sent.`);
-  }
+  const anyMalignant = s.lesions.some(
+    (l) =>
+      l.pathology === 'BCC' ||
+      l.pathology === 'SCC' ||
+      l.pathology === 'SCC in situ (Bowen)',
+  );
+  if (anyMalignant) lines.push(`GP letter to be sent.`);
   return lines;
 }
 
 function renderMarkdown(s: State): string {
+  const multi = s.lesions.length > 1;
+
+  const diagnosisLines = s.lesions.map((l, i) => {
+    const prefix = multi ? `Lesion ${i + 1}: ` : '';
+    return `${prefix}${l.pathology} of ${l.site}, ${l.size} mm.`;
+  });
+  if (multi) {
+    diagnosisLines.push(
+      `Plan: Excision of each lesion (see per-lesion details below).`,
+    );
+  } else {
+    const l = s.lesions[0];
+    diagnosisLines.push(
+      `Plan: Excision with ${l.margin} mm clinical margin and ${CLOSURE_PLAN_LABEL[l.closureType]}.`,
+    );
+  }
+
+  const procedureBlock = multi
+    ? joinSections(
+        ...s.lesions.map(
+          (l, i) =>
+            `### Lesion ${i + 1} — ${l.site} (${l.pathology})\n\n${numbered(
+              lesionProcedureSteps(l),
+            )}`,
+        ),
+      )
+    : numbered(lesionProcedureSteps(s.lesions[0]));
+
+  const findingsLines = s.lesions.map((l, i) => {
+    const prefix = multi
+      ? `Lesion ${i + 1} (${l.site}): `
+      : `${l.pathology} ${l.size} mm at ${l.site}; `;
+    return `${prefix}clinically clear margins; no deep invasion observed.`;
+  });
+
+  const specimenLines = s.lesions.map((l, i) => {
+    const suffix = multi ? ` (Lesion ${i + 1})` : '';
+    return `"${l.site} lesion${suffix} — ${l.specimenOrientation}" → Histology.`;
+  });
+
   return joinSections(
     `# OPERATION NOTE — Skin lesion excision`,
     [
@@ -231,12 +319,9 @@ function renderMarkdown(s: State): string {
       .filter(Boolean)
       .join('\n'),
     `## Diagnosis / Indication`,
-    bullets([
-      `${s.pathology} of ${s.site}, ${s.size} mm.`,
-      `Plan: Excision with ${s.margin} mm clinical margin and ${CLOSURE_PLAN_LABEL[s.closureType]}.`,
-    ]),
+    bullets(diagnosisLines),
     `## Consent`,
-    `Risks discussed: bleeding, haematoma, infection, scar, recurrence, incomplete excision requiring re-excision, sensory change, dehiscence, asymmetry, suture reaction${CLOSURE_EXTRA_RISKS[s.closureType]}.`,
+    `Risks discussed: bleeding, haematoma, infection, scar, recurrence, incomplete excision requiring re-excision, sensory change, dehiscence, asymmetry, suture reaction${unionClosureRisks(s.lesions)}.`,
     `## Position / Prep / Drape`,
     `Supine; 0.5% chlorhexidine in alcohol (aqueous if facial / near eye); standard drape.`,
     `## Anaesthesia`,
@@ -250,13 +335,11 @@ function renderMarkdown(s: State): string {
         `\nAntibiotic prophylaxis: ${s.antibioticDrug}.`,
       ),
     `## Procedure`,
-    numbered(procedureSteps(s)),
+    procedureBlock,
     `## Findings`,
-    bullets([
-      `${s.pathology} ${s.size} mm at ${s.site}; clinically clear margins; no deep invasion observed.`,
-    ]),
+    bullets(findingsLines),
     `## Specimens`,
-    bullets([`"${s.site} lesion — ${s.specimenOrientation}" → Histology.`]),
+    bullets(specimenLines),
     `## Estimated blood loss`,
     s.ebl,
     `## Complications`,
@@ -278,6 +361,29 @@ function SkinLesionExcision() {
     },
     [],
   );
+  const updateLesion = useCallback(
+    <K extends keyof Lesion>(index: number, key: K, value: Lesion[K]) => {
+      setState((prev) => ({
+        ...prev,
+        lesions: prev.lesions.map((l, i) =>
+          i === index ? { ...l, [key]: value } : l,
+        ),
+      }));
+    },
+    [],
+  );
+  const addLesion = useCallback(() => {
+    setState((prev) => ({ ...prev, lesions: [...prev.lesions, { ...NEW_LESION }] }));
+  }, []);
+  const removeLesion = useCallback((index: number) => {
+    setState((prev) => ({
+      ...prev,
+      lesions:
+        prev.lesions.length <= 1
+          ? prev.lesions
+          : prev.lesions.filter((_, i) => i !== index),
+    }));
+  }, []);
   const reset = useCallback(() => setState(INITIAL_STATE), []);
 
   return (
@@ -289,7 +395,7 @@ function SkinLesionExcision() {
     >
       <div class="opnote-section">
         <p class="opnote-section-title">Header</p>
-                <div class="opnote-row opnote-row-2">
+        <div class="opnote-row opnote-row-2">
           <label class="opnote-field">
             <span class="opnote-field-label">Date of op</span>
             <input class="opnote-field-input" type="text" value={state.date}
@@ -353,129 +459,153 @@ function SkinLesionExcision() {
       </div>
 
       <div class="opnote-section">
-        <p class="opnote-section-title">Lesion</p>
-        <div class="opnote-row opnote-row-2">
-          <label class="opnote-field">
-            <span class="opnote-field-label">Site</span>
-            <input class="opnote-field-input" type="text" value={state.site}
-              onInput={(e) => update('site', (e.currentTarget as HTMLInputElement).value)} />
-          </label>
-          <label class="opnote-field">
-            <span class="opnote-field-label">Size (mm)</span>
-            <input class="opnote-field-input" type="text" value={state.size}
-              onInput={(e) => update('size', (e.currentTarget as HTMLInputElement).value)} />
-          </label>
-        </div>
-        <div class="opnote-row opnote-row-2">
-          <label class="opnote-field">
-            <span class="opnote-field-label">Suspected pathology</span>
-            <select class="opnote-field-select" value={state.pathology}
-              onChange={(e) => update('pathology', (e.currentTarget as HTMLSelectElement).value as Pathology)}>
-              <option value="BCC">BCC</option>
-              <option value="SCC">SCC</option>
-              <option value="SCC in situ (Bowen)">SCC in situ (Bowen)</option>
-              <option value="Dysplastic naevus">Dysplastic naevus</option>
-              <option value="Seborrhoeic keratosis">Seborrhoeic keratosis</option>
-              <option value="Other">Other</option>
-            </select>
-          </label>
-          <label class="opnote-field">
-            <span class="opnote-field-label">Clinical margin (mm)</span>
-            <input class="opnote-field-input" type="text" value={state.margin}
-              onInput={(e) => update('margin', (e.currentTarget as HTMLInputElement).value)} />
-          </label>
-        </div>
-      </div>
-
-      <div class="opnote-section">
-        <p class="opnote-section-title">Closure</p>
-        <div class="opnote-field">
-          <span class="opnote-field-label">Closure type</span>
-          <div class="opnote-radio-group opnote-radio-group-cols-2" role="radiogroup" aria-label="Closure type">
-            {(['direct', 'ftsg', 'stsg', 'flap'] as const).map((v) => (
-              <label class="opnote-radio">
-                <input type="radio" name="closure" value={v} checked={state.closureType === v}
-                  onChange={() => update('closureType', v)} />
-                <span>
-                  {v === 'direct' && 'Direct primary'}
-                  {v === 'ftsg' && 'FTSG'}
-                  {v === 'stsg' && 'STSG'}
-                  {v === 'flap' && 'Local flap'}
-                </span>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        {state.closureType === 'ftsg' && (
-          <div class="opnote-subsection">
-            <p class="opnote-subsection-title">FTSG donor site</p>
-            <label class="opnote-field">
-              <span class="opnote-field-label">Donor site</span>
-              <select class="opnote-field-select" value={state.ftsgDonor}
-                onChange={(e) => update('ftsgDonor', (e.currentTarget as HTMLSelectElement).value as FtsgDonor)}>
-                <option value="Pre-auricular">Pre-auricular</option>
-                <option value="Post-auricular">Post-auricular</option>
-                <option value="Supraclavicular">Supraclavicular</option>
-                <option value="Upper inner arm">Upper inner arm</option>
-                <option value="Groin">Groin</option>
-              </select>
-            </label>
-          </div>
-        )}
-
-        {state.closureType === 'stsg' && (
-          <div class="opnote-subsection">
-            <p class="opnote-subsection-title">STSG</p>
+        <p class="opnote-section-title">
+          Lesions ({state.lesions.length})
+        </p>
+        {state.lesions.map((lesion, i) => (
+          <div class="opnote-lesion-card" key={`lesion-${i}`}>
+            <div class="opnote-lesion-header">
+              <p class="opnote-lesion-title">Lesion {i + 1}</p>
+              {state.lesions.length > 1 && (
+                <button
+                  type="button"
+                  class="opnote-lesion-remove"
+                  onClick={() => removeLesion(i)}
+                  aria-label={`Remove lesion ${i + 1}`}
+                >
+                  Remove
+                </button>
+              )}
+            </div>
             <div class="opnote-row opnote-row-2">
               <label class="opnote-field">
-                <span class="opnote-field-label">Donor site</span>
-                <select class="opnote-field-select" value={state.stsgDonor}
-                  onChange={(e) => update('stsgDonor', (e.currentTarget as HTMLSelectElement).value as StsgDonor)}>
-                  <option value="Anterolateral thigh">Anterolateral thigh</option>
-                  <option value="Buttock">Buttock</option>
+                <span class="opnote-field-label">Site</span>
+                <input class="opnote-field-input" type="text" value={lesion.site}
+                  onInput={(e) => updateLesion(i, 'site', (e.currentTarget as HTMLInputElement).value)} />
+              </label>
+              <label class="opnote-field">
+                <span class="opnote-field-label">Size (mm)</span>
+                <input class="opnote-field-input" type="text" value={lesion.size}
+                  onInput={(e) => updateLesion(i, 'size', (e.currentTarget as HTMLInputElement).value)} />
+              </label>
+            </div>
+            <div class="opnote-row opnote-row-2">
+              <label class="opnote-field">
+                <span class="opnote-field-label">Suspected pathology</span>
+                <select class="opnote-field-select" value={lesion.pathology}
+                  onChange={(e) => updateLesion(i, 'pathology', (e.currentTarget as HTMLSelectElement).value as Pathology)}>
+                  <option value="BCC">BCC</option>
+                  <option value="SCC">SCC</option>
+                  <option value="SCC in situ (Bowen)">SCC in situ (Bowen)</option>
+                  <option value="Dysplastic naevus">Dysplastic naevus</option>
+                  <option value="Seborrhoeic keratosis">Seborrhoeic keratosis</option>
+                  <option value="Other">Other</option>
                 </select>
               </label>
               <label class="opnote-field">
-                <span class="opnote-field-label">Thickness (inch)</span>
-                <select class="opnote-field-select" value={state.stsgThickness}
-                  onChange={(e) => update('stsgThickness', (e.currentTarget as HTMLSelectElement).value as State['stsgThickness'])}>
-                  <option value="0.008">0.008</option>
-                  <option value="0.010">0.010</option>
-                  <option value="0.012">0.012</option>
-                </select>
+                <span class="opnote-field-label">Clinical margin (mm)</span>
+                <input class="opnote-field-input" type="text" value={lesion.margin}
+                  onInput={(e) => updateLesion(i, 'margin', (e.currentTarget as HTMLInputElement).value)} />
               </label>
             </div>
-            <label class="opnote-toggle">
-              <input type="checkbox" checked={state.stsgMeshed}
-                onChange={(e) => update('stsgMeshed', (e.currentTarget as HTMLInputElement).checked)} />
-              <span class="opnote-toggle-label">Meshed 1:1.5</span>
-            </label>
-            <label class="opnote-toggle">
-              <input type="checkbox" checked={state.stsgNPWT}
-                onChange={(e) => update('stsgNPWT', (e.currentTarget as HTMLInputElement).checked)} />
-              <span class="opnote-toggle-label">NPWT bolster (vs tie-over)</span>
-            </label>
-          </div>
-        )}
+            <div class="opnote-field">
+              <span class="opnote-field-label">Closure type</span>
+              <div class="opnote-radio-group opnote-radio-group-cols-2" role="radiogroup" aria-label={`Closure type for lesion ${i + 1}`}>
+                {(['direct', 'ftsg', 'stsg', 'flap'] as const).map((v) => (
+                  <label class="opnote-radio">
+                    <input type="radio" name={`closure-${i}`} value={v} checked={lesion.closureType === v}
+                      onChange={() => updateLesion(i, 'closureType', v)} />
+                    <span>
+                      {v === 'direct' && 'Direct primary'}
+                      {v === 'ftsg' && 'FTSG'}
+                      {v === 'stsg' && 'STSG'}
+                      {v === 'flap' && 'Local flap'}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
 
-        {state.closureType === 'flap' && (
-          <div class="opnote-subsection">
-            <p class="opnote-subsection-title">Flap type</p>
+            {lesion.closureType === 'ftsg' && (
+              <div class="opnote-subsection">
+                <p class="opnote-subsection-title">FTSG donor site</p>
+                <label class="opnote-field">
+                  <span class="opnote-field-label">Donor site</span>
+                  <select class="opnote-field-select" value={lesion.ftsgDonor}
+                    onChange={(e) => updateLesion(i, 'ftsgDonor', (e.currentTarget as HTMLSelectElement).value as FtsgDonor)}>
+                    <option value="Pre-auricular">Pre-auricular</option>
+                    <option value="Post-auricular">Post-auricular</option>
+                    <option value="Supraclavicular">Supraclavicular</option>
+                    <option value="Upper inner arm">Upper inner arm</option>
+                    <option value="Groin">Groin</option>
+                  </select>
+                </label>
+              </div>
+            )}
+
+            {lesion.closureType === 'stsg' && (
+              <div class="opnote-subsection">
+                <p class="opnote-subsection-title">STSG</p>
+                <div class="opnote-row opnote-row-2">
+                  <label class="opnote-field">
+                    <span class="opnote-field-label">Donor site</span>
+                    <select class="opnote-field-select" value={lesion.stsgDonor}
+                      onChange={(e) => updateLesion(i, 'stsgDonor', (e.currentTarget as HTMLSelectElement).value as StsgDonor)}>
+                      <option value="Anterolateral thigh">Anterolateral thigh</option>
+                      <option value="Buttock">Buttock</option>
+                    </select>
+                  </label>
+                  <label class="opnote-field">
+                    <span class="opnote-field-label">Thickness (inch)</span>
+                    <select class="opnote-field-select" value={lesion.stsgThickness}
+                      onChange={(e) => updateLesion(i, 'stsgThickness', (e.currentTarget as HTMLSelectElement).value as Lesion['stsgThickness'])}>
+                      <option value="0.008">0.008</option>
+                      <option value="0.010">0.010</option>
+                      <option value="0.012">0.012</option>
+                    </select>
+                  </label>
+                </div>
+                <label class="opnote-toggle">
+                  <input type="checkbox" checked={lesion.stsgMeshed}
+                    onChange={(e) => updateLesion(i, 'stsgMeshed', (e.currentTarget as HTMLInputElement).checked)} />
+                  <span class="opnote-toggle-label">Meshed 1:1.5</span>
+                </label>
+                <label class="opnote-toggle">
+                  <input type="checkbox" checked={lesion.stsgNPWT}
+                    onChange={(e) => updateLesion(i, 'stsgNPWT', (e.currentTarget as HTMLInputElement).checked)} />
+                  <span class="opnote-toggle-label">NPWT bolster (vs tie-over)</span>
+                </label>
+              </div>
+            )}
+
+            {lesion.closureType === 'flap' && (
+              <div class="opnote-subsection">
+                <p class="opnote-subsection-title">Flap type</p>
+                <label class="opnote-field">
+                  <span class="opnote-field-label">Flap design</span>
+                  <select class="opnote-field-select" value={lesion.flapType}
+                    onChange={(e) => updateLesion(i, 'flapType', (e.currentTarget as HTMLSelectElement).value as FlapType)}>
+                    <option>Rhomboid (Limberg)</option>
+                    <option>Bilobed (Zitelli)</option>
+                    <option>V-Y advancement</option>
+                    <option>Rotation</option>
+                    <option>Nasolabial</option>
+                    <option>Keystone</option>
+                  </select>
+                </label>
+              </div>
+            )}
+
             <label class="opnote-field">
-              <span class="opnote-field-label">Flap design</span>
-              <select class="opnote-field-select" value={state.flapType}
-                onChange={(e) => update('flapType', (e.currentTarget as HTMLSelectElement).value as FlapType)}>
-                <option>Rhomboid (Limberg)</option>
-                <option>Bilobed (Zitelli)</option>
-                <option>V-Y advancement</option>
-                <option>Rotation</option>
-                <option>Nasolabial</option>
-                <option>Keystone</option>
-              </select>
+              <span class="opnote-field-label">Specimen orientation</span>
+              <input class="opnote-field-input" type="text" value={lesion.specimenOrientation}
+                onInput={(e) => updateLesion(i, 'specimenOrientation', (e.currentTarget as HTMLInputElement).value)} />
             </label>
           </div>
-        )}
+        ))}
+        <button type="button" class="opnote-add-lesion" onClick={addLesion}>
+          + Add another lesion
+        </button>
       </div>
 
       <div class="opnote-section">
@@ -520,18 +650,11 @@ function SkinLesionExcision() {
             </label>
           </div>
         )}
-        <div class="opnote-row opnote-row-2">
-          <label class="opnote-field">
-            <span class="opnote-field-label">Estimated blood loss</span>
-            <input class="opnote-field-input" type="text" value={state.ebl}
-              onInput={(e) => update('ebl', (e.currentTarget as HTMLInputElement).value)} />
-          </label>
-          <label class="opnote-field">
-            <span class="opnote-field-label">Specimen orientation</span>
-            <input class="opnote-field-input" type="text" value={state.specimenOrientation}
-              onInput={(e) => update('specimenOrientation', (e.currentTarget as HTMLInputElement).value)} />
-          </label>
-        </div>
+        <label class="opnote-field">
+          <span class="opnote-field-label">Estimated blood loss</span>
+          <input class="opnote-field-input" type="text" value={state.ebl}
+            onInput={(e) => update('ebl', (e.currentTarget as HTMLInputElement).value)} />
+        </label>
       </div>
 
       <div class="opnote-section">
@@ -585,12 +708,12 @@ export const meta = {
   slug: 'skin-lesion-excision',
   title: 'Skin lesion excision',
   indication:
-    'Excision of benign or malignant cutaneous lesion. Closure morphs by selection: direct / FTSG / STSG / local flap.',
+    'Excision of one or more benign or malignant cutaneous lesions on a single patient. Closure morphs per lesion: direct / FTSG / STSG / local flap.',
   category: 'skin-soft-tissue' as const,
   emits:
-    'Indication · Pathology · Margin · Closure-specific procedure · Specimen orientation · Histology · Follow-up',
+    'Indication · Per-lesion pathology and margin · Per-lesion closure procedure · Per-lesion specimen orientation · Shared post-op plan',
   lastReviewed: '2026-05-19',
-  version: '1.0',
+  version: '1.1',
 };
 
 export default SkinLesionExcision;
