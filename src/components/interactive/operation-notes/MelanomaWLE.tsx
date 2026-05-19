@@ -18,9 +18,8 @@ type Basin = 'axilla' | 'groin' | 'cervical' | 'parotid' | 'interval node';
 interface State {
   date: string;
   theatre: string;
-  start: string;
-  end: string;
   assistant: string;
+  hasAssistant: boolean;
   anaesthetist: string;
   hasAnaesthetist: boolean;
   site: string;
@@ -41,9 +40,8 @@ interface State {
 const INITIAL_STATE: State = {
   date: '[DD/MM/YYYY]',
   theatre: '[Theatre]',
-  start: '[HH:MM]',
-  end: '[HH:MM]',
   assistant: '[Registrar Dr ____]',
+  hasAssistant: true,
   anaesthetist: '[Dr ____]',
   hasAnaesthetist: true,
   site: '[SITE]',
@@ -90,14 +88,13 @@ function renderMarkdown(s: State): string {
     `# OPERATION NOTE — Melanoma wide local excision + SLNB`,
     [
       `Date: ${s.date}    Theatre: ${s.theatre}    Elective`,
-      `Start: ${s.start}    End: ${s.end}`,
       `Surgeon: Mateusz Gładysz, Consultant Plastic and Hand Surgeon`,
-      `Assistant: ${s.assistant}`,
+      s.hasAssistant && `Assistant: ${s.assistant}`,
       s.hasAnaesthetist
         ? `Anaesthetist: ${s.anaesthetist}    Anaesthetic: GA`
         : `Anaesthetic: GA`,
       `WHO Surgical Safety Checklist: Sign-in / Time-out / Sign-out — completed.`,
-    ].join('\n'),
+    ].filter(Boolean).join('\n'),
     `## Diagnosis / Indication`,
     bullets([
       `Biopsy-proven cutaneous melanoma of ${s.site}.`,
@@ -196,23 +193,18 @@ function MelanomaWLE() {
               onInput={(e) => update('theatre', (e.currentTarget as HTMLInputElement).value)} />
           </label>
         </div>
-        <div class="opnote-row opnote-row-2">
-          <label class="opnote-field">
-            <span class="opnote-field-label">Start</span>
-            <input class="opnote-field-input" type="text" value={state.start}
-              onInput={(e) => update('start', (e.currentTarget as HTMLInputElement).value)} />
-          </label>
-          <label class="opnote-field">
-            <span class="opnote-field-label">End</span>
-            <input class="opnote-field-input" type="text" value={state.end}
-              onInput={(e) => update('end', (e.currentTarget as HTMLInputElement).value)} />
-          </label>
-        </div>
-        <label class="opnote-field">
-          <span class="opnote-field-label">Assistant</span>
-          <input class="opnote-field-input" type="text" value={state.assistant}
-            onInput={(e) => update('assistant', (e.currentTarget as HTMLInputElement).value)} />
+        <label class="opnote-toggle">
+          <input type="checkbox" checked={state.hasAssistant}
+            onChange={(e) => update('hasAssistant', (e.currentTarget as HTMLInputElement).checked)} />
+          <span class="opnote-toggle-label">Assistant present (uncheck for solo procedures)</span>
         </label>
+        {state.hasAssistant && (
+          <label class="opnote-field">
+            <span class="opnote-field-label">Assistant</span>
+            <input class="opnote-field-input" type="text" value={state.assistant}
+              onInput={(e) => update('assistant', (e.currentTarget as HTMLInputElement).value)} />
+          </label>
+        )}
         <label class="opnote-toggle">
           <input type="checkbox" checked={state.hasAnaesthetist}
             onChange={(e) => update('hasAnaesthetist', (e.currentTarget as HTMLInputElement).checked)} />
