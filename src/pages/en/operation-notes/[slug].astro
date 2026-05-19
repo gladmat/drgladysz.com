@@ -33,11 +33,7 @@ import {
 // in the compiler error for `client:only`.
 import SkinLesionExcision from '@/components/interactive/operation-notes/SkinLesionExcision';
 import MelanomaWLE from '@/components/interactive/operation-notes/MelanomaWLE';
-import HandFractureFixation from '@/components/interactive/operation-notes/HandFractureFixation';
-import FlexorTendonRepair from '@/components/interactive/operation-notes/FlexorTendonRepair';
-import ExtensorTendonRepair from '@/components/interactive/operation-notes/ExtensorTendonRepair';
-import NerveRepair from '@/components/interactive/operation-notes/NerveRepair';
-import HandLacerationDebridement from '@/components/interactive/operation-notes/HandLacerationDebridement';
+import HandTrauma from '@/components/interactive/operation-notes/HandTrauma';
 import HandInfectionDrainage from '@/components/interactive/operation-notes/HandInfectionDrainage';
 import FreeFlapReconstruction from '@/components/interactive/operation-notes/FreeFlapReconstruction';
 
@@ -124,11 +120,7 @@ const pageDescription = `${meta.indication} Interactive Markdown-emitting templa
       <h2 id="builder-heading" class="opnote-builder-heading">Template builder</h2>
       {slug === 'skin-lesion-excision' && <SkinLesionExcision client:load />}
       {slug === 'melanoma-wide-local-excision-slnb' && <MelanomaWLE client:load />}
-      {slug === 'hand-fracture-fixation' && <HandFractureFixation client:load />}
-      {slug === 'flexor-tendon-repair' && <FlexorTendonRepair client:load />}
-      {slug === 'extensor-tendon-repair' && <ExtensorTendonRepair client:load />}
-      {slug === 'nerve-repair' && <NerveRepair client:load />}
-      {slug === 'hand-laceration-debridement' && <HandLacerationDebridement client:load />}
+      {slug === 'hand-trauma' && <HandTrauma client:load />}
       {slug === 'hand-infection-drainage' && <HandInfectionDrainage client:load />}
       {slug === 'free-flap-reconstruction' && <FreeFlapReconstruction client:load />}
     </section>

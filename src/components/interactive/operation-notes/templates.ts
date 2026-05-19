@@ -9,25 +9,21 @@
 //
 // Adding a new template:
 //   1. Build site/src/components/interactive/operation-notes/<Name>.tsx
-//      with an exported `meta` and a default Component (Object.assign'd
-//      with .meta so `Component.meta` works without re-importing).
+//      with an exported `meta` and a default Component.
 //   2. Import it here and append to OPERATION_NOTE_TEMPLATES.
+//   3. Add an entry to OPERATION_NOTE_COMPONENTS (slug → component).
 
 import type { ComponentType } from 'preact';
 
 import SkinLesionExcision, { meta as skinLesionExcisionMeta } from './SkinLesionExcision';
 import MelanomaWLE, { meta as melanomaWleMeta } from './MelanomaWLE';
-import HandFractureFixation, { meta as handFractureFixationMeta } from './HandFractureFixation';
-import FlexorTendonRepair, { meta as flexorTendonRepairMeta } from './FlexorTendonRepair';
-import ExtensorTendonRepair, { meta as extensorTendonRepairMeta } from './ExtensorTendonRepair';
-import NerveRepair, { meta as nerveRepairMeta } from './NerveRepair';
-import HandLacerationDebridement, { meta as handLacerationDebridementMeta } from './HandLacerationDebridement';
+import HandTrauma, { meta as handTraumaMeta } from './HandTrauma';
 import HandInfectionDrainage, { meta as handInfectionDrainageMeta } from './HandInfectionDrainage';
 import FreeFlapReconstruction, { meta as freeFlapReconstructionMeta } from './FreeFlapReconstruction';
 
 export type OperationNoteCategory =
   | 'skin-soft-tissue'
-  | 'hand-trauma'
+  | 'hand-surgery'
   | 'free-flap';
 
 export interface OperationNoteTemplateMeta {
@@ -51,11 +47,7 @@ export interface OperationNoteTemplate {
 export const OPERATION_NOTE_TEMPLATES: OperationNoteTemplate[] = [
   { meta: skinLesionExcisionMeta, component: SkinLesionExcision },
   { meta: melanomaWleMeta, component: MelanomaWLE },
-  { meta: handFractureFixationMeta, component: HandFractureFixation },
-  { meta: flexorTendonRepairMeta, component: FlexorTendonRepair },
-  { meta: extensorTendonRepairMeta, component: ExtensorTendonRepair },
-  { meta: nerveRepairMeta, component: NerveRepair },
-  { meta: handLacerationDebridementMeta, component: HandLacerationDebridement },
+  { meta: handTraumaMeta, component: HandTrauma },
   { meta: handInfectionDrainageMeta, component: HandInfectionDrainage },
   { meta: freeFlapReconstructionMeta, component: FreeFlapReconstruction },
 ];
@@ -68,11 +60,7 @@ export const OPERATION_NOTE_TEMPLATES: OperationNoteTemplate[] = [
 export const OPERATION_NOTE_COMPONENTS: Record<string, ComponentType<{}>> = {
   'skin-lesion-excision': SkinLesionExcision,
   'melanoma-wide-local-excision-slnb': MelanomaWLE,
-  'hand-fracture-fixation': HandFractureFixation,
-  'flexor-tendon-repair': FlexorTendonRepair,
-  'extensor-tendon-repair': ExtensorTendonRepair,
-  'nerve-repair': NerveRepair,
-  'hand-laceration-debridement': HandLacerationDebridement,
+  'hand-trauma': HandTrauma,
   'hand-infection-drainage': HandInfectionDrainage,
   'free-flap-reconstruction': FreeFlapReconstruction,
 };
@@ -82,7 +70,7 @@ export const OPERATION_NOTE_CATEGORY_LABEL: Record<
   string
 > = {
   'skin-soft-tissue': 'Skin and soft tissue',
-  'hand-trauma': 'Hand trauma',
+  'hand-surgery': 'Hand surgery',
   'free-flap': 'Free flap reconstruction',
 };
 
@@ -92,15 +80,15 @@ export const OPERATION_NOTE_CATEGORY_BLURB: Record<
 > = {
   'skin-soft-tissue':
     'Excisions, biopsies, and reconstructions of cutaneous and subcutaneous lesions — benign and malignant.',
-  'hand-trauma':
-    'Acute injuries of the hand: fractures, tendon, nerve, soft-tissue, and infection. Almost always ACC-funded.',
+  'hand-surgery':
+    'Acute hand surgery: trauma (laceration / fracture / tendon / nerve, one accident covered by one note) and infection (PFT / deep space / septic arthritis). Almost always ACC-funded for trauma.',
   'free-flap':
     'Microvascular tissue transfer for complex composite defects after trauma or oncologic resection.',
 };
 
 export const OPERATION_NOTE_CATEGORY_ORDER: OperationNoteCategory[] = [
   'skin-soft-tissue',
-  'hand-trauma',
+  'hand-surgery',
   'free-flap',
 ];
 

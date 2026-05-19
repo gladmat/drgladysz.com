@@ -406,7 +406,7 @@ export const meta = {
   title: 'Hand infection drainage',
   indication:
     'Surgical drainage of hand-space infection. Type toggle: pyogenic flexor tenosynovitis / deep palmar space / septic arthritis.',
-  category: 'hand-trauma' as const,
+  category: 'hand-surgery' as const,
   emits:
     'Diagnosis · Type-specific approach · Cultures · Lavage · Splint · IV antibiotic plan · Re-look plan',
   lastReviewed: '2026-05-19',
