@@ -73,6 +73,11 @@ const references = citationOrder
 const glossaryOrder = extractGlossaryOrderFromBlocks([article.body]);
 const glossaryTerms = await getGlossaryTermsByIds(glossaryOrder);
 
+// Citation/glossary sidenotes float into the reserved 320px right gutter. When
+// an article has neither (e.g. narrative `news` pieces), that gutter sits empty
+// and strands the prose; collapse it so the body reads as a clean single column.
+const hasSidenotes = references.length > 0 || glossaryTerms.length > 0;
+
 const siteUrl = (
   import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com'
 ).replace(/\/$/, '');
@@ -236,10 +241,19 @@ const procedureCategoryLabel: Record<string, string> = {
           loading="eager"
           decoding="async"
         />
+        {article.heroImage?.credit && (
+          <figcaption class="article-hero-credit">
+            {article.heroImage.creditUrl ? (
+              <>Photo: <a href={article.heroImage.creditUrl} target="_blank" rel="noopener noreferrer">{article.heroImage.credit}</a></>
+            ) : (
+              <>Photo: {article.heroImage.credit}</>
+            )}
+          </figcaption>
+        )}
       </figure>
     )}
 
-    <div class="article-content">
+    <div class:list={['article-content', { 'article-content--flush': !hasSidenotes }]}>
       {article.keyPoints && (
         <KeyPoints
           question={article.keyPoints.question}
@@ -394,6 +408,25 @@ const procedureCategoryLabel: Record<string, string> = {
     object-fit: cover;
   }
 
+  /* Open-access image attribution (e.g. CC-BY credit) under the hero. */
+  .article-hero-credit {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--ink-3);
+    margin: 8px 0 0;
+  }
+
+  .article-hero-credit a {
+    color: var(--ink-3);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .article-hero-credit a:hover {
+    color: var(--accent);
+  }
+
   /* Body container — reserves a 320px right gutter on desktop ≥1024px so
      <Citation>'s right-floated sidenote can land in the margin without
      overlapping prose. Below 1024px the gutter collapses and citations open
@@ -408,6 +441,21 @@ const procedureCategoryLabel: Record<string, string> = {
     .article-content {
       padding-right: 320px;
       max-width: 1040px;
+    }
+  }
+
+  /* No citations/glossary → no sidenotes will ever float into the gutter.
+     Drop the reserved 320px column so the body isn't stranded against the left
+     with a wide empty band; the prose keeps its comfortable reading measure and
+     stays left-aligned with the header. */
+  .article-content.article-content--flush {
+    max-width: 720px;
+  }
+
+  @media (min-width: 1024px) {
+    .article-content.article-content--flush {
+      padding-right: 0;
+      max-width: 720px;
     }
   }
 

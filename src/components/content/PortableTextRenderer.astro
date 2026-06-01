@@ -165,7 +165,26 @@ function imageSrcSet(img: SanityImage) {
     ) : null,
   );
 
-  if (style === 'h2') return <h2 class="pt-h2">{renderedChildren}</h2>;
+  if (style === 'h2') {
+    // Narrative section headings authored as "Part N — Title" get the site's
+    // editorial masthead treatment: a mono oxblood "PART N" kicker above the
+    // serif title (mirrors SectionMasthead's section-label). Only fires when the
+    // whole heading is a single unmarked span matching the pattern; every other
+    // h2 (clinical sections, "Why I wrote this", etc.) renders unchanged.
+    const headingText = (block.children ?? []).map((c) => (c as any).text ?? '').join('');
+    const partMatch = headingText.match(/^Part\s+([0-9]+|[IVXLC]+)\s*[—–-]\s*(.+)$/i);
+    const singleUnmarked =
+      (block.children ?? []).length === 1 &&
+      (((block.children?.[0] as any)?.marks?.length ?? 0) === 0);
+    if (partMatch && singleUnmarked) {
+      return (
+        <h2 class="pt-h2 pt-h2--part">
+          <span class="pt-h2-num">Part {partMatch[1]}</span>{partMatch[2]}
+        </h2>
+      );
+    }
+    return <h2 class="pt-h2">{renderedChildren}</h2>;
+  }
   if (style === 'h3') return <h3 class="pt-h3">{renderedChildren}</h3>;
   if (style === 'h4') return <h4 class="pt-h4">{renderedChildren}</h4>;
   if (style === 'h5') return <h5 class="pt-h5">{renderedChildren}</h5>;
@@ -195,6 +214,14 @@ function imageSrcSet(img: SanityImage) {
     color: var(--ink);
     margin: 0 0 24px;
     max-width: none;
+    /* Smooth the right rag and avoid stranded last-line words. Hyphenation
+       (Safari needs the -webkit- prefix) breaks long words so the ragged edge
+       isn't jagged; conservative limits keep it from over-hyphenating short
+       words or technical terms. */
+    text-wrap: pretty;
+    -webkit-hyphens: auto;
+    hyphens: auto;
+    hyphenate-limit-chars: 7 4 3;
   }
 
   .pt-h2 {
@@ -205,6 +232,23 @@ function imageSrcSet(img: SanityImage) {
     color: var(--ink);
     margin: 56px 0 20px;
     letter-spacing: -0.018em;
+    text-wrap: balance;
+  }
+
+  /* "Part N — Title" headings: mono oxblood kicker above the serif title. */
+  .pt-h2--part {
+    margin-top: 64px;
+  }
+
+  .pt-h2-num {
+    display: block;
+    font-family: var(--mono);
+    font-weight: 500;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
   }
 
   .pt-h3 {
@@ -215,6 +259,7 @@ function imageSrcSet(img: SanityImage) {
     color: var(--ink);
     margin: 40px 0 14px;
     letter-spacing: -0.012em;
+    text-wrap: balance;
   }
 
   .pt-h4 {

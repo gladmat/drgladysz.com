@@ -79,6 +79,11 @@ export type SanityImage = {
   caption?: string;
   hotspot?: unknown;
   crop?: unknown;
+  // Attribution, projected from the underlying asset's metadata
+  // (`creditLine` + `source.url`). Populated for open-access/licensed images;
+  // rendered as a small credit caption under the hero. See ARTICLE_PROJECTION.
+  credit?: string | null;
+  creditUrl?: string | null;
 };
 
 export type SanityGlossaryTerm = {
@@ -382,7 +387,7 @@ const ARTICLE_PROJECTION = /* groq */ `{
     affiliations, alumniOf, knowsAbout, sameAs
   },
   publishedDate, lastUpdated, excerpt, standfirst,
-  heroImage,
+  heroImage{ ..., "credit": asset->creditLine, "creditUrl": asset->source.url },
   keyPoints,
   body,
   faq,
