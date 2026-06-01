@@ -249,6 +249,18 @@ function imageSrcSet(img: SanityImage) {
     color: var(--ink-2);
   }
 
+  /* A multi-line callout authored as consecutive `> ` lines (e.g. a bold label
+     line followed by its body) renders as separate blockquote blocks. Collapse
+     the margin between adjacent blockquotes so they read as ONE callout with an
+     unbroken oxblood rule; the retained 8px padding keeps a small gap between
+     the label and body. Lone blockquotes keep their full 32px spacing. */
+  .pt-blockquote:has(+ .pt-blockquote) {
+    margin-bottom: 0;
+  }
+  .pt-blockquote + .pt-blockquote {
+    margin-top: 0;
+  }
+
   .pt-list {
     margin: 0 0 24px;
     padding-left: 24px;
