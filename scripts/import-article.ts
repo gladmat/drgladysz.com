@@ -24,16 +24,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const folder = process.argv[2];
-if (!folder) {
-  console.error(
-    'Usage: node --experimental-strip-types scripts/import-article.ts <folder>',
-  );
-  process.exit(1);
-}
 
+// Tolerate an absent folder at import time: this module is also imported as a
+// library (for its exported buildBody) by one-off seed scripts. PACKAGE_DIR is
+// only dereferenced inside main() via readPackageFile/readYaml, which only run
+// on a direct CLI invocation (see the isDirectRun guard at the bottom).
 const PACKAGE_DIR = resolve(
   __dirname,
-  `../../01-brand-system/articles/${folder}`,
+  `../../01-brand-system/articles/${folder ?? ''}`,
 );
 
 // The Phase 5 author doc was seeded with a UUID _id rather than the slug-form
@@ -312,7 +310,7 @@ function tokensToBlock(
 //   - paragraphs spanning multiple lines, joined by spaces, flushed on blank line
 // Inline tokens (em, strong, link, citation, glossary) work identically inside
 // any block kind because tokenisation is line-content-agnostic.
-function buildBody(
+export function buildBody(
   bodyMd: string,
   glossarySlugs: Set<string>,
   refSlugs: Set<string>,
@@ -833,4 +831,17 @@ function main() {
   process.stdout.write(JSON.stringify(out, null, 2) + '\n');
 }
 
-main();
+// Run the CLI only when invoked directly (node … import-article.ts <folder>).
+// When this module is imported for its exported helpers (e.g. by a one-off
+// seed script reusing buildBody), main() must not fire.
+const isDirectRun =
+  process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1]);
+if (isDirectRun) {
+  if (!folder) {
+    console.error(
+      'Usage: node --experimental-strip-types scripts/import-article.ts <folder>',
+    );
+    process.exit(1);
+  }
+  main();
+}
