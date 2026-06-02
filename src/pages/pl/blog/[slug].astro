@@ -55,6 +55,11 @@ const references = citationOrder
 const glossaryOrder = extractGlossaryOrderFromBlocks([article.body]);
 const glossaryTerms = await getGlossaryTermsByIds(glossaryOrder);
 
+// Collapse the reserved 320px sidenote gutter when an article has no
+// citations/glossary, so the prose reads as a clean single column. Mirrors the
+// EN blog route.
+const hasSidenotes = references.length > 0 || glossaryTerms.length > 0;
+
 const siteUrl = (
   import.meta.env.PUBLIC_SITE_URL || 'https://drgladysz.com'
 ).replace(/\/$/, '');
@@ -211,10 +216,19 @@ const procedureCategoryLabel: Record<string, string> = {
           loading="eager"
           decoding="async"
         />
+        {article.heroImage?.credit && (
+          <figcaption class="article-hero-credit">
+            {article.heroImage.creditUrl ? (
+              <>Zdjęcie: <a href={article.heroImage.creditUrl} target="_blank" rel="noopener noreferrer">{article.heroImage.credit}</a></>
+            ) : (
+              <>Zdjęcie: {article.heroImage.credit}</>
+            )}
+          </figcaption>
+        )}
       </figure>
     )}
 
-    <div class="article-content">
+    <div class:list={['article-content', { 'article-content--flush': !hasSidenotes }]}>
       {article.keyPoints && (
         <KeyPoints
           question={article.keyPoints.question}
@@ -371,6 +385,25 @@ const procedureCategoryLabel: Record<string, string> = {
     object-fit: cover;
   }
 
+  /* Open-access image attribution (e.g. CC-BY credit) under the hero. */
+  .article-hero-credit {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--ink-3);
+    margin: 8px 0 0;
+  }
+
+  .article-hero-credit a {
+    color: var(--ink-3);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .article-hero-credit a:hover {
+    color: var(--accent);
+  }
+
   .article-content {
     max-width: 720px;
     margin: 0;
@@ -381,6 +414,18 @@ const procedureCategoryLabel: Record<string, string> = {
     .article-content {
       padding-right: 320px;
       max-width: 1040px;
+    }
+  }
+
+  /* No citations/glossary → drop the empty sidenote gutter (mirrors EN blog). */
+  .article-content.article-content--flush {
+    max-width: 720px;
+  }
+
+  @media (min-width: 1024px) {
+    .article-content.article-content--flush {
+      padding-right: 0;
+      max-width: 720px;
     }
   }
 
