@@ -28,6 +28,10 @@
 - [Calculators (EN)](https://drgladysz.com/en/calculators/) — QuickDASH and validated upper-limb patient-reported outcome instruments.
 - [Kalkulatory kliniczne (PL)](https://drgladysz.com/pl/kalkulatory/)
 
+## Operation note templates (English only)
+
+- [Operation notes index](https://drgladysz.com/en/operation-notes/) — structured, interactive operation-note templates for hand-surgery procedures (composable hand-trauma template plus procedure-specific notes), intended for surgeons and trainees.
+
 ## FESSH MCQ preparation (English only)
 
 - [learn.drgladysz.com](https://learn.drgladysz.com/) — single-author, literature-checked FESSH Diploma preparation. 5 True/False statements per question. Every published question carries an audit-trail block (Question ID / First published / Last reviewed / Version). Single-author resource — not peer-reviewed in the formal sense; integrity layer is the visible per-question errata mechanism plus citation-backed evidence.
