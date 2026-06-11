@@ -107,10 +107,14 @@ const pmc = pmcUrl(reference.pmcid);
      the @media block at the bottom inverts this. */
   .cite-anchor {
     display: none;
+    position: relative;
     color: var(--accent);
     text-decoration: none;
     border-bottom: 1px dotted var(--accent);
-    padding: 0 2px;
+    /* Expand the hit area to the 24px minimum target size (WCAG 2.5.8)
+       without shifting the inline superscript layout. */
+    padding: 6px 4px;
+    margin: -6px -2px;
   }
 
   .cite-anchor:hover {
@@ -126,7 +130,10 @@ const pmc = pmcUrl(reference.pmcid);
   .cite-button {
     background: none;
     border: 0;
-    padding: 0 2px;
+    position: relative;
+    /* Same 24px-minimum hit-area expansion as .cite-anchor (WCAG 2.5.8). */
+    padding: 6px 4px;
+    margin: -6px -2px;
     color: var(--accent);
     font: inherit;
     cursor: pointer;
