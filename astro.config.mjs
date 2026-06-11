@@ -112,11 +112,13 @@ export default defineConfig({
   // redirects for the FEBHS MCQ sub-application (per brand spec v1.8
   // Decision #29/30 — MCQ lives on learn.drgladysz.com, not the main domain).
   redirects: {
-    // Bare apex → English (default locale). With `prefixDefaultLocale: true`,
-    // `/` would otherwise 404. Polish-browser detection isn't done at launch
-    // because the full PL site is still in composition; revisit when /pl/
-    // becomes a real home page.
-    '/': '/en/',
+    // Bare apex `/` is handled in vercel.json (NOT here): language-aware
+    // 307s — visitors from Poland (x-vercel-ip-country) or with a Polish
+    // Accept-Language land on /pl/, everyone else on /en/. Deliberately
+    // temporary redirects so browsers never cache one language for a
+    // returning visitor. Added 2026-06-11 once /pl/ was a real home page.
+    // (An entry here would emit a cacheable static 301 that shadows the
+    // conditional edge rules — do not re-add '/'.)
 
     // English content. Destinations include the trailing slash to match
     // the site-wide trailingSlash: 'always' policy — without this Vercel

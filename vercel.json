@@ -1,6 +1,19 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "redirects": [
+    {
+      "source": "/",
+      "has": [{ "type": "header", "key": "x-vercel-ip-country", "value": "PL" }],
+      "destination": "/pl/",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "header", "key": "accept-language", "value": "pl.*" }],
+      "destination": "/pl/",
+      "permanent": false
+    },
+    { "source": "/", "destination": "/en/", "permanent": false },
     { "source": "/about/", "destination": "/en/about/", "permanent": true },
     { "source": "/blog/", "destination": "/en/blog/", "permanent": true },
     { "source": "/extensor-tendon-injuries/", "destination": "/en/blog/extensor-tendon-injuries/", "permanent": true },
