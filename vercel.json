@@ -1,5 +1,23 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "redirects": [
+    { "source": "/about/", "destination": "/en/about/", "permanent": true },
+    { "source": "/blog/", "destination": "/en/blog/", "permanent": true },
+    { "source": "/extensor-tendon-injuries/", "destination": "/en/blog/extensor-tendon-injuries/", "permanent": true },
+    { "source": "/scaphoid-fractures/", "destination": "/en/blog/scaphoid-fractures/", "permanent": true },
+    { "source": "/flexor-tendon-injuries-and-repair/", "destination": "/en/blog/flexor-tendon-injuries-and-repair/", "permanent": true },
+    { "source": "/carpal-tunnel-syndrome-doctors-explanation/", "destination": "/en/blog/carpal-tunnel-syndrome/", "permanent": true },
+    { "source": "/homepage/contact/", "destination": "/en/contact/", "permanent": true },
+    { "source": "/zespol-ciesni-nadgarstka/", "destination": "/pl/blog/zespol-ciesni-nadgarstka/", "permanent": true },
+    { "source": "/wp-content/:path*", "destination": "/en/", "permanent": true },
+    { "source": "/feed/", "destination": "/en/blog/", "permanent": true },
+    { "source": "/en/learn/", "destination": "https://learn.drgladysz.com/", "permanent": true },
+    { "source": "/pl/nauka/", "destination": "https://learn.drgladysz.com/", "permanent": true },
+    { "source": "/en/glossary/wyniki-raportowane-przez-pacjenta/", "destination": "/en/glossary/patient-reported-outcome-measures/", "permanent": true },
+    { "source": "/pl/slowniczek/wyniki-raportowane-przez-pacjenta/", "destination": "/pl/slowniczek/patient-reported-outcome-measures/", "permanent": true },
+    { "source": "/en/glossary/guzek-dd/", "destination": "/en/glossary/dupuytrens-nodule/", "permanent": true },
+    { "source": "/pl/slowniczek/guzek-dd/", "destination": "/pl/slowniczek/dupuytrens-nodule/", "permanent": true }
+  ],
   "headers": [
     {
       "source": "/(.*)",
