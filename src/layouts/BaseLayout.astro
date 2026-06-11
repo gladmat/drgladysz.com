@@ -137,7 +137,7 @@ if (heroPreload) {
   {alternateUrl && (
     <link rel="alternate" hreflang={altLangCode} href={`${siteUrl}${alternateUrl}`} />
   )}
-  <link rel="alternate" hreflang="x-default" href={`${siteUrl}/en/`} />
+  <link rel="alternate" hreflang="x-default" href={locale === 'pl' && alternateUrl ? `${siteUrl}${alternateUrl}` : canonicalUrl} />
   
   <!-- Open Graph -->
   <meta property="og:type" content={ogType} />

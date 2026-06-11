@@ -497,7 +497,7 @@ export function generateDefinedTermSetSchema({
         locale === 'pl' && t.shortDefinitionPolish
           ? t.shortDefinitionPolish
           : t.shortDefinition,
-      url: `${termUrlPrefix}${t.slug.current}`,
+      url: `${termUrlPrefix}${t.slug.current}/`,
     })),
   };
 }
