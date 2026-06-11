@@ -25,8 +25,8 @@
           "value": "max-age=63072000; includeSubDomains; preload"
         },
         {
-          "key": "Content-Security-Policy-Report-Only",
-          "value": "default-src 'self'; script-src 'self'; img-src 'self' data: https://cdn.sanity.io; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self' https://plausible.io https://cdn.sanity.io; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors 'none'"
         }
       ]
     },

@@ -177,7 +177,11 @@ const contactPageJsonLd = generateContactPageSchema({
           The form sends correspondence to <a href="mailto:office@drgladysz.com">office@drgladysz.com</a>. Replies are sent from the same address. Specific clinical advice is not provided by email.
         </p>
       </form>
-      <script is:inline>
+      {/* Processed (not is:inline) so Astro bundles it — required by the
+          hash-based CSP: unprocessed inline scripts aren't hashed and would
+          be blocked by script-src. Runs as a deferred module; the form is
+          progressively enhanced, so the delay is harmless. */}
+      <script>
         (() => {
           const form = document.querySelector('[data-contact-form]');
           if (!form) return;

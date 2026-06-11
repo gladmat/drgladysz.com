@@ -62,6 +62,52 @@ export default defineConfig({
     domains: ['cdn.sanity.io'], // Allow Sanity-hosted images
   },
 
+  // Content Security Policy (stable in Astro 6). Astro emits a per-page
+  // <meta http-equiv="content-security-policy"> carrying script-src with
+  // sha256 hashes for its bundled inline scripts (the island hydration
+  // bootstraps on /en/operation-notes/*) — this is what makes an enforcing
+  // policy possible without 'unsafe-inline' for scripts. frame-ancestors
+  // is ignored in meta CSP, so it ships as the (enforcing) header in
+  // vercel.json instead. The two halves don't overlap, so there is no
+  // multiple-policy intersection to reason about.
+  security: {
+    csp: {
+      scriptDirective: {
+        resources: ["'self'"],
+      },
+      styleDirective: {
+        // Astro always pins hashes for its island-runtime styles into
+        // style-src, and per the CSP spec a hash neutralises
+        // 'unsafe-inline' in the same directive — so this 'unsafe-inline'
+        // only matters for pre-CSP3 browsers. Modern browsers get style
+        // attributes via style-src-attr below.
+        resources: ["'self'", "'unsafe-inline'"],
+      },
+      directives: [
+        "default-src 'self'",
+        "img-src 'self' data: https://cdn.sanity.io",
+        "font-src 'self' data:",
+        // plausible.io: the self-hosted /js/plausible.js posts events to
+        // plausible.io's collection API (data-api in BaseLayout).
+        "connect-src 'self' https://plausible.io https://cdn.sanity.io",
+        "object-src 'none'",
+        "base-uri 'self'",
+        // style-src-attr is REQUIRED: Astro pins island-runtime style
+        // hashes into style-src, and a hash in style-src makes browsers
+        // ignore its 'unsafe-inline' — without this directive every
+        // style="" attribute breaks (PhotoBreak figureStyle, Standfirst
+        // custom property, GlossaryTerm anchor positioning, the underline
+        // decorator in PortableTextSpan). Astro's config schema doesn't
+        // (yet) allowlist "style-src-attr" as its own entry, but entries
+        // are validated with startsWith() and serialized verbatim with
+        // ';' joins — so it ships appended to form-action. If an Astro
+        // upgrade tightens that validation, the build fails loudly here:
+        // re-split this entry once "style-src-attr" is allowlisted.
+        "form-action 'self'; style-src-attr 'unsafe-inline'",
+      ],
+    },
+  },
+
   // Locked 301 redirects from existing WordPress site, plus subdomain
   // redirects for the FEBHS MCQ sub-application (per brand spec v1.8
   // Decision #29/30 — MCQ lives on learn.drgladysz.com, not the main domain).
@@ -99,6 +145,7 @@ export default defineConfig({
     '/wp-content/': '/en/',
     '/feed/': '/en/blog/',
     '/sitemap_index.xml': '/sitemap-index.xml',
+
   },
 
   // Markdown pipeline. The section-masthead plugin recognises the locked
