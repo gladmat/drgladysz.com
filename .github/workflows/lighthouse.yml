@@ -90,4 +90,5 @@ jobs:
             --collect.url="$BASE/en/" \
             --collect.url="$BASE/en/blog/scaphoid-fractures/" \
             --collect.url="$BASE/en/procedures/open-carpal-tunnel-release/" \
-            --collect.url="$BASE/pl/zabiegi/zespol-ciesni-nadgarstka/"
+            --collect.url="$BASE/pl/zabiegi/zespol-ciesni-nadgarstka/" \
+            --collect.url="$BASE/en/operation-notes/hand-trauma/"
