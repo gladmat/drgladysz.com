@@ -146,6 +146,14 @@ export default defineConfig({
     '/feed/': '/en/blog/',
     '/sitemap_index.xml': '/sitemap-index.xml',
 
+    // Glossary re-slugs (2026-06-11 audit, finding B8): two terms were
+    // seeded with Polish slugs against the canonical-EN-slug rule. The
+    // glossary is single-doc-bilingual, so each re-slug moves both the EN
+    // and PL URL.
+    '/en/glossary/wyniki-raportowane-przez-pacjenta/': '/en/glossary/patient-reported-outcome-measures/',
+    '/pl/slowniczek/wyniki-raportowane-przez-pacjenta/': '/pl/slowniczek/patient-reported-outcome-measures/',
+    '/en/glossary/guzek-dd/': '/en/glossary/dupuytrens-nodule/',
+    '/pl/slowniczek/guzek-dd/': '/pl/slowniczek/dupuytrens-nodule/',
   },
 
   // Markdown pipeline. The section-masthead plugin recognises the locked
