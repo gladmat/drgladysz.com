@@ -281,8 +281,8 @@ function lesionProcedureSteps(l: Lesion): string[] {
       return [
         ...common,
         `Defect templated; donor site: ${l.ftsgDonor}.`,
-        `FTSG harvested, defatted, inset with 5-0 nylon interrupted; tie-over bolster placed (Jelonet + saline-soaked cotton wool + 4-0 silk anchor sutures).`,
-        `Donor closed primarily: 4-0 Monocryl deep dermal; 5-0 nylon skin.`,
+        `FTSG harvested, defatted, inset with 4-0 Vicryl Rapide interrupted; tie-over bolster placed (Jelonet + saline-soaked cotton wool + 4-0 silk anchor sutures).`,
+        `Donor closed primarily: 3-0 Monocryl deep dermal; 3-0 Monocryl intradermal running.`,
       ];
     case 'stsg':
       return [
@@ -311,10 +311,13 @@ function lesionProcedureSteps(l: Lesion): string[] {
 //   woundCare — dressing handling, bolster, donor site, precautions
 //   removal   — what comes out and when
 //   day       — earliest removal day, drives the follow-up interval
+//   visitReason — what the first clinic visit is actually for. FTSG has
+//                 nothing to remove, so "(suture removal)" would be wrong.
 interface ClosureAftercare {
   woundCare: string[];
   removal: string[];
   day: number;
+  visitReason: string;
 }
 
 // Skin sutures on the lesion itself, for the two closures that have them.
@@ -335,7 +338,12 @@ function lesionAftercare(l: Lesion): ClosureAftercare {
   switch (l.closureType) {
     case 'direct': {
       const { line, day } = skinSutureRemoval(l);
-      return { woundCare: [dryDressing], removal: [line], day };
+      return {
+        woundCare: [dryDressing],
+        removal: [line],
+        day,
+        visitReason: 'suture removal',
+      };
     }
     case 'flap': {
       const { line, day } = skinSutureRemoval(l);
@@ -347,12 +355,15 @@ function lesionAftercare(l: Lesion): ClosureAftercare {
         ],
         removal: [line],
         day,
+        visitReason: 'suture removal',
       };
     }
-    case 'ftsg': {
-      // The donor is closed with 5-0 nylon in the procedure steps, so it has
-      // its own removal timing — driven by the donor site, not the lesion.
-      const facialDonor = isFacialSite(l.ftsgDonor);
+    case 'ftsg':
+      // Nothing to remove: the graft is inset in 4-0 Vicryl Rapide, which
+      // sloughs on its own, and the donor is closed intradermally in buried
+      // Monocryl. Only the bolster and its silk anchors come off, and that is
+      // already stated in the wound-care bullet. The note says so explicitly
+      // so the clinic does not go looking for a suture line.
       return {
         woundCare: [
           `Tie-over bolster left undisturbed until day 7; graft inspected at bolster removal.`,
@@ -360,12 +371,14 @@ function lesionAftercare(l: Lesion): ClosureAftercare {
           `Once healed: daily moisturiser and massage; sun protection for 12 months.`,
         ],
         removal: [
-          `Graft sutures out with the bolster at 7 days.`,
-          `Donor sutures out at ${facialDonor ? '5–7' : '10–14'} days (${l.ftsgDonor.toLowerCase()} donor).`,
+          // Scoped to "graft and donor" rather than a bare "no sutures to
+          // remove", so it cannot be read as contradicting another lesion's
+          // suture-removal bullet in a multi-lesion note.
+          `Graft and donor need no suture removal — 4-0 Vicryl Rapide inset (sloughs by 10–14 days), donor closed with buried Monocryl.`,
         ],
         day: 7,
+        visitReason: 'graft check and bolster removal',
       };
-    }
     case 'stsg':
       return {
         woundCare: [
@@ -374,6 +387,7 @@ function lesionAftercare(l: Lesion): ClosureAftercare {
         ],
         removal: [`Staples out at 7–10 days.`],
         day: 7,
+        visitReason: 'graft check and staple removal',
       };
   }
 }
@@ -390,12 +404,16 @@ function isMalignant(l: Lesion): boolean {
 // and the histology visit is only offered when something went to histology
 // that can come back malignant.
 function autoFollowUp(s: State): string {
-  const earliest = Math.min(...s.lesions.map((l) => lesionAftercare(l).day));
-  const removalVisit = earliest <= 7 ? '1 week' : '2 weeks';
+  const care = s.lesions.map(lesionAftercare);
+  const earliest = Math.min(...care.map((c) => c.day));
+  const firstVisit = earliest <= 7 ? '1 week' : '2 weeks';
+  // Say what the visit is for, not "suture removal" by reflex — an FTSG has
+  // nothing to remove, it is a bolster-down and graft check.
+  const reasons = [...new Set(care.map((c) => c.visitReason))].join(', ');
   const histology = s.lesions.some(isMalignant)
     ? ' and 6 weeks (with histology)'
     : '';
-  return `Plastics clinic ${removalVisit} (suture removal)${histology}`;
+  return `Plastics clinic ${firstVisit} (${reasons})${histology}`;
 }
 
 function followUpValue(s: State): string {
@@ -940,7 +958,7 @@ export const meta = {
   emits:
     'Indication · Per-lesion pathology and margin · Site-driven skin prep · Per-lesion closure procedure and skin suture · Per-lesion specimen orientation · Closure-specific post-op plan, removals and follow-up',
   lastReviewed: '2026-08-11',
-  version: '1.3',
+  version: '1.4',
 };
 
 export default SkinLesionExcision;
