@@ -192,7 +192,7 @@ function renderMarkdown(s: State): string {
   return joinSections(
     `# OPERATION NOTE — Free flap reconstruction`,
     [
-      `Date: ${s.date}Elective`,
+      `Date: ${s.date}    Elective`,
       `Primary surgeon: Mateusz Gładysz, Consultant Plastic and Hand Surgeon`,
       s.hasAssistant && `Assistant: ${s.assistant}`,
       s.hasAnaesthetist

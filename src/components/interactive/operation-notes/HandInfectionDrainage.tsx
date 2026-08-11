@@ -184,7 +184,7 @@ function renderMarkdown(s: State): string {
   return joinSections(
     `# OPERATION NOTE — Hand infection drainage`,
     [
-      `Date: ${s.date}Acute`,
+      `Date: ${s.date}    Acute`,
       `Surgeon: Mateusz Gładysz, Consultant Plastic and Hand Surgeon`,
       s.hasAssistant && `Assistant: ${s.assistant}`,
       s.hasAnaesthetist
