@@ -6,10 +6,21 @@
 // Margin matrix per Australian and New Zealand Melanoma Guidelines
 // (Sladden et al., MJA 2018) / SCNZ 4th Edition. Form lets the surgeon
 // override the guideline value with a documented rationale.
+//
+// Skin prep (v1.1) follows the lesion site: a facial / periocular primary
+// switches to povidone-iodine aqueous, with a manual override either way.
+// Anaesthesia stays GA — WLE + SLNB has no local-infiltration line.
 
 import { useState, useCallback } from 'preact/hooks';
 import OperationNoteShell from './_shared/OperationNoteShell';
 import { joinSections, bullets, numbered, todayNZ } from './_shared/markdown';
+import {
+  isFacialSite,
+  resolvePrepAgent,
+  prepAgentPhrase,
+  PREP_AGENT_LABEL,
+  type PrepAgent,
+} from './_shared/sites';
 
 type Stage = 'in-situ' | 'pT1' | 'pT2' | 'pT3' | 'pT4';
 
@@ -21,6 +32,7 @@ interface State {
   hasAssistant: boolean;
   anaesthetist: string;
   hasAnaesthetist: boolean;
+  prepAgent: PrepAgent;
   site: string;
   breslowMm: string;
   ulcerated: boolean;
@@ -42,6 +54,7 @@ const INITIAL_STATE: State = {
   hasAssistant: true,
   anaesthetist: '[Dr ____]',
   hasAnaesthetist: true,
+  prepAgent: 'auto',
   site: '[SITE]',
   breslowMm: '[___]',
   ulcerated: false,
@@ -81,11 +94,17 @@ const STAGE_GUIDELINE_MARGIN: Record<Stage, string> = {
   pT4: '20 mm',
 };
 
+function prepLine(s: State): string {
+  const facial = isFacialSite(s.site);
+  const agent = resolvePrepAgent(s.prepAgent, facial);
+  return `Supine; [arm abducted / leg externally rotated / head turned] for ${s.basin} access. Prep ${prepAgentPhrase(agent, facial)}. Wide drape.`;
+}
+
 function renderMarkdown(s: State): string {
   return joinSections(
     `# OPERATION NOTE — Melanoma wide local excision + SLNB`,
     [
-      `Date: ${s.date}Elective`,
+      `Date: ${s.date}    Elective`,
       `Surgeon: Mateusz Gładysz, Consultant Plastic and Hand Surgeon`,
       s.hasAssistant && `Assistant: ${s.assistant}`,
       s.hasAnaesthetist
@@ -116,7 +135,7 @@ function renderMarkdown(s: State): string {
       `Lymphoscintigraphy performed [date, time]: Tc-99m antimony sulphide colloid injected intradermally peri-lesionally; SLN basin identified: ${s.basin}. Number of hot nodes on SPECT-CT: ${s.hotNodesOnSpect}. Skin marked.`,
     ]),
     `## Position / Prep / Drape`,
-    `Supine; [arm abducted / leg externally rotated / head turned] for ${s.basin} access. Prep 0.5% chlorhexidine-alcohol. Wide drape.`,
+    prepLine(s),
     `## Anaesthesia / Antibiotics`,
     `GA. Cefazolin 2 g IV at induction. Tourniquet not used (interferes with dye dynamics).`,
     `## Procedure — SLNB first, then WLE`,
@@ -305,6 +324,22 @@ function MelanomaWLE() {
 
       <div class="opnote-section">
         <p class="opnote-section-title">Perioperative</p>
+        <div class="opnote-field">
+          <span class="opnote-field-label">Skin prep</span>
+          <div class="opnote-radio-group opnote-radio-group-cols-3" role="radiogroup" aria-label="Skin prep agent">
+            {(['auto', 'chlorhexidine', 'betadine'] as const).map((v) => (
+              <label class="opnote-radio">
+                <input type="radio" name="prep" value={v} checked={state.prepAgent === v}
+                  onChange={() => update('prepAgent', v)} />
+                <span>
+                  {v === 'auto'
+                    ? `Auto — ${PREP_AGENT_LABEL[resolvePrepAgent('auto', isFacialSite(state.site))]}`
+                    : PREP_AGENT_LABEL[v]}
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
         <label class="opnote-field">
           <span class="opnote-field-label">Estimated blood loss (mL)</span>
           <input class="opnote-field-input" type="text" value={state.ebl}
@@ -331,9 +366,9 @@ export const meta = {
     'Wide local excision of biopsy-proven cutaneous melanoma with sentinel lymph node biopsy. Margin matrix per ANZ Melanoma Guidelines (Sladden 2018) / SCNZ 4th Edition.',
   category: 'skin-soft-tissue' as const,
   emits:
-    'Histology · AJCC 8 pT · Configurable margin matrix · Lymphoscintigraphy · Patent blue + gamma probe · WLE · Surveillance plan',
-  lastReviewed: '2026-05-19',
-  version: '1.0',
+    'Histology · AJCC 8 pT · Configurable margin matrix · Site-driven skin prep · Lymphoscintigraphy · Patent blue + gamma probe · WLE · Surveillance plan',
+  lastReviewed: '2026-08-11',
+  version: '1.1',
 };
 
 export default MelanomaWLE;

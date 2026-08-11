@@ -14,10 +14,24 @@
 //                  Specimens; shared anaesthesia / tourniquet / antibiotics /
 //                  EBL / post-op kept at case level
 // Consent risks are the union of closure-specific risks across all lesions.
+//
+// Site-driven defaults (v1.2): a facial / periocular lesion site switches the
+// skin prep to povidone-iodine aqueous and the direct/flap skin closure to a
+// running 6-0 nylon. Both are `auto` by default and can be forced either way.
+// Suture-removal timing and the follow-up interval are then derived from the
+// resolved closure rather than hardcoded — a face closed with running nylon
+// gets a 5-day removal and a 1-week clinic slot, not the old flat 2 weeks.
 
 import { useState, useCallback } from 'preact/hooks';
 import OperationNoteShell from './_shared/OperationNoteShell';
 import { joinSections, bullets, numbered, ifSection, todayNZ } from './_shared/markdown';
+import {
+  isFacialSite,
+  resolvePrepAgent,
+  prepAgentPhrase,
+  PREP_AGENT_LABEL,
+  type PrepAgent,
+} from './_shared/sites';
 
 type Pathology =
   | 'BCC'
@@ -48,12 +62,25 @@ type FtsgDonor =
 
 type StsgDonor = 'Anterolateral thigh' | 'Buttock';
 
+// Skin-suture technique + gauge for direct closure and local-flap inset.
+// `auto` resolves per-lesion from the site: facial → running 6-0 (the usual
+// facial closure), everything else → interrupted 5-0 (the pre-v1.2 default).
+type SkinSuture =
+  | 'auto'
+  | 'interrupted-5-0'
+  | 'interrupted-6-0'
+  | 'running-5-0'
+  | 'running-6-0';
+
+type ResolvedSkinSuture = Exclude<SkinSuture, 'auto'>;
+
 interface Lesion {
   site: string;
   size: string;
   pathology: Pathology;
   margin: string;
   closureType: ClosureType;
+  skinSuture: SkinSuture;
   ftsgDonor: FtsgDonor;
   stsgDonor: StsgDonor;
   stsgThickness: '0.008' | '0.010' | '0.012';
@@ -71,6 +98,7 @@ interface State {
   anaesthetist: string;
   hasAnaesthetist: boolean;
   anaesthesiaType: AnaesthesiaType;
+  prepAgent: PrepAgent;
   lesions: Lesion[];
   tourniquetUsed: boolean;
   tourniquetPressure: string;
@@ -82,6 +110,9 @@ interface State {
   accClaim: boolean;
   acc45: string;
   accMechanism: string;
+  // `auto` derives the follow-up sentence from the resolved closures; typing
+  // in the field flips this to `custom` and `followUp` becomes authoritative.
+  followUpMode: 'auto' | 'custom';
   followUp: string;
   extraNotes: string;
   signatureDate: string;
@@ -93,6 +124,7 @@ const DEFAULT_FIRST_LESION: Lesion = {
   pathology: 'BCC',
   margin: '3',
   closureType: 'direct',
+  skinSuture: 'auto',
   ftsgDonor: 'Pre-auricular',
   stsgDonor: 'Anterolateral thigh',
   stsgThickness: '0.010',
@@ -108,6 +140,7 @@ const NEW_LESION: Lesion = {
   pathology: 'BCC',
   margin: '[margin]',
   closureType: 'direct',
+  skinSuture: 'auto',
   ftsgDonor: 'Pre-auricular',
   stsgDonor: 'Anterolateral thigh',
   stsgThickness: '0.010',
@@ -125,6 +158,7 @@ const INITIAL_STATE: State = {
   anaesthetist: '[Dr ____]',
   hasAnaesthetist: false,
   anaesthesiaType: 'local',
+  prepAgent: 'auto',
   lesions: [DEFAULT_FIRST_LESION],
   tourniquetUsed: false,
   tourniquetPressure: '250',
@@ -136,7 +170,8 @@ const INITIAL_STATE: State = {
   accClaim: false,
   acc45: '[#########]',
   accMechanism: '[____]',
-  followUp: 'Plastics clinic 2 weeks (suture removal) and 6 weeks (with histology)',
+  followUpMode: 'auto',
+  followUp: '',
   extraNotes: '',
   signatureDate: '[DD/MM/YYYY]',
 };
@@ -150,8 +185,11 @@ const ANAESTHESIA_LABEL: Record<AnaesthesiaType, string> = {
 };
 
 const ANAESTHESIA_DETAIL: Record<AnaesthesiaType, string> = {
+  // Per the Waikato nurse-initiated local anaesthetic guideline (W1132HWF,
+  // 03/23). WALANT below deliberately stays at 1% / 1:100,000 — that is the
+  // hand-surgery standard and the dilute mix would be wrong there.
   local:
-    'Local infiltration of 1% lignocaine with 1:100,000 adrenaline, allowed 7 min for vasoconstriction.',
+    'Local infiltration of 0.4% lignocaine with 1:250,000 adrenaline, 1–1.5 mL/kg subcutaneously to the marked areas; allowed 7 min for vasoconstriction.',
   walant:
     'WALANT: 1% lignocaine with 1:100,000 adrenaline infiltrated and allowed 25 min.',
   regional: 'Regional block ([block type]).',
@@ -188,6 +226,43 @@ function unionClosureRisks(lesions: Lesion[]): string {
   return parts.length > 0 ? ', ' + parts.join(', ') : '';
 }
 
+// --- Site-driven resolution -------------------------------------------------
+
+function anyLesionFacial(lesions: Lesion[]): boolean {
+  return lesions.some((l) => isFacialSite(l.site));
+}
+
+function prepLine(s: State): string {
+  const facial = anyLesionFacial(s.lesions);
+  const agent = resolvePrepAgent(s.prepAgent, facial);
+  return `Supine; ${prepAgentPhrase(agent, facial)}; standard drape.`;
+}
+
+function resolveSkinSuture(l: Lesion): ResolvedSkinSuture {
+  if (l.skinSuture !== 'auto') return l.skinSuture;
+  return isFacialSite(l.site) ? 'running-6-0' : 'interrupted-5-0';
+}
+
+// "6-0 nylon running" — parallels the existing "5-0 nylon interrupted" shape
+// so the closure sentence reads the same either way.
+const SKIN_SUTURE_PHRASE: Record<ResolvedSkinSuture, string> = {
+  'interrupted-5-0': '5-0 nylon interrupted',
+  'interrupted-6-0': '6-0 nylon interrupted',
+  'running-5-0': '5-0 nylon running',
+  'running-6-0': '6-0 nylon running',
+};
+
+const SKIN_SUTURE_LABEL: Record<ResolvedSkinSuture, string> = {
+  'interrupted-5-0': 'Interrupted 5-0 nylon',
+  'interrupted-6-0': 'Interrupted 6-0 nylon',
+  'running-5-0': 'Running 5-0 nylon',
+  'running-6-0': 'Running 6-0 nylon',
+};
+
+function isRunning(suture: ResolvedSkinSuture): boolean {
+  return suture.startsWith('running-');
+}
+
 function lesionProcedureSteps(l: Lesion): string[] {
   const common = [
     `Lesion marked with ${l.margin} mm clinical margin; ${l.closureType === 'direct' ? 'ellipse oriented along RSTL with ~3:1 length-to-width ratio' : 'orientation along RSTL'}.`,
@@ -200,7 +275,7 @@ function lesionProcedureSteps(l: Lesion): string[] {
       return [
         ...common,
         `Wide subdermal undermining as required to mobilise edges.`,
-        `Closure: deep dermal 4-0 Monocryl interrupted; skin 5-0 nylon interrupted.`,
+        `Closure: deep dermal 4-0 Monocryl interrupted; skin ${SKIN_SUTURE_PHRASE[resolveSkinSuture(l)]}.`,
       ];
     case 'ftsg':
       return [
@@ -220,9 +295,65 @@ function lesionProcedureSteps(l: Lesion): string[] {
       return [
         ...common,
         `${l.flapType} flap designed, elevated in subcutaneous plane, transposed / advanced to defect.`,
-        `Donor closed primarily; flap inset with 4-0 Monocryl deep dermal and 5-0 nylon skin.`,
+        `Donor closed primarily; flap inset with 4-0 Monocryl deep dermal and skin ${SKIN_SUTURE_PHRASE[resolveSkinSuture(l)]}.`,
       ];
   }
+}
+
+// What comes out, and when, for one lesion's resolved closure.
+//
+// `line` is null where an existing bullet already carries the timing (the
+// FTSG bolster line says it), but `day` still counts toward the follow-up
+// interval so the clinic slot lands after the last thing is removed.
+interface RemovalPlan {
+  line: string | null;
+  day: number;
+}
+
+function lesionRemoval(l: Lesion): RemovalPlan {
+  switch (l.closureType) {
+    case 'direct':
+    case 'flap': {
+      if (!isFacialSite(l.site)) {
+        return { line: `Sutures out at 10–14 days (trunk / limb).`, day: 10 };
+      }
+      return isRunning(resolveSkinSuture(l))
+        ? {
+            line: `Sutures out at 5 days (face) — running suture, early removal avoids cross-hatching.`,
+            day: 5,
+          }
+        : { line: `Sutures out at 5–7 days (face).`, day: 5 };
+    }
+    case 'ftsg':
+      // Timing lives on the bolster bullet below.
+      return { line: null, day: 7 };
+    case 'stsg':
+      return { line: `Staples out at 7–10 days.`, day: 7 };
+  }
+}
+
+function isMalignant(l: Lesion): boolean {
+  return (
+    l.pathology === 'BCC' ||
+    l.pathology === 'SCC' ||
+    l.pathology === 'SCC in situ (Bowen)'
+  );
+}
+
+// Derived follow-up sentence: the clinic visit tracks the earliest removal,
+// and the histology visit is only offered when something went to histology
+// that can come back malignant.
+function autoFollowUp(s: State): string {
+  const earliest = Math.min(...s.lesions.map((l) => lesionRemoval(l).day));
+  const removalVisit = earliest <= 7 ? '1 week' : '2 weeks';
+  const histology = s.lesions.some(isMalignant)
+    ? ' and 6 weeks (with histology)'
+    : '';
+  return `Plastics clinic ${removalVisit} (suture removal)${histology}`;
+}
+
+function followUpValue(s: State): string {
+  return s.followUpMode === 'auto' ? autoFollowUp(s) : s.followUp;
 }
 
 function postOpPlan(s: State): string[] {
@@ -235,23 +366,27 @@ function postOpPlan(s: State): string[] {
   const anyStsgNpwt = s.lesions.some(
     (l) => l.closureType === 'stsg' && l.stsgNPWT,
   );
-  if (anyFtsg) lines.push(`Tie-over bolster down at 7 days.`);
+  if (anyFtsg)
+    lines.push(`Tie-over bolster down at 7 days; graft sutures out at the same time.`);
   if (anyStsg)
     lines.push(
       `${anyStsgNpwt ? 'NPWT' : 'Bolster'} down at 5–7 days; donor occlusive dressing until saturated.`,
     );
-  lines.push(`Sutures out: face 5–7 days; trunk/limb 10–14 days.`);
+  // De-duplicated across lesions, in lesion order — two facial direct closures
+  // produce one bullet, a facial excision plus a shin graft produce two.
+  const seenRemoval = new Set<string>();
+  for (const l of s.lesions) {
+    const { line } = lesionRemoval(l);
+    if (line && !seenRemoval.has(line)) {
+      seenRemoval.add(line);
+      lines.push(line);
+    }
+  }
   lines.push(`Histology review at clinic.`);
-  lines.push(`Follow-up: ${s.followUp}.`);
+  lines.push(`Follow-up: ${followUpValue(s)}.`);
   if (s.accClaim) lines.push(`ACC claim ${s.acc45} lodged.`);
   if (s.extraNotes) lines.push(s.extraNotes);
-  const anyMalignant = s.lesions.some(
-    (l) =>
-      l.pathology === 'BCC' ||
-      l.pathology === 'SCC' ||
-      l.pathology === 'SCC in situ (Bowen)',
-  );
-  if (anyMalignant) lines.push(`GP letter to be sent.`);
+  if (s.lesions.some(isMalignant)) lines.push(`GP letter to be sent.`);
   return lines;
 }
 
@@ -293,13 +428,15 @@ function renderMarkdown(s: State): string {
 
   const specimenLines = s.lesions.map((l, i) => {
     const suffix = multi ? ` (Lesion ${i + 1})` : '';
-    return `"${l.site} lesion${suffix} — ${l.specimenOrientation}" → Histology.`;
+    // Specimen labels are sentence-initial on the pathology form.
+    const site = l.site.charAt(0).toUpperCase() + l.site.slice(1);
+    return `"${site} lesion${suffix} — ${l.specimenOrientation}" → Histology.`;
   });
 
   return joinSections(
     `# OPERATION NOTE — Skin lesion excision`,
     [
-      `Date: ${s.date}${s.classification}`,
+      `Date: ${s.date}    ${s.classification}`,
       `Surgeon: Mateusz Gładysz, Consultant Plastic and Hand Surgeon`,
       s.hasAssistant && `Assistant: ${s.assistant}`,
       s.hasAnaesthetist
@@ -318,7 +455,7 @@ function renderMarkdown(s: State): string {
     `## Consent`,
     `Risks discussed: bleeding, haematoma, infection, scar, recurrence, incomplete excision requiring re-excision, sensory change, dehiscence, asymmetry, suture reaction${unionClosureRisks(s.lesions)}.`,
     `## Position / Prep / Drape`,
-    `Supine; 0.5% chlorhexidine in alcohol (aqueous if facial / near eye); standard drape.`,
+    prepLine(s),
     `## Anaesthesia`,
     ANAESTHESIA_DETAIL[s.anaesthesiaType] +
       ifSection(
@@ -336,7 +473,7 @@ function renderMarkdown(s: State): string {
     `## Specimens`,
     bullets(specimenLines),
     `## Estimated blood loss`,
-    s.ebl,
+    `${s.ebl}.`,
     `## Complications`,
     `Nil intra-operative.`,
     `## Count`,
@@ -382,6 +519,14 @@ function SkinLesionExcision() {
           ? prev.lesions
           : prev.lesions.filter((_, i) => i !== index),
     }));
+  }, []);
+  // Typing in the follow-up field takes it off auto; the reset button hands
+  // it back. Storing '' on auto keeps the two modes from drifting apart.
+  const editFollowUp = useCallback((value: string) => {
+    setState((prev) => ({ ...prev, followUpMode: 'custom', followUp: value }));
+  }, []);
+  const resetFollowUp = useCallback(() => {
+    setState((prev) => ({ ...prev, followUpMode: 'auto', followUp: '' }));
   }, []);
   const reset = useCallback(() => setState({ ...INITIAL_STATE, date: todayNZ(), signatureDate: todayNZ() }), []);
 
@@ -515,6 +660,22 @@ function SkinLesionExcision() {
               </div>
             </div>
 
+            {(lesion.closureType === 'direct' || lesion.closureType === 'flap') && (
+              <label class="opnote-field">
+                <span class="opnote-field-label">Skin suture</span>
+                <select class="opnote-field-select" value={lesion.skinSuture}
+                  onChange={(e) => updateLesion(i, 'skinSuture', (e.currentTarget as HTMLSelectElement).value as SkinSuture)}>
+                  <option value="auto">
+                    Auto — {SKIN_SUTURE_LABEL[resolveSkinSuture({ ...lesion, skinSuture: 'auto' })]}
+                  </option>
+                  <option value="interrupted-5-0">Interrupted 5-0 nylon</option>
+                  <option value="interrupted-6-0">Interrupted 6-0 nylon</option>
+                  <option value="running-5-0">Running 5-0 nylon</option>
+                  <option value="running-6-0">Running 6-0 nylon</option>
+                </select>
+              </label>
+            )}
+
             {lesion.closureType === 'ftsg' && (
               <div class="opnote-subsection">
                 <p class="opnote-subsection-title">FTSG donor site</p>
@@ -599,6 +760,22 @@ function SkinLesionExcision() {
 
       <div class="opnote-section">
         <p class="opnote-section-title">Perioperative</p>
+        <div class="opnote-field">
+          <span class="opnote-field-label">Skin prep</span>
+          <div class="opnote-radio-group opnote-radio-group-cols-3" role="radiogroup" aria-label="Skin prep agent">
+            {(['auto', 'chlorhexidine', 'betadine'] as const).map((v) => (
+              <label class="opnote-radio">
+                <input type="radio" name="prep" value={v} checked={state.prepAgent === v}
+                  onChange={() => update('prepAgent', v)} />
+                <span>
+                  {v === 'auto'
+                    ? `Auto — ${PREP_AGENT_LABEL[resolvePrepAgent('auto', anyLesionFacial(state.lesions))]}`
+                    : PREP_AGENT_LABEL[v]}
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
         <label class="opnote-toggle">
           <input type="checkbox" checked={state.tourniquetUsed}
             onChange={(e) => update('tourniquetUsed', (e.currentTarget as HTMLInputElement).checked)} />
@@ -674,10 +851,20 @@ function SkinLesionExcision() {
       <div class="opnote-section">
         <p class="opnote-section-title">Post-op</p>
         <label class="opnote-field">
-          <span class="opnote-field-label">Follow-up</span>
-          <input class="opnote-field-input" type="text" value={state.followUp}
-            onInput={(e) => update('followUp', (e.currentTarget as HTMLInputElement).value)} />
+          <span class="opnote-field-label">
+            Follow-up
+            {state.followUpMode === 'auto'
+              ? ' — derived from closure type'
+              : ' — overridden'}
+          </span>
+          <input class="opnote-field-input" type="text" value={followUpValue(state)}
+            onInput={(e) => editFollowUp((e.currentTarget as HTMLInputElement).value)} />
         </label>
+        {state.followUpMode === 'custom' && (
+          <button type="button" class="opnote-add-lesion" onClick={resetFollowUp}>
+            Reset follow-up to automatic
+          </button>
+        )}
         <label class="opnote-field">
           <span class="opnote-field-label">Additional notes</span>
           <textarea class="opnote-field-textarea" value={state.extraNotes}
@@ -700,9 +887,9 @@ export const meta = {
     'Excision of one or more benign or malignant cutaneous lesions on a single patient. Closure morphs per lesion: direct / FTSG / STSG / local flap.',
   category: 'skin-soft-tissue' as const,
   emits:
-    'Indication · Per-lesion pathology and margin · Per-lesion closure procedure · Per-lesion specimen orientation · Shared post-op plan',
-  lastReviewed: '2026-05-19',
-  version: '1.1',
+    'Indication · Per-lesion pathology and margin · Site-driven skin prep · Per-lesion closure procedure and skin suture · Per-lesion specimen orientation · Closure-driven suture removal and follow-up',
+  lastReviewed: '2026-08-11',
+  version: '1.2',
 };
 
 export default SkinLesionExcision;
