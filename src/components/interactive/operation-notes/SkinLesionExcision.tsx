@@ -74,6 +74,21 @@ type SkinSuture =
 
 type ResolvedSkinSuture = Exclude<SkinSuture, 'auto'>;
 
+// FTSG donor closure follows the DONOR site, not the lesion site.
+//   facial donor (pre-/post-auricular) → Monocryl deep + running monofilament,
+//                                        which has to come out at 5–7 days
+//   everything else                    → 3-0 Monocryl deep + 3-0 Monocryl
+//                                        intradermal running, nothing to remove
+// This selector only picks gauge and material for the facial case.
+type DonorSuture =
+  | 'auto'
+  | 'nylon-5-0'
+  | 'nylon-6-0'
+  | 'prolene-5-0'
+  | 'prolene-6-0';
+
+type ResolvedDonorSuture = Exclude<DonorSuture, 'auto'>;
+
 interface Lesion {
   site: string;
   size: string;
@@ -82,6 +97,7 @@ interface Lesion {
   closureType: ClosureType;
   skinSuture: SkinSuture;
   ftsgDonor: FtsgDonor;
+  ftsgDonorSuture: DonorSuture;
   stsgDonor: StsgDonor;
   stsgThickness: '0.008' | '0.010' | '0.012';
   stsgMeshed: boolean;
@@ -126,6 +142,7 @@ const DEFAULT_FIRST_LESION: Lesion = {
   closureType: 'direct',
   skinSuture: 'auto',
   ftsgDonor: 'Pre-auricular',
+  ftsgDonorSuture: 'auto',
   stsgDonor: 'Anterolateral thigh',
   stsgThickness: '0.010',
   stsgMeshed: false,
@@ -142,6 +159,7 @@ const NEW_LESION: Lesion = {
   closureType: 'direct',
   skinSuture: 'auto',
   ftsgDonor: 'Pre-auricular',
+  ftsgDonorSuture: 'auto',
   stsgDonor: 'Anterolateral thigh',
   stsgThickness: '0.010',
   stsgMeshed: false,
@@ -263,6 +281,31 @@ function isRunning(suture: ResolvedSkinSuture): boolean {
   return suture.startsWith('running-');
 }
 
+// A pre-/post-auricular donor is closed like facial skin — Monocryl deep plus
+// a running monofilament that has to come out. Any other donor gets a buried
+// intradermal Monocryl closure with nothing to remove.
+function isFacialDonor(l: Lesion): boolean {
+  return isFacialSite(l.ftsgDonor);
+}
+
+function resolveDonorSuture(l: Lesion): ResolvedDonorSuture {
+  return l.ftsgDonorSuture === 'auto' ? 'nylon-6-0' : l.ftsgDonorSuture;
+}
+
+const DONOR_SUTURE_PHRASE: Record<ResolvedDonorSuture, string> = {
+  'nylon-5-0': '5-0 nylon running',
+  'nylon-6-0': '6-0 nylon running',
+  'prolene-5-0': '5-0 Prolene running',
+  'prolene-6-0': '6-0 Prolene running',
+};
+
+const DONOR_SUTURE_LABEL: Record<ResolvedDonorSuture, string> = {
+  'nylon-5-0': 'Running 5-0 nylon',
+  'nylon-6-0': 'Running 6-0 nylon',
+  'prolene-5-0': 'Running 5-0 Prolene',
+  'prolene-6-0': 'Running 6-0 Prolene',
+};
+
 function lesionProcedureSteps(l: Lesion): string[] {
   const common = [
     `Lesion marked with ${l.margin} mm clinical margin; ${l.closureType === 'direct' ? 'ellipse oriented along RSTL with ~3:1 length-to-width ratio' : 'orientation along RSTL'}.`,
@@ -282,7 +325,9 @@ function lesionProcedureSteps(l: Lesion): string[] {
         ...common,
         `Defect templated; donor site: ${l.ftsgDonor}.`,
         `FTSG harvested, defatted, inset with 4-0 Vicryl Rapide interrupted; tie-over bolster placed (Jelonet + saline-soaked cotton wool + 4-0 silk anchor sutures).`,
-        `Donor closed primarily: 3-0 Monocryl deep dermal; 3-0 Monocryl intradermal running.`,
+        isFacialDonor(l)
+          ? `Donor closed primarily: 4-0 Monocryl deep dermal; skin ${DONOR_SUTURE_PHRASE[resolveDonorSuture(l)]}.`
+          : `Donor closed primarily: 3-0 Monocryl deep dermal; 3-0 Monocryl intradermal running.`,
       ];
     case 'stsg':
       return [
@@ -358,27 +403,38 @@ function lesionAftercare(l: Lesion): ClosureAftercare {
         visitReason: 'suture removal',
       };
     }
-    case 'ftsg':
-      // Nothing to remove: the graft is inset in 4-0 Vicryl Rapide, which
-      // sloughs on its own, and the donor is closed intradermally in buried
-      // Monocryl. Only the bolster and its silk anchors come off, and that is
-      // already stated in the wound-care bullet. The note says so explicitly
-      // so the clinic does not go looking for a suture line.
+    case 'ftsg': {
+      // The graft itself never needs removal — 4-0 Vicryl Rapide sloughs. The
+      // donor does, but only when it is facial: a pre-/post-auricular donor is
+      // closed with a running monofilament, everything else with buried
+      // Monocryl. Saying so explicitly stops clinic hunting for a suture line
+      // that isn't there. Both phrasings name what they cover, so neither can
+      // be read as contradicting another lesion's suture bullet.
+      const woundCare = [
+        `Tie-over bolster left undisturbed until day 7; graft inspected at bolster removal.`,
+        `No shearing or pressure on the graft for 2 weeks.`,
+        `Once healed: daily moisturiser and massage; sun protection for 12 months.`,
+      ];
+      if (isFacialDonor(l)) {
+        return {
+          woundCare,
+          removal: [
+            `Graft needs no suture removal — inset in 4-0 Vicryl Rapide, sloughs by 10–14 days.`,
+            `Donor sutures out at 5–7 days (${l.ftsgDonor.toLowerCase()} donor).`,
+          ],
+          day: 7,
+          visitReason: 'graft check, bolster and donor sutures out',
+        };
+      }
       return {
-        woundCare: [
-          `Tie-over bolster left undisturbed until day 7; graft inspected at bolster removal.`,
-          `No shearing or pressure on the graft for 2 weeks.`,
-          `Once healed: daily moisturiser and massage; sun protection for 12 months.`,
-        ],
+        woundCare,
         removal: [
-          // Scoped to "graft and donor" rather than a bare "no sutures to
-          // remove", so it cannot be read as contradicting another lesion's
-          // suture-removal bullet in a multi-lesion note.
           `Graft and donor need no suture removal — 4-0 Vicryl Rapide inset (sloughs by 10–14 days), donor closed with buried Monocryl.`,
         ],
         day: 7,
         visitReason: 'graft check and bolster removal',
       };
+    }
     case 'stsg':
       return {
         woundCare: [
@@ -759,6 +815,25 @@ function SkinLesionExcision() {
                     <option value="Groin">Groin</option>
                   </select>
                 </label>
+                {isFacialDonor(lesion) ? (
+                  <label class="opnote-field">
+                    <span class="opnote-field-label">Donor skin suture</span>
+                    <select class="opnote-field-select" value={lesion.ftsgDonorSuture}
+                      onChange={(e) => updateLesion(i, 'ftsgDonorSuture', (e.currentTarget as HTMLSelectElement).value as DonorSuture)}>
+                      <option value="auto">
+                        Auto — {DONOR_SUTURE_LABEL[resolveDonorSuture({ ...lesion, ftsgDonorSuture: 'auto' })]}
+                      </option>
+                      <option value="nylon-5-0">Running 5-0 nylon</option>
+                      <option value="nylon-6-0">Running 6-0 nylon</option>
+                      <option value="prolene-5-0">Running 5-0 Prolene</option>
+                      <option value="prolene-6-0">Running 6-0 Prolene</option>
+                    </select>
+                  </label>
+                ) : (
+                  <p class="opnote-field-label">
+                    Closed 3-0 Monocryl deep + 3-0 Monocryl intradermal running — nothing to remove.
+                  </p>
+                )}
               </div>
             )}
 
@@ -958,7 +1033,7 @@ export const meta = {
   emits:
     'Indication · Per-lesion pathology and margin · Site-driven skin prep · Per-lesion closure procedure and skin suture · Per-lesion specimen orientation · Closure-specific post-op plan, removals and follow-up',
   lastReviewed: '2026-08-11',
-  version: '1.4',
+  version: '1.5',
 };
 
 export default SkinLesionExcision;
