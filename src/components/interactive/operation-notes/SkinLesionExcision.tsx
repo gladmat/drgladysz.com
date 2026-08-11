@@ -300,35 +300,81 @@ function lesionProcedureSteps(l: Lesion): string[] {
   }
 }
 
-// What comes out, and when, for one lesion's resolved closure.
+// Post-operative aftercare for one lesion's resolved closure.
 //
-// `line` is null where an existing bullet already carries the timing (the
-// FTSG bolster line says it), but `day` still counts toward the follow-up
-// interval so the clinic slot lands after the last thing is removed.
-interface RemovalPlan {
-  line: string | null;
+// The four closures diverge more than the old flat plan allowed: a bolstered
+// graft is NOT "keep dressing dry 48 h", an FTSG has a second (donor) suture
+// line to remove, and an STSG donor is the site that actually hurts. So each
+// closure owns its wound-care bullets and its own removal bullets, and the
+// case-level plan merges them.
+//
+//   woundCare — dressing handling, bolster, donor site, precautions
+//   removal   — what comes out and when
+//   day       — earliest removal day, drives the follow-up interval
+interface ClosureAftercare {
+  woundCare: string[];
+  removal: string[];
   day: number;
 }
 
-function lesionRemoval(l: Lesion): RemovalPlan {
-  switch (l.closureType) {
-    case 'direct':
-    case 'flap': {
-      if (!isFacialSite(l.site)) {
-        return { line: `Sutures out at 10–14 days (trunk / limb).`, day: 10 };
+// Skin sutures on the lesion itself, for the two closures that have them.
+function skinSutureRemoval(l: Lesion): { line: string; day: number } {
+  if (!isFacialSite(l.site)) {
+    return { line: `Sutures out at 10–14 days (trunk / limb).`, day: 10 };
+  }
+  return isRunning(resolveSkinSuture(l))
+    ? {
+        line: `Sutures out at 5 days (face) — running suture, early removal avoids cross-hatching.`,
+        day: 5,
       }
-      return isRunning(resolveSkinSuture(l))
-        ? {
-            line: `Sutures out at 5 days (face) — running suture, early removal avoids cross-hatching.`,
-            day: 5,
-          }
-        : { line: `Sutures out at 5–7 days (face).`, day: 5 };
+    : { line: `Sutures out at 5–7 days (face).`, day: 5 };
+}
+
+function lesionAftercare(l: Lesion): ClosureAftercare {
+  const dryDressing = `Keep dressing dry 48 h; elevate where applicable.`;
+  switch (l.closureType) {
+    case 'direct': {
+      const { line, day } = skinSutureRemoval(l);
+      return { woundCare: [dryDressing], removal: [line], day };
     }
-    case 'ftsg':
-      // Timing lives on the bolster bullet below.
-      return { line: null, day: 7 };
+    case 'flap': {
+      const { line, day } = skinSutureRemoval(l);
+      return {
+        woundCare: [
+          dryDressing,
+          `No pressure on the flap; avoid dependent positioning until the dressing is down.`,
+          `Pincushioning / trapdoor deformity: daily massage from 3 weeks; do not consider revision before 6 months.`,
+        ],
+        removal: [line],
+        day,
+      };
+    }
+    case 'ftsg': {
+      // The donor is closed with 5-0 nylon in the procedure steps, so it has
+      // its own removal timing — driven by the donor site, not the lesion.
+      const facialDonor = isFacialSite(l.ftsgDonor);
+      return {
+        woundCare: [
+          `Tie-over bolster left undisturbed until day 7; graft inspected at bolster removal.`,
+          `No shearing or pressure on the graft for 2 weeks.`,
+          `Once healed: daily moisturiser and massage; sun protection for 12 months.`,
+        ],
+        removal: [
+          `Graft sutures out with the bolster at 7 days.`,
+          `Donor sutures out at ${facialDonor ? '5–7' : '10–14'} days (${l.ftsgDonor.toLowerCase()} donor).`,
+        ],
+        day: 7,
+      };
+    }
     case 'stsg':
-      return { line: `Staples out at 7–10 days.`, day: 7 };
+      return {
+        woundCare: [
+          `${l.stsgNPWT ? 'NPWT' : 'Tie-over bolster'} down at 5–7 days; graft inspected at first dressing change.`,
+          `Donor site (Mepitel One + Mepore) left undisturbed 10–14 days until the dressing separates; reinforce rather than change if strike-through.`,
+        ],
+        removal: [`Staples out at 7–10 days.`],
+        day: 7,
+      };
   }
 }
 
@@ -344,7 +390,7 @@ function isMalignant(l: Lesion): boolean {
 // and the histology visit is only offered when something went to histology
 // that can come back malignant.
 function autoFollowUp(s: State): string {
-  const earliest = Math.min(...s.lesions.map((l) => lesionRemoval(l).day));
+  const earliest = Math.min(...s.lesions.map((l) => lesionAftercare(l).day));
   const removalVisit = earliest <= 7 ? '1 week' : '2 weeks';
   const histology = s.lesions.some(isMalignant)
     ? ' and 6 weeks (with histology)'
@@ -356,32 +402,37 @@ function followUpValue(s: State): string {
   return s.followUpMode === 'auto' ? autoFollowUp(s) : s.followUp;
 }
 
-function postOpPlan(s: State): string[] {
-  const lines: string[] = [
-    `Keep dressing dry 48 h; elevate where applicable.`,
-    `Analgesia: regular paracetamol; ibuprofen PRN.`,
-  ];
-  const anyFtsg = s.lesions.some((l) => l.closureType === 'ftsg');
-  const anyStsg = s.lesions.some((l) => l.closureType === 'stsg');
-  const anyStsgNpwt = s.lesions.some(
-    (l) => l.closureType === 'stsg' && l.stsgNPWT,
-  );
-  if (anyFtsg)
-    lines.push(`Tie-over bolster down at 7 days; graft sutures out at the same time.`);
-  if (anyStsg)
-    lines.push(
-      `${anyStsgNpwt ? 'NPWT' : 'Bolster'} down at 5–7 days; donor occlusive dressing until saturated.`,
-    );
-  // De-duplicated across lesions, in lesion order — two facial direct closures
-  // produce one bullet, a facial excision plus a shin graft produce two.
-  const seenRemoval = new Set<string>();
-  for (const l of s.lesions) {
-    const { line } = lesionRemoval(l);
-    if (line && !seenRemoval.has(line)) {
-      seenRemoval.add(line);
-      lines.push(line);
+// Collects one field across every lesion, de-duplicated, in lesion order.
+// Two facial direct closures collapse to one bullet; a facial excision plus a
+// shin graft keep both. Per-lesion collection (rather than a case-level
+// `some()`) is what lets two STSGs with different bolsters each state their
+// own — the old some() reported whichever it found first for both.
+function mergeAftercare(
+  lesions: Lesion[],
+  field: 'woundCare' | 'removal',
+): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const l of lesions) {
+    for (const line of lesionAftercare(l)[field]) {
+      if (!seen.has(line)) {
+        seen.add(line);
+        out.push(line);
+      }
     }
   }
+  return out;
+}
+
+function postOpPlan(s: State): string[] {
+  const anyStsg = s.lesions.some((l) => l.closureType === 'stsg');
+  const lines: string[] = [
+    ...mergeAftercare(s.lesions, 'woundCare'),
+    anyStsg
+      ? `Analgesia: regular paracetamol; ibuprofen PRN — warn the donor site is usually more painful than the graft.`
+      : `Analgesia: regular paracetamol; ibuprofen PRN.`,
+    ...mergeAftercare(s.lesions, 'removal'),
+  ];
   lines.push(`Histology review at clinic.`);
   lines.push(`Follow-up: ${followUpValue(s)}.`);
   if (s.accClaim) lines.push(`ACC claim ${s.acc45} lodged.`);
@@ -887,9 +938,9 @@ export const meta = {
     'Excision of one or more benign or malignant cutaneous lesions on a single patient. Closure morphs per lesion: direct / FTSG / STSG / local flap.',
   category: 'skin-soft-tissue' as const,
   emits:
-    'Indication · Per-lesion pathology and margin · Site-driven skin prep · Per-lesion closure procedure and skin suture · Per-lesion specimen orientation · Closure-driven suture removal and follow-up',
+    'Indication · Per-lesion pathology and margin · Site-driven skin prep · Per-lesion closure procedure and skin suture · Per-lesion specimen orientation · Closure-specific post-op plan, removals and follow-up',
   lastReviewed: '2026-08-11',
-  version: '1.2',
+  version: '1.3',
 };
 
 export default SkinLesionExcision;
