@@ -20,6 +20,7 @@ import MelanomaWLE, { meta as melanomaWleMeta } from './MelanomaWLE';
 import HandTrauma, { meta as handTraumaMeta } from './HandTrauma';
 import HandInfectionDrainage, { meta as handInfectionDrainageMeta } from './HandInfectionDrainage';
 import FreeFlapReconstruction, { meta as freeFlapReconstructionMeta } from './FreeFlapReconstruction';
+import OpenCarpalTunnelRelease, { meta as openCarpalTunnelReleaseMeta } from './OpenCarpalTunnelRelease';
 
 export type OperationNoteCategory =
   | 'skin-soft-tissue'
@@ -50,6 +51,7 @@ export const OPERATION_NOTE_TEMPLATES: OperationNoteTemplate[] = [
   { meta: handTraumaMeta, component: HandTrauma },
   { meta: handInfectionDrainageMeta, component: HandInfectionDrainage },
   { meta: freeFlapReconstructionMeta, component: FreeFlapReconstruction },
+  { meta: openCarpalTunnelReleaseMeta, component: OpenCarpalTunnelRelease },
 ];
 
 // Slug-keyed component map. Astro/Vite can statically analyse direct object
@@ -63,6 +65,7 @@ export const OPERATION_NOTE_COMPONENTS: Record<string, ComponentType<{}>> = {
   'hand-trauma': HandTrauma,
   'hand-infection-drainage': HandInfectionDrainage,
   'free-flap-reconstruction': FreeFlapReconstruction,
+  'open-carpal-tunnel-release': OpenCarpalTunnelRelease,
 };
 
 export const OPERATION_NOTE_CATEGORY_LABEL: Record<
@@ -81,7 +84,7 @@ export const OPERATION_NOTE_CATEGORY_BLURB: Record<
   'skin-soft-tissue':
     'Excisions, biopsies, and reconstructions of cutaneous and subcutaneous lesions — benign and malignant.',
   'hand-surgery':
-    'Acute hand surgery: trauma (laceration / fracture / tendon / nerve, one accident covered by one note) and infection (PFT / deep space / septic arthritis). Almost always ACC-funded for trauma.',
+    'Acute hand surgery — trauma (laceration / fracture / tendon / nerve, one accident covered by one note) and infection (PFT / deep space / septic arthritis), almost always ACC-funded — plus elective nerve decompression.',
   'free-flap':
     'Microvascular tissue transfer for complex composite defects after trauma or oncologic resection.',
 };
