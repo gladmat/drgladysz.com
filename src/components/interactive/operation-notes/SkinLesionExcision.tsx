@@ -21,12 +21,24 @@
 // Suture-removal timing and the follow-up interval are then derived from the
 // resolved closure rather than hardcoded — a face closed with running nylon
 // gets a 5-day removal and a 1-week clinic slot, not the old flat 2 weeks.
+//
+// Secondary intention (v1.6): a fifth closure for the wound that is simply
+// left open — the frail patient, the concave facial site, the shin that will
+// not close. It carries its own primary-dressing selector (auto = Jelonet on a
+// facial site, Aquacel everywhere else — the operator's practice; hydrofibre /
+// silver hydrofibre / chlorhexidine tulle / paraffin tulle / hydrocolloid /
+// silicone layer all selectable), an
+// optional purse-string adjunct, and a lower-leg branch driven by
+// `isLowerLegSite()` that adds elevation, compression and the longer healing
+// expectation. Evidence summary lives in
+// 01-brand-system/operation-notes-package/evidence/secondary-intention-dressing-regimen.md.
 
 import { useState, useCallback } from 'preact/hooks';
 import OperationNoteShell from './_shared/OperationNoteShell';
 import { joinSections, bullets, numbered, ifSection, todayNZ } from './_shared/markdown';
 import {
   isFacialSite,
+  isLowerLegSite,
   resolvePrepAgent,
   prepAgentPhrase,
   PREP_AGENT_LABEL,
@@ -41,7 +53,7 @@ type Pathology =
   | 'Seborrhoeic keratosis'
   | 'Other';
 
-type ClosureType = 'direct' | 'ftsg' | 'stsg' | 'flap';
+type ClosureType = 'direct' | 'ftsg' | 'stsg' | 'flap' | 'secondary';
 
 type AnaesthesiaType = 'local' | 'walant' | 'regional' | 'sedation' | 'ga';
 
@@ -89,6 +101,28 @@ type DonorSuture =
 
 type ResolvedDonorSuture = Exclude<DonorSuture, 'auto'>;
 
+// Primary (wound-contact) dressing for a wound left to heal by secondary
+// intention. `auto` follows the site: a facial wound gets Jelonet (paraffin
+// tulle — light, conformable, no antiseptic on a clean face), anything else
+// gets Aquacel (hydrofibre — absorbent, moist, stays 3–7 days). Both are the
+// operator's practice; the evidence has never ranked one product above
+// another on healing time (gauze alone loses on pain and nursing time). The
+// rest are the alternatives stocked on the same shelf.
+type SihDressing =
+  | 'auto'
+  | 'aquacel'
+  | 'aquacel-ag'
+  | 'bactigras'
+  | 'jelonet'
+  | 'hydrocolloid'
+  | 'mepitel';
+
+type ResolvedSihDressing = Exclude<SihDressing, 'auto'>;
+
+// Purse-string adjunct. Absorbable vs non-absorbable is what decides whether a
+// removal bullet exists — the same rule as every other suture in this file.
+type PurseStringSuture = 'monocryl-3-0' | 'pds-3-0' | 'nylon-3-0' | 'prolene-3-0';
+
 interface Lesion {
   site: string;
   size: string;
@@ -103,6 +137,10 @@ interface Lesion {
   stsgMeshed: boolean;
   stsgNPWT: boolean;
   flapType: FlapType;
+  sihDressing: SihDressing;
+  sihPurseString: boolean;
+  sihPurseStringSuture: PurseStringSuture;
+  sihReason: string;
   specimenOrientation: string;
 }
 
@@ -148,6 +186,10 @@ const DEFAULT_FIRST_LESION: Lesion = {
   stsgMeshed: false,
   stsgNPWT: false,
   flapType: 'Rhomboid (Limberg)',
+  sihDressing: 'auto',
+  sihPurseString: false,
+  sihPurseStringSuture: 'monocryl-3-0',
+  sihReason: 'patient factors and site suitability',
   specimenOrientation: 'short = superior, long = lateral',
 };
 
@@ -165,6 +207,10 @@ const NEW_LESION: Lesion = {
   stsgMeshed: false,
   stsgNPWT: false,
   flapType: 'Rhomboid (Limberg)',
+  sihDressing: 'auto',
+  sihPurseString: false,
+  sihPurseStringSuture: 'monocryl-3-0',
+  sihReason: 'patient factors and site suitability',
   specimenOrientation: 'short = superior, long = lateral',
 };
 
@@ -220,6 +266,7 @@ const CLOSURE_PLAN_LABEL: Record<ClosureType, string> = {
   ftsg: 'FTSG reconstruction',
   stsg: 'STSG reconstruction',
   flap: 'local flap reconstruction',
+  secondary: 'healing by secondary intention',
 };
 
 // Closure-specific consent risk additions, keyed by closure type. Multi-lesion
@@ -229,6 +276,8 @@ const CLOSURE_RISKS_BY_TYPE: Record<ClosureType, string> = {
   ftsg: 'graft failure, donor-site scar, pigmentary mismatch',
   stsg: 'graft failure, donor-site pain and slow healing 14–21 d, mesh pattern visible if meshed',
   flap: 'flap necrosis, trapdoor deformity, dog-ear, pincushioning',
+  secondary:
+    'prolonged healing over weeks to months with ongoing dressings, wound contraction distorting adjacent free margins, depressed or pale scar, delayed healing or wound infection (highest on the lower leg)',
 };
 
 function unionClosureRisks(lesions: Lesion[]): string {
@@ -306,6 +355,64 @@ const DONOR_SUTURE_LABEL: Record<ResolvedDonorSuture, string> = {
   'prolene-6-0': 'Running 6-0 Prolene',
 };
 
+// --- Secondary intention ---------------------------------------------------
+
+function resolveSihDressing(l: Lesion): ResolvedSihDressing {
+  if (l.sihDressing !== 'auto') return l.sihDressing;
+  return isFacialSite(l.site) ? 'jelonet' : 'aquacel';
+}
+
+// What went on in theatre — the tail of the "left open" procedure step.
+const SIH_DRESSING_PHRASE: Record<ResolvedSihDressing, string> = {
+  aquacel: 'Aquacel (hydrofibre) cut to the wound, absorbent pad and retention dressing',
+  'aquacel-ag':
+    'Aquacel Ag (silver hydrofibre) cut to the wound, absorbent pad and retention dressing',
+  bactigras: 'Bactigras (0.5% chlorhexidine tulle), Melolin and retention dressing',
+  jelonet: 'Jelonet (paraffin tulle), Melolin and retention dressing',
+  hydrocolloid: 'hydrocolloid (DuoDERM) sheet overlapping the wound edge by 2 cm',
+  mepitel: 'Mepitel (silicone contact layer), absorbent pad and retention dressing',
+};
+
+const SIH_DRESSING_LABEL: Record<ResolvedSihDressing, string> = {
+  aquacel: 'Aquacel (hydrofibre)',
+  'aquacel-ag': 'Aquacel Ag (silver hydrofibre)',
+  bactigras: 'Bactigras (chlorhexidine tulle)',
+  jelonet: 'Jelonet (paraffin tulle)',
+  hydrocolloid: 'Hydrocolloid (DuoDERM)',
+  mepitel: 'Mepitel (silicone layer)',
+};
+
+// The change regimen each product actually needs. Hydrofibre, hydrocolloid and
+// silicone layers are built to stay on for days; the two tulles dry out and
+// adhere, so they must come off sooner or they take the granulation with them.
+// Every line ends on the same instruction because the one thing the evidence is
+// clear on is that a crusted wound heals slower and hides its own endpoint.
+const SIH_DRESSING_CARE: Record<ResolvedSihDressing, string> = {
+  aquacel:
+    'Primary dressing Aquacel (hydrofibre): first change at 48–72 h, then every 3–7 days or when saturated; keep the wound bed moist — do not let it dry to a crust.',
+  'aquacel-ag':
+    'Primary dressing Aquacel Ag (silver hydrofibre): first change at 48–72 h, then every 3–7 days or when saturated; step down to plain Aquacel once clean and granulating — silver adds nothing to an uninfected wound; keep the wound bed moist.',
+  bactigras:
+    'Primary dressing Bactigras (0.5% chlorhexidine tulle) with Melolin: change every 2–3 days — it dries and adheres if left longer; keep the wound bed moist — do not let it dry to a crust.',
+  jelonet:
+    'Primary dressing Jelonet (paraffin tulle) with Melolin: change every 2–3 days; keep the wound bed moist — do not let it dry to a crust.',
+  hydrocolloid:
+    'Primary dressing hydrocolloid (DuoDERM): leave 3–7 days, change on leakage or lift; keep the wound bed moist — do not let it dry to a crust.',
+  mepitel:
+    'Primary dressing Mepitel (silicone contact layer) with absorbent pad: contact layer left up to 7 days, pad changed on strike-through; keep the wound bed moist — do not let it dry to a crust.',
+};
+
+const PURSE_STRING_PHRASE: Record<PurseStringSuture, string> = {
+  'monocryl-3-0': '3-0 Monocryl',
+  'pds-3-0': '3-0 PDS',
+  'nylon-3-0': '3-0 nylon',
+  'prolene-3-0': '3-0 Prolene',
+};
+
+function isAbsorbablePurseString(suture: PurseStringSuture): boolean {
+  return suture === 'monocryl-3-0' || suture === 'pds-3-0';
+}
+
 function lesionProcedureSteps(l: Lesion): string[] {
   const common = [
     `Lesion marked with ${l.margin} mm clinical margin; ${l.closureType === 'direct' ? 'ellipse oriented along RSTL with ~3:1 length-to-width ratio' : 'orientation along RSTL'}.`,
@@ -342,6 +449,13 @@ function lesionProcedureSteps(l: Lesion): string[] {
         `${l.flapType} flap designed, elevated in subcutaneous plane, transposed / advanced to defect.`,
         `Donor closed primarily; flap inset with 4-0 Monocryl deep dermal and skin ${SKIN_SUTURE_PHRASE[resolveSkinSuture(l)]}.`,
       ];
+    case 'secondary':
+      return [
+        ...common,
+        l.sihPurseString &&
+          `Purse-string suture (${PURSE_STRING_PHRASE[l.sihPurseStringSuture]}) placed in the dermis to reduce the defect diameter; edges not fully apposed.`,
+        `Wound left open to heal by secondary intention — ${l.sihReason}. Wound bed dry after haemostasis; dressed with ${SIH_DRESSING_PHRASE[resolveSihDressing(l)]}.`,
+      ].filter((step): step is string => Boolean(step));
   }
 }
 
@@ -445,6 +559,45 @@ function lesionAftercare(l: Lesion): ClosureAftercare {
         day: 7,
         visitReason: 'graft check and staple removal',
       };
+    case 'secondary': {
+      // The regimen is principles, not a product: moist, non-adherent,
+      // changed as seldom as the exudate allows, tap-water cleansing, and no
+      // topical antibiotic (petrolatum-only care has the same infection rate
+      // and none of the contact dermatitis). The lower leg is a different
+      // wound — months not weeks, one in three infected in the elderly
+      // cohort, and oedema is the modifiable factor — so it gets its own
+      // bullets rather than a caveat on the shared ones.
+      const lowerLeg = isLowerLegSite(l.site);
+      const woundCare = [
+        lowerLeg
+          ? `Wound left open to heal by secondary intention; expect 8–12 weeks or longer on the lower leg — healing time scales with wound size and depth.`
+          : `Wound left open to heal by secondary intention; expect 4–8 weeks — healing time scales with wound size and depth.`,
+        SIH_DRESSING_CARE[resolveSihDressing(l)],
+        `Cleanse with tap water or saline at each change; no antiseptic soaks and no topical antibiotic — white soft paraffin only if an ointment is wanted.`,
+      ];
+      if (lowerLeg) {
+        woundCare.push(
+          `Lower leg: elevate when sitting and minimise standing; compression (tubular or two-layer) from the first dressing change if ABPI ≥ 0.8 and no arterial disease — reduces oedema and dressing shear.`,
+          `Infection risk is highest on the lower leg (around one in three in elderly cohorts): warn of spreading redness, increasing pain or malodour, and give return advice.`,
+        );
+      }
+      woundCare.push(
+        `Dressing changes via practice / district nurse; patient given written wound-care instructions.`,
+        `Once epithelialised: moisturiser and massage; sun protection for 12 months.`,
+      );
+      const nonAbsorbablePurseString =
+        l.sihPurseString && !isAbsorbablePurseString(l.sihPurseStringSuture);
+      return {
+        woundCare,
+        removal: nonAbsorbablePurseString
+          ? [
+              `Purse-string suture (${PURSE_STRING_PHRASE[l.sihPurseStringSuture]}) out at 14–21 days once the wound has contracted.`,
+            ]
+          : [`Open wound: no sutures to remove.`],
+        day: nonAbsorbablePurseString ? 14 : 7,
+        visitReason: 'wound check',
+      };
+    }
   }
 }
 
@@ -770,7 +923,7 @@ function SkinLesionExcision() {
             <div class="opnote-field">
               <span class="opnote-field-label">Closure type</span>
               <div class="opnote-radio-group opnote-radio-group-cols-2" role="radiogroup" aria-label={`Closure type for lesion ${i + 1}`}>
-                {(['direct', 'ftsg', 'stsg', 'flap'] as const).map((v) => (
+                {(['direct', 'ftsg', 'stsg', 'flap', 'secondary'] as const).map((v) => (
                   <label class="opnote-radio">
                     <input type="radio" name={`closure-${i}`} value={v} checked={lesion.closureType === v}
                       onChange={() => updateLesion(i, 'closureType', v)} />
@@ -779,6 +932,7 @@ function SkinLesionExcision() {
                       {v === 'ftsg' && 'FTSG'}
                       {v === 'stsg' && 'STSG'}
                       {v === 'flap' && 'Local flap'}
+                      {v === 'secondary' && 'Secondary intention'}
                     </span>
                   </label>
                 ))}
@@ -887,6 +1041,54 @@ function SkinLesionExcision() {
                     <option>Keystone</option>
                   </select>
                 </label>
+              </div>
+            )}
+
+            {lesion.closureType === 'secondary' && (
+              <div class="opnote-subsection">
+                <p class="opnote-subsection-title">Secondary intention</p>
+                <label class="opnote-field">
+                  <span class="opnote-field-label">Primary dressing</span>
+                  <select class="opnote-field-select" value={lesion.sihDressing}
+                    onChange={(e) => updateLesion(i, 'sihDressing', (e.currentTarget as HTMLSelectElement).value as SihDressing)}>
+                    <option value="auto">
+                      Auto — {SIH_DRESSING_LABEL[resolveSihDressing({ ...lesion, sihDressing: 'auto' })]}
+                    </option>
+                    <option value="aquacel">Aquacel (hydrofibre)</option>
+                    <option value="aquacel-ag">Aquacel Ag (silver hydrofibre)</option>
+                    <option value="bactigras">Bactigras (chlorhexidine tulle)</option>
+                    <option value="jelonet">Jelonet (paraffin tulle)</option>
+                    <option value="hydrocolloid">Hydrocolloid (DuoDERM)</option>
+                    <option value="mepitel">Mepitel (silicone layer)</option>
+                  </select>
+                </label>
+                <label class="opnote-field">
+                  <span class="opnote-field-label">Reason left open</span>
+                  <input class="opnote-field-input" type="text" value={lesion.sihReason}
+                    onInput={(e) => updateLesion(i, 'sihReason', (e.currentTarget as HTMLInputElement).value)} />
+                </label>
+                <label class="opnote-toggle">
+                  <input type="checkbox" checked={lesion.sihPurseString}
+                    onChange={(e) => updateLesion(i, 'sihPurseString', (e.currentTarget as HTMLInputElement).checked)} />
+                  <span class="opnote-toggle-label">Purse-string suture to reduce the defect</span>
+                </label>
+                {lesion.sihPurseString && (
+                  <label class="opnote-field">
+                    <span class="opnote-field-label">Purse-string suture</span>
+                    <select class="opnote-field-select" value={lesion.sihPurseStringSuture}
+                      onChange={(e) => updateLesion(i, 'sihPurseStringSuture', (e.currentTarget as HTMLSelectElement).value as PurseStringSuture)}>
+                      <option value="monocryl-3-0">3-0 Monocryl (absorbable)</option>
+                      <option value="pds-3-0">3-0 PDS (absorbable)</option>
+                      <option value="nylon-3-0">3-0 nylon (out at 14–21 d)</option>
+                      <option value="prolene-3-0">3-0 Prolene (out at 14–21 d)</option>
+                    </select>
+                  </label>
+                )}
+                {isLowerLegSite(lesion.site) && (
+                  <p class="opnote-field-label">
+                    Lower-leg site detected — post-op plan adds elevation, compression (ABPI permitting) and the longer healing expectation.
+                  </p>
+                )}
               </div>
             )}
 
@@ -1028,12 +1230,12 @@ export const meta = {
   slug: 'skin-lesion-excision',
   title: 'Skin lesion excision',
   indication:
-    'Excision of one or more benign or malignant cutaneous lesions on a single patient. Closure morphs per lesion: direct / FTSG / STSG / local flap.',
+    'Excision of one or more benign or malignant cutaneous lesions on a single patient. Closure morphs per lesion: direct / FTSG / STSG / local flap / secondary intention.',
   category: 'skin-soft-tissue' as const,
   emits:
-    'Indication · Per-lesion pathology and margin · Site-driven skin prep · Per-lesion closure procedure and skin suture · Per-lesion specimen orientation · Closure-specific post-op plan, removals and follow-up',
-  lastReviewed: '2026-08-11',
-  version: '1.5',
+    'Indication · Per-lesion pathology and margin · Site-driven skin prep · Per-lesion closure procedure and skin suture · Secondary-intention dressing regimen · Per-lesion specimen orientation · Closure-specific post-op plan, removals and follow-up',
+  lastReviewed: '2026-09-08',
+  version: '1.6',
 };
 
 export default SkinLesionExcision;

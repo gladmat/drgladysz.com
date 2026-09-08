@@ -55,15 +55,56 @@ const FACIAL_SITE_TERMS = [
 // A trailing `s` is tolerated so "both cheeks" matches; "shin" still does not
 // match `chin`, because the preceding-character class rejects a letter before
 // the term.
-const FACIAL_SITE_RE = new RegExp(
-  `(?:^|[^a-z-])(?:${[...FACIAL_SITE_TERMS]
-    .sort((a, b) => b.length - a.length)
-    .join('|')})s?(?![a-z-])`,
-  'i',
-);
+function siteTermRegExp(terms: readonly string[]): RegExp {
+  return new RegExp(
+    `(?:^|[^a-z-])(?:${[...terms]
+      .sort((a, b) => b.length - a.length)
+      .join('|')})s?(?![a-z-])`,
+    'i',
+  );
+}
+
+const FACIAL_SITE_RE = siteTermRegExp(FACIAL_SITE_TERMS);
 
 export function isFacialSite(site: string): boolean {
   return FACIAL_SITE_RE.test(site);
+}
+
+// Lower-leg / foot sites, where a wound left to heal by secondary intention
+// behaves differently from anywhere else: healing runs to months rather than
+// weeks (HEALS cohort, mean age 81: median 81 days, 30% wound infection),
+// dependent oedema and dressing shear are the enemies, and elevation plus
+// compression (ABPI permitting) are part of the regimen. Thigh and knee are
+// deliberately absent — they are not gaiter-area skin and do not carry the
+// venous-hypertension problem.
+//
+// Bare `leg` is included because surgeons write "left leg" for the shin; the
+// price is that "upper leg" also matches, which is rare enough in practice to
+// accept rather than special-case.
+const LOWER_LEG_SITE_TERMS = [
+  'lower leg',
+  'leg',
+  'shin',
+  'pretibial',
+  'pre-tibial',
+  'tibia',
+  'tibial',
+  'calf',
+  'gaiter',
+  'ankle',
+  'malleolus',
+  'malleolar',
+  'malleoli',
+  'foot',
+  'feet',
+  'heel',
+  'toe',
+];
+
+const LOWER_LEG_SITE_RE = siteTermRegExp(LOWER_LEG_SITE_TERMS);
+
+export function isLowerLegSite(site: string): boolean {
+  return LOWER_LEG_SITE_RE.test(site);
 }
 
 export type PrepAgent = 'auto' | 'chlorhexidine' | 'betadine';
