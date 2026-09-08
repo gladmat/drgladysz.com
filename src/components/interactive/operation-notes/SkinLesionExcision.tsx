@@ -32,6 +32,13 @@
 // `isLowerLegSite()` that adds elevation, compression and the longer healing
 // expectation. Evidence summary lives in
 // 01-brand-system/operation-notes-package/evidence/secondary-intention-dressing-regimen.md.
+//
+// Per-lesion post-op plan (v1.7): with 2+ lesions whose aftercare differs,
+// the post-op section splits into `### Lesion N — site (closure)` subsections
+// (lesions with identical aftercare share one heading) followed by
+// `### All lesions` for the case-level lines. Identical aftercare across every
+// lesion keeps the single merged list, so a note for two facial BCCs closed
+// directly reads exactly as it did before.
 
 import { useState, useCallback } from 'preact/hooks';
 import OperationNoteShell from './_shared/OperationNoteShell';
@@ -651,21 +658,79 @@ function mergeAftercare(
   return out;
 }
 
-function postOpPlan(s: State): string[] {
+// Case-level lines that belong to the patient, not to any one lesion.
+function analgesiaLine(s: State): string {
   const anyStsg = s.lesions.some((l) => l.closureType === 'stsg');
-  const lines: string[] = [
-    ...mergeAftercare(s.lesions, 'woundCare'),
-    anyStsg
-      ? `Analgesia: regular paracetamol; ibuprofen PRN — warn the donor site is usually more painful than the graft.`
-      : `Analgesia: regular paracetamol; ibuprofen PRN.`,
-    ...mergeAftercare(s.lesions, 'removal'),
-  ];
-  lines.push(`Histology review at clinic.`);
-  lines.push(`Follow-up: ${followUpValue(s)}.`);
+  return anyStsg
+    ? `Analgesia: regular paracetamol; ibuprofen PRN — warn the donor site is usually more painful than the graft.`
+    : `Analgesia: regular paracetamol; ibuprofen PRN.`;
+}
+
+function caseLevelPlan(s: State): string[] {
+  const lines = [`Histology review at clinic.`, `Follow-up: ${followUpValue(s)}.`];
   if (s.accClaim) lines.push(`ACC claim ${s.acc45} lodged.`);
   if (s.extraNotes) lines.push(s.extraNotes);
   if (s.lesions.some(isMalignant)) lines.push(`GP letter to be sent.`);
   return lines;
+}
+
+// Single merged list — used for one lesion, or for several whose aftercare is
+// identical. Wound care, then analgesia, then removals, then the case lines.
+function postOpPlan(s: State): string[] {
+  return [
+    ...mergeAftercare(s.lesions, 'woundCare'),
+    analgesiaLine(s),
+    ...mergeAftercare(s.lesions, 'removal'),
+    ...caseLevelPlan(s),
+  ];
+}
+
+// Lesions grouped by identical aftercare, in order of first appearance. Two
+// facial direct closures fall into one group; a facial excision and a shin
+// left open fall into two. More than one group means the post-op plan has to
+// say which bullets belong to which wound.
+interface CareGroup {
+  indices: number[];
+  lesions: Lesion[];
+  care: ClosureAftercare;
+}
+
+function groupLesionsByCare(lesions: Lesion[]): CareGroup[] {
+  const groups: CareGroup[] = [];
+  const byKey = new Map<string, CareGroup>();
+  lesions.forEach((l, i) => {
+    const care = lesionAftercare(l);
+    const key = [...care.woundCare, '--', ...care.removal].join('\n');
+    let g = byKey.get(key);
+    if (!g) {
+      g = { indices: [], lesions: [], care };
+      byKey.set(key, g);
+      groups.push(g);
+    }
+    g.indices.push(i);
+    g.lesions.push(l);
+  });
+  return groups;
+}
+
+// "Lesion 2 — left shin (healing by secondary intention)" or, for a shared
+// group, "Lesions 1 + 3 — right cheek, left temple (direct primary closure)".
+function careGroupHeading(g: CareGroup): string {
+  const numbers = g.indices.map((i) => i + 1).join(' + ');
+  const sites = g.lesions.map((l) => l.site).join(', ');
+  const closures = [...new Set(g.lesions.map((l) => CLOSURE_PLAN_LABEL[l.closureType]))].join(' / ');
+  return `### ${g.indices.length > 1 ? 'Lesions' : 'Lesion'} ${numbers} — ${sites} (${closures})`;
+}
+
+function postOpBlock(s: State): string {
+  const groups = s.lesions.length > 1 ? groupLesionsByCare(s.lesions) : [];
+  if (groups.length < 2) return bullets(postOpPlan(s));
+  return joinSections(
+    ...groups.map(
+      (g) => `${careGroupHeading(g)}\n\n${bullets([...g.care.woundCare, ...g.care.removal])}`,
+    ),
+    `### All lesions\n\n${bullets([analgesiaLine(s), ...caseLevelPlan(s)])}`,
+  );
 }
 
 function renderMarkdown(s: State): string {
@@ -757,7 +822,7 @@ function renderMarkdown(s: State): string {
     `## Count`,
     `Swabs / needles / instruments — confirmed correct.`,
     `## Post-op plan`,
-    bullets(postOpPlan(s)),
+    postOpBlock(s),
     `## Signature`,
     `Mateusz Gładysz, Consultant Plastic and Hand Surgeon — ${s.signatureDate}`,
   );
@@ -1233,9 +1298,9 @@ export const meta = {
     'Excision of one or more benign or malignant cutaneous lesions on a single patient. Closure morphs per lesion: direct / FTSG / STSG / local flap / secondary intention.',
   category: 'skin-soft-tissue' as const,
   emits:
-    'Indication · Per-lesion pathology and margin · Site-driven skin prep · Per-lesion closure procedure and skin suture · Secondary-intention dressing regimen · Per-lesion specimen orientation · Closure-specific post-op plan, removals and follow-up',
+    'Indication · Per-lesion pathology and margin · Site-driven skin prep · Per-lesion closure procedure and skin suture · Secondary-intention dressing regimen · Per-lesion specimen orientation · Closure-specific post-op plan split per lesion when aftercare differs, removals and follow-up',
   lastReviewed: '2026-09-08',
-  version: '1.6',
+  version: '1.7',
 };
 
 export default SkinLesionExcision;
