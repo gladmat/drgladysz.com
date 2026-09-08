@@ -8,13 +8,16 @@
 // line with the ring-finger radial border, ulnar to the thenar crease and
 // proximal to Kaplan's line; ligament entered at its ulnar third; planes
 // developed above and below before division; scissors proximally, scalpel
-// distally; no routine neurolysis / epineurotomy / tenosynovectomy; 4-0
-// nylon; bulky non-circumferential dressing; no splint.
+// distally; no routine neurolysis / epineurotomy / tenosynovectomy; 3-0
+// Pronova mattress; bulky non-circumferential dressing; no splint.
 //
-// Site-driven resolution (v2.1 pattern): the anaesthetist line and the
-// local-anaesthetic volume default from the anaesthetic choice at render
-// time — no stored derived state. Skin closure drives the post-op removal
-// bullet (absorbable closure has nothing to remove).
+// Site-driven resolution (v2.1 pattern): the anaesthetist line, the
+// local-anaesthetic mix and its volume default from the anaesthetic choice
+// at render time — no stored derived state. Local + tourniquet defaults to
+// the Waikato skin-shop mix (0.4% lignocaine, 1:250,000 adrenaline, within
+// 1–1.5 mL/kg); WALANT defaults to the buffered Lalonde mix (1% lignocaine,
+// 1:100,000 adrenaline, 8.4% sodium bicarbonate 10:1). Skin closure drives
+// the post-op removal bullet (absorbable closure has nothing to remove).
 
 import { useState, useCallback } from 'preact/hooks';
 import OperationNoteShell from './_shared/OperationNoteShell';
@@ -27,7 +30,8 @@ type NcsSeverity = 'unspecified' | 'mild' | 'moderate' | 'severe';
 type Injections = 'none' | 'one' | 'two';
 type InjectionRelief = 'transient' | 'none';
 type NerveAppearance = 'compressed' | 'hourglass' | 'normal';
-type Closure = 'nylon' | 'monocryl';
+type Closure = 'pronova' | 'monocryl';
+type LaMix = 'auto' | 'skinshop' | 'buffered' | 'custom';
 
 interface State {
   date: string;
@@ -36,8 +40,9 @@ interface State {
   anaesthetist: string;
   anaesthetistMode: AnaesthetistMode;
   anaesthesia: Anaesthesia;
-  localAgent: string;
-  localVolume: string; // '' = auto (10 mL local / 20 mL WALANT)
+  laMix: LaMix;
+  localAgent: string; // used only when laMix === 'custom'
+  localVolume: string; // '' = auto (20 mL for the two standard mixes, 10 mL custom)
   tourniquetPressure: string;
   tourniquetOn: string;
   tourniquetOff: string;
@@ -72,6 +77,7 @@ const INITIAL_STATE: State = {
   anaesthetist: '[Dr ____]',
   anaesthetistMode: 'auto',
   anaesthesia: 'local',
+  laMix: 'auto',
   localAgent: '1% lignocaine with 1:100,000 adrenaline',
   localVolume: '',
   tourniquetPressure: '250',
@@ -97,7 +103,7 @@ const INITIAL_STATE: State = {
   synovitis: false,
   tenosynovectomy: false,
   additionalFindings: '',
-  closure: 'nylon',
+  closure: 'pronova',
   signatureDate: '[DD/MM/YYYY]',
 };
 
@@ -130,13 +136,13 @@ const NERVE_APPEARANCE_PHRASE: Record<NerveAppearance, string> = {
 };
 
 const CLOSURE_STEP: Record<Closure, string> = {
-  nylon: 'Skin closed with 4-0 nylon interrupted.',
+  pronova: 'Skin closed with 3-0 Pronova interrupted mattress sutures.',
   monocryl:
     'Skin closed with 4-0 Monocryl subcuticular running; Steri-Strips applied.',
 };
 
 const CLOSURE_POSTOP: Record<Closure, string> = {
-  nylon: 'Sutures out at 10–14 days.',
+  pronova: 'Sutures out at 10–14 days.',
   monocryl:
     'Absorbable subcuticular closure — no sutures to remove; wound check at 10–14 days.',
 };
@@ -152,10 +158,42 @@ function anaesthetistPresent(s: State): boolean {
   return s.anaesthesia === 'regional' || s.anaesthesia === 'ga';
 }
 
-function resolveLocalVolume(s: State): string {
+type ResolvedLaMix = Exclude<LaMix, 'auto'>;
+
+function resolveLaMix(s: State): ResolvedLaMix {
+  if (s.laMix !== 'auto') return s.laMix;
+  return s.anaesthesia === 'walant' ? 'buffered' : 'skinshop';
+}
+
+const LA_MIX_LABEL: Record<ResolvedLaMix, string> = {
+  skinshop: 'Skin-shop mix — 0.4% lignocaine, 1:250,000 adrenaline',
+  buffered: 'Buffered WALANT mix — 1% lignocaine, 1:100,000 adrenaline, 8.4% sodium bicarbonate 10:1',
+  custom: 'Custom',
+};
+
+// Noun phrase for the infiltration sentence. The skin-shop mix carries its
+// weight-based ceiling so the note documents the dose check; the buffered
+// mix states the ratio so the preparation is reproducible.
+function laAgentPhrase(s: State, mix: ResolvedLaMix): string {
+  switch (mix) {
+    case 'skinshop':
+      return '0.4% lignocaine with 1:250,000 adrenaline';
+    case 'buffered':
+      return '1% lignocaine with 1:100,000 adrenaline buffered 10:1 with 8.4% sodium bicarbonate';
+    case 'custom':
+      return s.localAgent;
+  }
+}
+
+function resolveLocalVolume(s: State, mix: ResolvedLaMix): string {
   const typed = s.localVolume.trim();
   if (typed) return typed;
-  return s.anaesthesia === 'walant' ? '20' : '10';
+  return mix === 'custom' ? '10' : '20';
+}
+
+function laDosePhrase(s: State, mix: ResolvedLaMix): string {
+  const volume = `${resolveLocalVolume(s, mix)} mL`;
+  return mix === 'skinshop' ? `${volume} (within 1–1.5 mL/kg)` : volume;
 }
 
 // "A, B, or C" / "A or B" / "A" — for the negative-findings sentence.
@@ -190,12 +228,14 @@ function diagnosisLines(s: State): string[] {
 function positionLine(s: State): string {
   const base = 'Supine, arm on hand table, forearm supinated.';
   const tourniquet = `Upper arm tourniquet ${s.tourniquetPressure} mmHg, on ${s.tourniquetOn} off ${s.tourniquetOff} = ${s.tourniquetTime} min.`;
-  const volume = resolveLocalVolume(s);
+  const mix = resolveLaMix(s);
+  const agent = laAgentPhrase(s, mix);
+  const dose = laDosePhrase(s, mix);
   switch (s.anaesthesia) {
     case 'local':
-      return `${base} Incision marked before infiltration. Local infiltration of ${s.localAgent}, ${volume} mL, along the planned incision and into the carpal tunnel. ${tourniquet}`;
+      return `${base} Incision marked before infiltration. Local infiltration of ${agent}, ${dose}, along the planned incision and into the carpal tunnel. ${tourniquet}`;
     case 'walant':
-      return `${base} Incision marked before infiltration. WALANT: ${s.localAgent}, ${volume} mL, infiltrated along the planned incision and into the carpal tunnel and allowed 25 min. No tourniquet.`;
+      return `${base} Incision marked before infiltration. WALANT: ${agent}, ${dose}, infiltrated subcutaneously proximal to the wrist crease over the median nerve and along the incision into the carpal tunnel; allowed 25 min for vasoconstriction. No tourniquet.`;
     case 'regional':
       return `${base} Supraclavicular block. ${tourniquet}`;
     case 'ga':
@@ -338,6 +378,7 @@ function OpenCarpalTunnelRelease() {
   const present = anaesthetistPresent(state);
   const tourniquet = usesTourniquet(state.anaesthesia);
   const localUsed = state.anaesthesia === 'local' || state.anaesthesia === 'walant';
+  const resolvedMix = resolveLaMix(state);
 
   return (
     <OperationNoteShell
@@ -474,18 +515,31 @@ function OpenCarpalTunnelRelease() {
         {localUsed && (
           <div class="opnote-subsection">
             <p class="opnote-subsection-title">Local anaesthetic</p>
-            <div class="opnote-row opnote-row-2">
-              <label class="opnote-field">
-                <span class="opnote-field-label">Agent</span>
-                <input class="opnote-field-input" type="text" value={state.localAgent}
-                  onInput={(e) => update('localAgent', (e.currentTarget as HTMLInputElement).value)} />
-              </label>
+            <label class="opnote-field">
+              <span class="opnote-field-label">Mix</span>
+              <select class="opnote-field-select" value={state.laMix}
+                onChange={(e) => update('laMix', (e.currentTarget as HTMLSelectElement).value as LaMix)}>
+                <option value="auto">Auto — follows anaesthetic ({resolvedMix === 'skinshop' ? 'skin-shop mix' : 'buffered WALANT mix'})</option>
+                <option value="skinshop">{LA_MIX_LABEL.skinshop}</option>
+                <option value="buffered">{LA_MIX_LABEL.buffered}</option>
+                <option value="custom">Custom</option>
+              </select>
+              <span class="opnote-field-hint">Skin-shop mix with tourniquet, buffered mix for WALANT. Bicarbonate is drawn up fresh: 1 mL of 8.4% per 10 mL of lignocaine-adrenaline.</span>
+            </label>
+            <div class="opnote-row opnote-row-2" style="margin-top:12px">
+              {resolvedMix === 'custom' && (
+                <label class="opnote-field">
+                  <span class="opnote-field-label">Agent</span>
+                  <input class="opnote-field-input" type="text" value={state.localAgent}
+                    onInput={(e) => update('localAgent', (e.currentTarget as HTMLInputElement).value)} />
+                </label>
+              )}
               <label class="opnote-field">
                 <span class="opnote-field-label">Volume (mL)</span>
                 <input class="opnote-field-input" type="text" value={state.localVolume}
-                  placeholder={`Auto — ${resolveLocalVolume(state)} mL`}
+                  placeholder={`Auto — ${resolveLocalVolume(state, resolvedMix)} mL`}
                   onInput={(e) => update('localVolume', (e.currentTarget as HTMLInputElement).value)} />
-                <span class="opnote-field-hint">Leave blank for 10 mL with tourniquet, 20 mL for WALANT.</span>
+                <span class="opnote-field-hint">Leave blank for 20 mL with either standard mix (10 mL custom).</span>
               </label>
             </div>
           </div>
@@ -602,9 +656,9 @@ function OpenCarpalTunnelRelease() {
           <span class="opnote-field-label">Skin closure</span>
           <div class="opnote-radio-group opnote-radio-group-cols-2" role="radiogroup" aria-label="Skin closure">
             <label class="opnote-radio">
-              <input type="radio" name="closure" value="nylon" checked={state.closure === 'nylon'}
-                onChange={() => update('closure', 'nylon')} />
-              <span>4-0 nylon interrupted</span>
+              <input type="radio" name="closure" value="pronova" checked={state.closure === 'pronova'}
+                onChange={() => update('closure', 'pronova')} />
+              <span>3-0 Pronova mattress</span>
             </label>
             <label class="opnote-radio">
               <input type="radio" name="closure" value="monocryl" checked={state.closure === 'monocryl'}
@@ -632,12 +686,12 @@ export const meta = {
   slug: 'open-carpal-tunnel-release',
   title: 'Open carpal tunnel release',
   indication:
-    'Elective open division of the transverse carpal ligament for carpal tunnel syndrome. Anaesthetic toggle: local + tourniquet / WALANT / supraclavicular block / GA; closure toggle drives the post-op plan.',
+    'Elective open division of the transverse carpal ligament for carpal tunnel syndrome. Anaesthetic toggle: local + tourniquet / WALANT / supraclavicular block / GA with selectable local mix; closure toggle drives the post-op plan.',
   category: 'hand-surgery' as const,
   emits:
     'Diagnosis with NCS + conservative history · Consent · Anaesthetic-specific position line · Six-step ligament division · Variant-aware findings · Closure-specific post-op plan',
   lastReviewed: '2026-09-08',
-  version: '1.0',
+  version: '1.1',
 };
 
 export default OpenCarpalTunnelRelease;
