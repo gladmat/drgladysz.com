@@ -34,8 +34,8 @@ type Anaesthesia = 'regional' | 'ga' | 'combined';
 type AnaesthetistMode = 'auto' | 'present' | 'absent';
 type Antibiotic = 'cefazolin2' | 'cefazolin3' | 'clindamycin' | 'custom';
 type Side = 'unspecified' | 'left' | 'right';
-type Stage = 'unspecified' | 'II' | 'III';
-type Stt = 'preserved' | 'mild';
+type Stage = 'unspecified' | 'II' | 'III' | 'IV';
+type Stt = 'auto' | 'preserved' | 'mild' | 'advanced';
 type Injections = 'none' | 'one' | 'two';
 type InjectionRelief = 'transient' | 'none';
 type CupShape = 'spherical' | 'conical';
@@ -116,7 +116,7 @@ const INITIAL_STATE: State = {
   keyPinch: '[___]',
   keyPinchContra: '[___]',
   mcpHyperextension: '[___]',
-  stt: 'preserved',
+  stt: 'auto',
   orthosisMonths: '[___]',
   injections: 'none',
   injectionRelief: 'transient',
@@ -172,9 +172,40 @@ const SIDE_LABEL: Record<Side, string> = {
 };
 
 const STAGE_LABEL: Record<Stage, string> = {
-  unspecified: '[II/III]',
+  unspecified: '[STAGE]',
   II: 'II',
   III: 'III',
+  IV: 'IV',
+};
+
+type ResolvedStt = Exclude<Stt, 'auto'>;
+
+// Stage IV is defined by scaphotrapeziotrapezoid involvement, so the STT
+// status follows the stage unless the surgeon overrides it: stage IV →
+// advanced change accepted, anything else → preserved.
+function resolveStt(s: State): ResolvedStt {
+  if (s.stt !== 'auto') return s.stt;
+  return s.stage === 'IV' ? 'advanced' : 'preserved';
+}
+
+const STT_LABEL: Record<ResolvedStt, string> = {
+  preserved: 'Preserved',
+  mild: 'Mild changes, accepted',
+  advanced: 'STT osteoarthritis (stage IV), accepted',
+};
+
+const STT_DIAGNOSIS: Record<ResolvedStt, string> = {
+  preserved: 'scaphotrapeziotrapezoid joint preserved.',
+  mild: 'mild scaphotrapeziotrapezoid changes accepted, asymptomatic on examination.',
+  advanced:
+    'scaphotrapeziotrapezoid osteoarthritis (stage IV) accepted — pain and tenderness localised to the trapeziometacarpal joint on examination.',
+};
+
+const STT_FINDING: Record<ResolvedStt, string> = {
+  preserved: 'Scaphotrapeziotrapezoid joint: preserved.',
+  mild: 'Scaphotrapeziotrapezoid joint: mild degenerative change, accepted.',
+  advanced:
+    'Scaphotrapeziotrapezoid joint: degenerative change consistent with stage IV disease, accepted and not addressed.',
 };
 
 const NECK_TYPE_PHRASE: Record<NeckType, string> = {
@@ -276,10 +307,7 @@ function antibioticLine(s: State): string {
 }
 
 function diagnosisLines(s: State): string[] {
-  const sttSentence =
-    s.stt === 'preserved'
-      ? 'scaphotrapeziotrapezoid joint preserved.'
-      : 'mild scaphotrapeziotrapezoid changes accepted, asymptomatic on examination.';
+  const sttSentence = STT_DIAGNOSIS[resolveStt(s)];
   const injection =
     s.injections === 'none'
       ? 'no steroid injection'
@@ -290,6 +318,14 @@ function diagnosisLines(s: State): string[] {
     `Conservative management failed: activity modification, thumb orthosis and hand therapy for ${s.orthosisMonths} months; NSAIDs; ${injection}.`,
     `Total joint replacement chosen over trapeziectomy for earlier recovery of pinch strength and preservation of thumb length; conversion to trapeziectomy remains available should the implant fail.`,
   ];
+}
+
+function consentParagraph(s: State): string {
+  const stageIv =
+    s.stage === 'IV'
+      ? ' Use of the prosthesis in stage IV disease — outside the manufacturer\'s labelled indication of stage II–III — and the possibility of persistent scaphotrapeziotrapezoid pain discussed.'
+      : '';
+  return `Risks discussed: bleeding, infection (including deep infection requiring implant removal), numbness or neuroma from the superficial branch of the radial nerve, radial artery injury, intra-operative trapezial fracture with conversion to trapeziectomy, dislocation, impingement, loosening or wear of the implant requiring revision, de Quervain-type tendon irritation, stiffness, persistent pain, CRPS, need for further surgery. Alternatives (continued non-operative care, trapeziectomy with or without suspension, arthrodesis) discussed.${stageIv} Implant details will be recorded in the clinical record and given to the patient. Written consent obtained.`;
 }
 
 function positionLine(s: State): string {
@@ -357,10 +393,7 @@ function findingsLines(s: State): string[] {
   const trapezium = s.trapezialCrack
     ? `Trapezium: ${bone}; non-displaced crack of the trapezial wall on cup impaction — cup remained stable to rotation and pull-out, no displacement on image intensifier; immobilisation extended.`
     : `Trapezium: ${bone}; no intra-operative fracture.`;
-  const stt =
-    s.stt === 'preserved'
-      ? 'Scaphotrapeziotrapezoid joint: preserved.'
-      : 'Scaphotrapeziotrapezoid joint: mild degenerative change, accepted.';
+  const stt = STT_FINDING[resolveStt(s)];
   const mcp =
     s.mcpProcedure === 'none'
       ? `MCP joint hyperextension ${s.mcpHyperextension}° pre-operatively; realigned passively once the thumb ray was restored — no additional procedure.`
@@ -417,7 +450,7 @@ function renderMarkdown(s: State): string {
     `## Diagnosis / Indication`,
     bullets(diagnosisLines(s)),
     `## Consent`,
-    `Risks discussed: bleeding, infection (including deep infection requiring implant removal), numbness or neuroma from the superficial branch of the radial nerve, radial artery injury, intra-operative trapezial fracture with conversion to trapeziectomy, dislocation, impingement, loosening or wear of the implant requiring revision, de Quervain-type tendon irritation, stiffness, persistent pain, CRPS, need for further surgery. Alternatives (continued non-operative care, trapeziectomy with or without suspension, arthrodesis) discussed. Implant details will be recorded in the clinical record and given to the patient. Written consent obtained.`,
+    consentParagraph(s),
     `## Position / Anaesthesia / Tourniquet`,
     positionLine(s),
     `## Antibiotics / VTE prophylaxis`,
@@ -527,11 +560,12 @@ function TrapeziometacarpalJointReplacementTouch() {
             <span class="opnote-field-label">Eaton–Littler stage</span>
             <select class="opnote-field-select" value={state.stage}
               onChange={(e) => update('stage', (e.currentTarget as HTMLSelectElement).value as Stage)}>
-              <option value="unspecified">[II/III]</option>
+              <option value="unspecified">[STAGE]</option>
               <option value="II">II</option>
               <option value="III">III</option>
+              <option value="IV">IV</option>
             </select>
-            <span class="opnote-field-hint">Touch® is indicated for stage II–III. Stage IV (STT involvement) is outside the labelled indication.</span>
+            <span class="opnote-field-hint">Labelled indication is stage II–III. Stage IV (STT involvement) resolves the STT status to "accepted" and adds the off-label sentence to Consent.</span>
           </label>
         </div>
         <div class="opnote-row opnote-row-3">
@@ -561,8 +595,10 @@ function TrapeziometacarpalJointReplacementTouch() {
             <span class="opnote-field-label">STT joint</span>
             <select class="opnote-field-select" value={state.stt}
               onChange={(e) => update('stt', (e.currentTarget as HTMLSelectElement).value as Stt)}>
-              <option value="preserved">Preserved</option>
-              <option value="mild">Mild changes, accepted</option>
+              <option value="auto">Auto — follows stage ({STT_LABEL[resolveStt(state)]})</option>
+              <option value="preserved">{STT_LABEL.preserved}</option>
+              <option value="mild">{STT_LABEL.mild}</option>
+              <option value="advanced">{STT_LABEL.advanced}</option>
             </select>
           </label>
         </div>
@@ -878,8 +914,8 @@ export const meta = {
   category: 'hand-surgery' as const,
   emits:
     'Staged diagnosis with conservative history · Consent with implant-specific risks · Antibiotic + VTE prophylaxis line · Thirteen-step implantation with fluoroscopic checks · Implant record (REF / LOT / UDI) · Radiation record · Immobilisation-specific post-op plan',
-  lastReviewed: '2026-09-10',
-  version: '1.0',
+  lastReviewed: '2026-09-11',
+  version: '1.1',
 };
 
 export default TrapeziometacarpalJointReplacementTouch;
