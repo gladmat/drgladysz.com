@@ -21,6 +21,9 @@ import HandTrauma, { meta as handTraumaMeta } from './HandTrauma';
 import HandInfectionDrainage, { meta as handInfectionDrainageMeta } from './HandInfectionDrainage';
 import FreeFlapReconstruction, { meta as freeFlapReconstructionMeta } from './FreeFlapReconstruction';
 import OpenCarpalTunnelRelease, { meta as openCarpalTunnelReleaseMeta } from './OpenCarpalTunnelRelease';
+import TrapeziometacarpalJointReplacementTouch, {
+  meta as trapeziometacarpalJointReplacementTouchMeta,
+} from './TrapeziometacarpalJointReplacementTouch';
 
 export type OperationNoteCategory =
   | 'skin-soft-tissue'
@@ -52,6 +55,10 @@ export const OPERATION_NOTE_TEMPLATES: OperationNoteTemplate[] = [
   { meta: handInfectionDrainageMeta, component: HandInfectionDrainage },
   { meta: freeFlapReconstructionMeta, component: FreeFlapReconstruction },
   { meta: openCarpalTunnelReleaseMeta, component: OpenCarpalTunnelRelease },
+  {
+    meta: trapeziometacarpalJointReplacementTouchMeta,
+    component: TrapeziometacarpalJointReplacementTouch,
+  },
 ];
 
 // Slug-keyed component map. Astro/Vite can statically analyse direct object
@@ -66,6 +73,7 @@ export const OPERATION_NOTE_COMPONENTS: Record<string, ComponentType<{}>> = {
   'hand-infection-drainage': HandInfectionDrainage,
   'free-flap-reconstruction': FreeFlapReconstruction,
   'open-carpal-tunnel-release': OpenCarpalTunnelRelease,
+  'trapeziometacarpal-joint-replacement-touch': TrapeziometacarpalJointReplacementTouch,
 };
 
 export const OPERATION_NOTE_CATEGORY_LABEL: Record<
@@ -84,7 +92,7 @@ export const OPERATION_NOTE_CATEGORY_BLURB: Record<
   'skin-soft-tissue':
     'Excisions, biopsies, and reconstructions of cutaneous and subcutaneous lesions — benign and malignant.',
   'hand-surgery':
-    'Acute hand surgery — trauma (laceration / fracture / tendon / nerve, one accident covered by one note) and infection (PFT / deep space / septic arthritis), almost always ACC-funded — plus elective nerve decompression.',
+    'Acute hand surgery — trauma (laceration / fracture / tendon / nerve, one accident covered by one note) and infection (PFT / deep space / septic arthritis), almost always ACC-funded — plus elective nerve decompression and thumb-base joint replacement.',
   'free-flap':
     'Microvascular tissue transfer for complex composite defects after trauma or oncologic resection.',
 };
