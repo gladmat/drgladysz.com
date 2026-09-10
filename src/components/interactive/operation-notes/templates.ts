@@ -24,8 +24,10 @@ import OpenCarpalTunnelRelease, { meta as openCarpalTunnelReleaseMeta } from './
 import TrapeziometacarpalJointReplacementTouch, {
   meta as trapeziometacarpalJointReplacementTouchMeta,
 } from './TrapeziometacarpalJointReplacementTouch';
+import GeneralOperationNote, { meta as generalOperationNoteMeta } from './GeneralOperationNote';
 
 export type OperationNoteCategory =
+  | 'general'
   | 'skin-soft-tissue'
   | 'hand-surgery'
   | 'free-flap';
@@ -59,6 +61,7 @@ export const OPERATION_NOTE_TEMPLATES: OperationNoteTemplate[] = [
     meta: trapeziometacarpalJointReplacementTouchMeta,
     component: TrapeziometacarpalJointReplacementTouch,
   },
+  { meta: generalOperationNoteMeta, component: GeneralOperationNote },
 ];
 
 // Slug-keyed component map. Astro/Vite can statically analyse direct object
@@ -74,12 +77,14 @@ export const OPERATION_NOTE_COMPONENTS: Record<string, ComponentType<{}>> = {
   'free-flap-reconstruction': FreeFlapReconstruction,
   'open-carpal-tunnel-release': OpenCarpalTunnelRelease,
   'trapeziometacarpal-joint-replacement-touch': TrapeziometacarpalJointReplacementTouch,
+  'general-operation-note': GeneralOperationNote,
 };
 
 export const OPERATION_NOTE_CATEGORY_LABEL: Record<
   OperationNoteCategory,
   string
 > = {
+  general: 'General',
   'skin-soft-tissue': 'Skin and soft tissue',
   'hand-surgery': 'Hand surgery',
   'free-flap': 'Free flap reconstruction',
@@ -89,6 +94,8 @@ export const OPERATION_NOTE_CATEGORY_BLURB: Record<
   OperationNoteCategory,
   string
 > = {
+  general:
+    'A bare operation-note skeleton for any procedure without a dedicated template — the RCS Good Surgical Practice section spine, standard consent wording with switchable risk groups, prophylaxis lines, implant and specimen records, and a generic post-op plan.',
   'skin-soft-tissue':
     'Excisions, biopsies, and reconstructions of cutaneous and subcutaneous lesions — benign and malignant.',
   'hand-surgery':
@@ -98,6 +105,7 @@ export const OPERATION_NOTE_CATEGORY_BLURB: Record<
 };
 
 export const OPERATION_NOTE_CATEGORY_ORDER: OperationNoteCategory[] = [
+  'general',
   'skin-soft-tissue',
   'hand-surgery',
   'free-flap',

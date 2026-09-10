@@ -38,6 +38,7 @@ import HandInfectionDrainage from '@/components/interactive/operation-notes/Hand
 import FreeFlapReconstruction from '@/components/interactive/operation-notes/FreeFlapReconstruction';
 import OpenCarpalTunnelRelease from '@/components/interactive/operation-notes/OpenCarpalTunnelRelease';
 import TrapeziometacarpalJointReplacementTouch from '@/components/interactive/operation-notes/TrapeziometacarpalJointReplacementTouch';
+import GeneralOperationNote from '@/components/interactive/operation-notes/GeneralOperationNote';
 
 export async function getStaticPaths() {
   return OPERATION_NOTE_TEMPLATES.map((t) => ({
@@ -127,6 +128,7 @@ const pageDescription = `${meta.indication} Interactive Markdown-emitting templa
       {slug === 'free-flap-reconstruction' && <FreeFlapReconstruction client:load />}
       {slug === 'open-carpal-tunnel-release' && <OpenCarpalTunnelRelease client:load />}
       {slug === 'trapeziometacarpal-joint-replacement-touch' && <TrapeziometacarpalJointReplacementTouch client:load />}
+      {slug === 'general-operation-note' && <GeneralOperationNote client:load />}
     </section>
 
     <section class="opnote-emits" aria-labelledby="emits-heading">
