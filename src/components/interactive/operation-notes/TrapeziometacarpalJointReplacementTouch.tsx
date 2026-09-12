@@ -17,9 +17,14 @@
 // under traction — and on freedom from neck-on-cup impingement).
 //
 // Two safety rules shape the form:
-//   1. Implant sizes and lot numbers are never defaulted. Every size select
-//      starts at [__] and every lot at [________], so the implant record
-//      cannot be pasted with a wrong size by accident.
+//   1. Neck and stem sizes and every lot number are never defaulted — they
+//      start at [__] / [________] so the implant record cannot be pasted
+//      with a wrong size by accident. The cup defaults to the operator's
+//      standard 9 mm conical (his stated practice); 10 mm and spherical
+//      remain selectable.
+//   Component range per the FDA labelling (P240020D, July 2025): stem XS /
+//   0 / 1 / 2 / 3 / 4; neck S 6 mm / M 8 mm / L 10 mm, straight or 15°
+//   offset; cup conical or spherical, Ø 9 or 10 mm.
 //   2. Suture material drives the post-op removal bullet (operator closes with
 //      Monocryl + Steri-Strips, so the default has nothing to remove); immobilisation
 //      resolves at render time ('auto' → extended when an intra-operative
@@ -41,8 +46,8 @@ type InjectionRelief = 'transient' | 'none';
 type CupShape = 'spherical' | 'conical';
 type CupSize = 'unspecified' | '9' | '10';
 type NeckType = 'offset' | 'straight';
-type NeckLength = 'unspecified' | '6' | '8' | '10';
-type StemSize = 'unspecified' | '1' | '2' | '3' | '4' | '5' | '6';
+type NeckLength = 'unspecified' | 'S' | 'M' | 'L';
+type StemSize = 'unspecified' | 'XS' | '0' | '1' | '2' | '3' | '4';
 type Capsule = 'repair' | 'resect';
 type McpProcedure = 'none' | 'capsulodesis' | 'kwire';
 type BoneQuality = 'good' | 'osteopenic';
@@ -122,8 +127,8 @@ const INITIAL_STATE: State = {
   injectionRelief: 'transient',
   acc: false,
   accNumber: '[#########]',
-  cupShape: 'spherical',
-  cupSize: 'unspecified',
+  cupShape: 'conical',
+  cupSize: '9',
   cupLot: '[________]',
   neckType: 'offset',
   neckLength: 'unspecified',
@@ -293,6 +298,19 @@ function sizeOrPlaceholder(value: string): string {
   return value === 'unspecified' ? '[__]' : value;
 }
 
+const NECK_LENGTH_MM: Record<Exclude<NeckLength, 'unspecified'>, string> = {
+  S: '6',
+  M: '8',
+  L: '10',
+};
+
+// "size S (6 mm)" — the catalogue letter first, because that is what is on
+// the box, with the length in millimetres so the note stands on its own.
+function neckSizePhrase(length: NeckLength): string {
+  if (length === 'unspecified') return 'size [__]';
+  return `size ${length} (${NECK_LENGTH_MM[length]} mm)`;
+}
+
 function antibioticLine(s: State): string {
   const agent =
     s.antibiotic === 'cefazolin2'
@@ -334,7 +352,7 @@ function positionLine(s: State): string {
 
 function procedureSteps(s: State): string[] {
   const cup = sizeOrPlaceholder(s.cupSize);
-  const neck = sizeOrPlaceholder(s.neckLength);
+  const neck = neckSizePhrase(s.neckLength);
   const stem = sizeOrPlaceholder(s.stemSize);
   const neckType = NECK_TYPE_PHRASE[s.neckType];
   const immobilisation = resolveImmobilisation(s);
@@ -364,8 +382,8 @@ function procedureSteps(s: State): string[] {
     `Trapezium: articular surface and osteophytes debrided; centre of the distal articular surface identified at the intersection of the dorsopalmar and radioulnar diameters. Guidewire inserted at the centre, perpendicular to the proximal articular surface of the trapezium in both the lateral and the dorsopalmar plane; position confirmed on image intensifier before reaming.`,
     `Cannulated reaming over the guidewire — starter, then Ø ${cup} mm reamer — to a depth that preserves the subchondral bone of the scaphotrapeziotrapezoid surface; trapezial walls checked circumferentially and intact. Trial cup seated and stable.`,
     `Definitive ${s.cupShape} cup Ø ${cup} mm impacted press-fit — centred on the distal trapezial surface and parallel to the proximal articular surface, stable to rotation and pull-out; seating confirmed on image intensifier.`,
-    `Trial reduction with the trial stem and trial necks: ${neckType} neck, length ${neck} mm, selected on tension — ½ to 1 head diameter of subluxation under longitudinal traction — with full flexion–extension, abduction–adduction, opposition and retropulsion free of neck-on-cup impingement, no subluxation on axial compression and circumduction, and tenodesis balance of the thumb ray restored.`,
-    `Definitive stem size ${stem} impacted in the axis of the canal; definitive ${neckType} neck ${neck} mm with pre-assembled polyethylene liner seated on the taper with the impactor; joint reduced. Range of motion, stability and absence of impingement re-confirmed.`,
+    `Trial reduction with the trial stem and trial necks: ${neckType} neck, ${neck}, selected on tension — ½ to 1 head diameter of subluxation under longitudinal traction — with full flexion–extension, abduction–adduction, opposition and retropulsion free of neck-on-cup impingement, no subluxation on axial compression and circumduction, and tenodesis balance of the thumb ray restored.`,
+    `Definitive stem size ${stem} impacted in the axis of the canal; definitive ${neckType} neck ${neck} with pre-assembled polyethylene liner seated on the dried taper with the impactor; joint reduced. Range of motion, stability and absence of impingement re-confirmed.`,
     `Image intensifier: posteroanterior and lateral views saved to PACS — cup centred in the trapezium and parallel to its proximal articular surface, stem in the axis of the metacarpal, joint reduced, no fracture.`,
     mcpStep,
     closureDeep,
@@ -377,7 +395,7 @@ function procedureSteps(s: State): string[] {
 function implantLines(s: State): string[] {
   return [
     `Trapezial cup: ${s.cupShape}, Ø ${sizeOrPlaceholder(s.cupSize)} mm — stainless steel, plasma-sprayed titanium + hydroxyapatite coating — LOT ${s.cupLot}`,
-    `Neck with pre-assembled liner: ${NECK_TYPE_PHRASE[s.neckType]}, length ${sizeOrPlaceholder(s.neckLength)} mm — stainless steel, highly cross-linked UHMWPE liner — LOT ${s.neckLot}`,
+    `Neck with pre-assembled liner: ${NECK_TYPE_PHRASE[s.neckType]}, ${neckSizePhrase(s.neckLength)} — stainless steel, highly cross-linked UHMWPE liner — LOT ${s.neckLot}`,
     `Metacarpal stem: size ${sizeOrPlaceholder(s.stemSize)} — titanium alloy, plasma-sprayed titanium + hydroxyapatite coating — LOT ${s.stemLot}`,
   ];
 }
@@ -709,7 +727,7 @@ function TrapeziometacarpalJointReplacementTouch() {
 
       <div class="opnote-section">
         <p class="opnote-section-title">Implants</p>
-        <span class="opnote-field-hint">Sizes and lot numbers are never pre-filled — transcribe them from the implant labels.</span>
+        <span class="opnote-field-hint">Cup defaults to the standard 9 mm conical. Neck and stem sizes and all lot numbers are never pre-filled — transcribe them from the implant labels.</span>
         <div class="opnote-subsection">
           <p class="opnote-subsection-title">Trapezial cup</p>
           <div class="opnote-row opnote-row-2">
@@ -717,8 +735,8 @@ function TrapeziometacarpalJointReplacementTouch() {
               <span class="opnote-field-label">Shape</span>
               <select class="opnote-field-select" value={state.cupShape}
                 onChange={(e) => update('cupShape', (e.currentTarget as HTMLSelectElement).value as CupShape)}>
-                <option value="spherical">Spherical</option>
                 <option value="conical">Conical</option>
+                <option value="spherical">Spherical</option>
               </select>
             </label>
             <label class="opnote-field">
@@ -750,13 +768,13 @@ function TrapeziometacarpalJointReplacementTouch() {
               <span class="opnote-field-hint">Offset is the usual choice; switch to straight if the offset neck impinges on the cup rim in flexion–extension.</span>
             </label>
             <label class="opnote-field">
-              <span class="opnote-field-label">Length (mm)</span>
+              <span class="opnote-field-label">Size</span>
               <select class="opnote-field-select" value={state.neckLength}
                 onChange={(e) => update('neckLength', (e.currentTarget as HTMLSelectElement).value as NeckLength)}>
                 <option value="unspecified">[__]</option>
-                <option value="6">6</option>
-                <option value="8">8</option>
-                <option value="10">10</option>
+                <option value="S">S (6 mm)</option>
+                <option value="M">M (8 mm)</option>
+                <option value="L">L (10 mm)</option>
               </select>
             </label>
           </div>
@@ -774,7 +792,7 @@ function TrapeziometacarpalJointReplacementTouch() {
               <select class="opnote-field-select" value={state.stemSize}
                 onChange={(e) => update('stemSize', (e.currentTarget as HTMLSelectElement).value as StemSize)}>
                 <option value="unspecified">[__]</option>
-                {(['1', '2', '3', '4', '5', '6'] as const).map((v) => (
+                {(['XS', '0', '1', '2', '3', '4'] as const).map((v) => (
                   <option value={v} key={v}>{v}</option>
                 ))}
               </select>
@@ -914,8 +932,8 @@ export const meta = {
   category: 'hand-surgery' as const,
   emits:
     'Staged diagnosis with conservative history · Consent with implant-specific risks · Antibiotic + VTE prophylaxis line · Thirteen-step implantation with fluoroscopic checks · Implant record (REF / LOT / UDI) · Radiation record · Immobilisation-specific post-op plan',
-  lastReviewed: '2026-09-11',
-  version: '1.1',
+  lastReviewed: '2026-09-13',
+  version: '1.2',
 };
 
 export default TrapeziometacarpalJointReplacementTouch;
